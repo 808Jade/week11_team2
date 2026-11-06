@@ -1,0 +1,245 @@
+{
+    "DesignSize": [
+        1920,
+        1080
+    ],
+    "ParentClass": "UScoreboardWidget",
+    "Root": {
+        "Children": [
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "AlignmentX": 0.0,
+                    "AlignmentY": 0.0,
+                    "Anchors": {
+                        "W": 0.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    },
+                    "ColorAndOpacity": {
+                        "A": 0.6200000047683716,
+                        "B": 0.07999999821186066,
+                        "G": 0.05000000074505806,
+                        "R": 0.029999999329447746
+                    },
+                    "Offsets": {
+                        "W": 120.0,
+                        "X": 32.0,
+                        "Y": 32.0,
+                        "Z": 360.0
+                    },
+                    "RenderOpacity": 1.0,
+                    "TexturePath": "",
+                    "Visibility": 0,
+                    "WidgetName": "Plate",
+                    "ZOrder": 0,
+                    "bAutoSize": false
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "AlignmentX": 0.0,
+                    "AlignmentY": 0.0,
+                    "Anchors": {
+                        "W": 0.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    },
+                    "ColorAndOpacity": {
+                        "A": 0.699999988079071,
+                        "B": 1.0,
+                        "G": 1.0,
+                        "R": 1.0
+                    },
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "FontSize": 22.0,
+                    "Justification": 0,
+                    "Offsets": {
+                        "W": 0.0,
+                        "X": 56.0,
+                        "Y": 44.0,
+                        "Z": 0.0
+                    },
+                    "RenderOpacity": 1.0,
+                    "Text": "SCORE",
+                    "Visibility": 0,
+                    "WidgetName": "ScoreLabel",
+                    "ZOrder": 0,
+                    "bAutoSize": true
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "AlignmentX": 0.0,
+                    "AlignmentY": 0.0,
+                    "Anchors": {
+                        "W": 0.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    },
+                    "ColorAndOpacity": {
+                        "A": 1.0,
+                        "B": 0.0,
+                        "G": 0.0,
+                        "R": 1.0
+                    },
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "FontSize": 56.0,
+                    "Justification": 0,
+                    "Offsets": {
+                        "W": 66.80078125,
+                        "X": 61.49285888671875,
+                        "Y": 73.59878540039062,
+                        "Z": 166.796875
+                    },
+                    "RenderOpacity": 1.0,
+                    "Text": "00000",
+                    "Visibility": 0,
+                    "WidgetName": "ScoreText",
+                    "ZOrder": 0,
+                    "bAutoSize": true
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "AlignmentX": 1.0,
+                    "AlignmentY": 0.0,
+                    "Anchors": {
+                        "W": 0.0,
+                        "X": 1.0,
+                        "Y": 0.0,
+                        "Z": 1.0
+                    },
+                    "ColorAndOpacity": {
+                        "A": 1.0,
+                        "B": 1.0,
+                        "G": 1.0,
+                        "R": 1.0
+                    },
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "FontSize": 48.0,
+                    "Justification": 0,
+                    "Offsets": {
+                        "W": 0.0,
+                        "X": -81.07763671875,
+                        "Y": 65.84149932861328,
+                        "Z": 0.0
+                    },
+                    "RenderOpacity": 1.0,
+                    "Text": "00:00",
+                    "Visibility": 0,
+                    "WidgetName": "TimeText",
+                    "ZOrder": 0,
+                    "bAutoSize": true
+                }
+            },
+            {
+                "Children": [
+                    {
+                        "Class": "UTextBlock",
+                        "Properties": {
+                            "AlignmentX": 0.0,
+                            "AlignmentY": 0.0,
+                            "Anchors": {
+                                "W": 0.0,
+                                "X": 0.0,
+                                "Y": 0.0,
+                                "Z": 0.0
+                            },
+                            "ColorAndOpacity": {
+                                "A": 1.0,
+                                "B": 1.0,
+                                "G": 1.0,
+                                "R": 1.0
+                            },
+                            "FontPath": "Assets/Fonts/Pretendard.json",
+                            "FontSize": 32.0,
+                            "Justification": 1,
+                            "Offsets": {
+                                "W": 80.39688110351562,
+                                "X": -13.39276123046875,
+                                "Y": 21.27037811279297,
+                                "Z": 586.0686645507812
+                            },
+                            "RenderOpacity": 1.0,
+                            "Text": "좋은 코드가 살아남는다",
+                            "Visibility": 0,
+                            "WidgetName": "TextBlock143",
+                            "ZOrder": 0,
+                            "bAutoSize": false
+                        }
+                    }
+                ],
+                "Class": "UButton",
+                "Properties": {
+                    "AlignmentX": 0.0,
+                    "AlignmentY": 0.0,
+                    "Anchors": {
+                        "W": 0.0,
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0
+                    },
+                    "HoveredColor": {
+                        "A": 0.949999988079071,
+                        "B": 0.9005848169326782,
+                        "G": 0.37524375319480896,
+                        "R": 0.0
+                    },
+                    "NormalColor": {
+                        "A": 0.8999999761581421,
+                        "B": 0.20000000298023224,
+                        "G": 0.15000000596046448,
+                        "R": 0.11999999731779099
+                    },
+                    "Offsets": {
+                        "W": 132.27737426757812,
+                        "X": 734.8734130859375,
+                        "Y": 50.692138671875,
+                        "Z": 531.0259399414062
+                    },
+                    "PressedColor": {
+                        "A": 1.0,
+                        "B": 0.017210422083735466,
+                        "G": 0.3279367685317993,
+                        "R": 0.5350877046585083
+                    },
+                    "RenderOpacity": 1.0,
+                    "Visibility": 0,
+                    "WidgetName": "Button169",
+                    "ZOrder": 0,
+                    "bAutoSize": false
+                }
+            }
+        ],
+        "Class": "UCanvasPanel",
+        "Properties": {
+            "AlignmentX": 0.0,
+            "AlignmentY": 0.0,
+            "Anchors": {
+                "W": 1.0,
+                "X": 0.0,
+                "Y": 0.0,
+                "Z": 1.0
+            },
+            "Offsets": {
+                "W": 0.0,
+                "X": 0.0,
+                "Y": 0.0,
+                "Z": 0.0
+            },
+            "RenderOpacity": 1.0,
+            "Visibility": 0,
+            "WidgetName": "Root",
+            "ZOrder": 0,
+            "bAutoSize": false
+        }
+    },
+    "Version": 2
+}
