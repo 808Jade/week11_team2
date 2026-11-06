@@ -464,68 +464,58 @@ namespace
 	}
 }
 
-FFbxImporter::~FFbxImporter()
-{
+FFbxImporter::~FFbxImporter() {
 	Close();
 }
 
-bool FFbxImporter::Open(const FString& Path, FString& OutError, const FString& ExtractionFolder)
-{
+bool FFbxImporter::Open(const FString& Path, FString& OutError, const FString& ExtractionFolder) {
 	Close();
 	OutError.clear();
 
-	Manager = FbxManager::Create();
-	if (!Manager)
-	{
+	mManager = FbxManager::Create();
+	if (!mManager) {
 		OutError = "FBX: failed to create SDK manager";
 		return false;
 	}
 
-	FbxIOSettings* Settings = FbxIOSettings::Create(Manager, IOSROOT);	// IOSRoot라는 이름으로 FbxIOSettings 객체를 생성
-	if (!Settings)
-	{
+	FbxIOSettings* Settings{ FbxIOSettings::Create(mManager, IOSROOT) };	// IOSRoot라는 이름으로 FbxIOSettings 객체를 생성
+	if (!Settings) {
 		OutError = "FBX: failed to create IO settings";
 		Close();
 		return false;
 	}
-	Manager->SetIOSettings(Settings);
-
+	mManager->SetIOSettings(Settings);
 
 	// Asset Import는 호출자가 관리하는 임시 폴더로 추출한다. 폴더 없는 Scene 조회는 디스크에 쓰지 않는다.
 	Settings->SetBoolProp(IMP_FBX_EXTRACT_EMBEDDED_DATA, !ExtractionFolder.empty());
 
-	Scene = FbxScene::Create(Manager, "ImportScene");
+	mScene = FbxScene::Create(mManager, "ImportScene");
 	// importer에 이름을 지정하면, 이름을 기반으로 로그를 남길 때 유용하게 사용할 수 있지만
 	// 현재는 multiple importer가 필요하지 않아서 이름은 지정하지 않았다.
-	FbxImporter* Reader = FbxImporter::Create(Manager, "");
-	if (!Scene || !Reader)
-	{
+	FbxImporter* Reader{ FbxImporter::Create(mManager, "") };
+	if (!mScene || !Reader) {
 		OutError = "FBX: failed to create scene or reader";
 		Close();
 		return false;
 	}
 
-	if (!Reader->Initialize(Path.c_str(), -1, Settings))
-	{
+	if (!Reader->Initialize(Path.c_str(), -1, Settings)) {
 		OutError = "FBX: cannot open '" + Path + "': " + Reader->GetStatus().GetErrorString();
 		Close();
 		return false;
 	}
-	if (!Reader->IsFBX())
-	{
+	if (!Reader->IsFBX()) {
 		OutError = "FBX: not an FBX file: '" + Path + "'";
 		Close();
 		return false;
 	}
-	FEmbeddedExtraction Extraction;
-	FbxEmbeddedFileCallback* Callback = nullptr;
-	if (!ExtractionFolder.empty())
-	{
+	FEmbeddedExtraction Extraction{};
+	FbxEmbeddedFileCallback* Callback{};
+	if (!ExtractionFolder.empty()) {
 		Extraction.Folder = PathOf(ExtractionFolder);
 		Reader->SetEmbeddingExtractionFolder(ExtractionFolder.c_str());
-		Callback = FbxEmbeddedFileCallback::Create(Manager, "EmbeddedTextures");
-		if (!Callback || Callback->RegisterReadFunction(FEmbeddedExtraction::Read, &Extraction) < 0)
-		{
+		Callback = FbxEmbeddedFileCallback::Create(mManager, "EmbeddedTextures");
+		if (!Callback || Callback->RegisterReadFunction(FEmbeddedExtraction::Read, &Extraction) < 0) {
 			OutError = "FBX: cannot create embedded texture callback";
 			Close();
 			return false;
@@ -533,217 +523,241 @@ bool FFbxImporter::Open(const FString& Path, FString& OutError, const FString& E
 		// Initialize가 callback을 초기화하므로 Initialize 이후, Import 이전에 등록한다.
 		Reader->SetEmbeddedFileReadCallback(Callback);
 	}
-	const bool Imported = Reader->Import(Scene);
+	const bool Imported{ Reader->Import(mScene) };
 	// callback의 지역 상태를 가리키는 포인터가 Open 반환 뒤에 남지 않도록 해제한다.
-	if (Callback)
-	{
+	if (Callback) {
 		Reader->SetEmbeddedFileReadCallback(nullptr);
 		Callback->Destroy();
 	}
-	if (!Imported || !Extraction.Error.empty())
-	{
+	if (!Imported || !Extraction.Error.empty()) {
 		OutError = Extraction.Error.empty() ? "FBX: cannot import '" + Path + "': " + Reader->GetStatus().GetErrorString() : Extraction.Error;
 		Close();
 		return false;
 	}
-	Extraction.ResolveTextures(Scene);
+	Extraction.ResolveTextures(mScene);
 
 	// Creator는 Reader가 살아 있을 때 읽어 두고 Blender Armature 예외 판별에 사용한다.
-	const FbxIOFileHeaderInfo* Header = Reader->GetFileHeaderInfo();
-	bIsBlender = Header && FString(Header->mCreator.Buffer()).starts_with("Blender");
+	const FbxIOFileHeaderInfo* Header{ Reader->GetFileHeaderInfo() };
+	mIsBlender = Header && FString(Header->mCreator.Buffer()).starts_with("Blender");
 	// 파일 읽기는 끝났으므로 Reader를 닫고 메모리에 있는 Scene만 유지한다.
 	Reader->Destroy();
-	SourcePath = Path;
+	mSourcePath = Path;
+	PrepareScene();
 	return true;
 }
 
-void FFbxImporter::Close()
-{
+void FFbxImporter::Close() {
 	ClearSkeletonData();
-	MeshNodes.Empty();
-	SourcePath.clear();
-	bIsBlender = false;
+	mMeshNodes.Empty();
+	mSourcePath.clear();
+	mIsBlender = false;
 	// Manager가 아직 남아 있는 Reader, Scene, IOSettings를 함께 해제한다.
-	if (Manager)
-		Manager->Destroy();
-	Manager = nullptr;
-	Scene = nullptr;
+	if (mManager)
+		mManager->Destroy();
+	mManager = nullptr;
+	mScene = nullptr;
 }
 
-// 열린 Scene의 축/단위를 변환한 뒤, Mesh Node별 Geometry/Material과 Control Point 대응표를 만든다.
 // 모든 Node 추출이 성공했을 때만 Results를 MeshNodes에 보관한다.
-bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
-{
-	ClearSkeletonData();
-	MeshNodes.Empty();
+bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError) {
+	mMeshNodes.Empty();
 	OutWarnings.Empty();
 	OutError.clear();
-	if (!Scene) 
-	{ 
-		OutError = "FBX: no scene is open"; 
-		return false; 
+	if (!mScene) {
+		OutError = "FBX: no scene is open";
+		return false;
 	}
 
-	FbxRootNodeUtility::RemoveAllFbxRoots(Scene);
-	// Mesh/Bone을 읽기 전에 장면 전체를 엔진 좌표계(+Z 위, +X 앞, 왼손)로 맞춘다.
-	// DeepConvertScene은 Transform뿐 아니라 정점/Normal, Polygon 순서, Pose/Cluster도 변환한다.
-	// 이후 값을 옮길 때 Y나 Quaternion을 다시 반전하지 않는다.
-	const FbxAxisSystem Target(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
-	if (Scene->GetGlobalSettings().GetAxisSystem() != Target) Target.DeepConvertScene(Scene);
-	// 단위도 설정값만 바꾸는 것이 아니라 Scene 데이터를 cm 기준으로 실제 변환한다.
-	if (Scene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::cm) FbxSystemUnit::cm.ConvertScene(Scene);
-	// 축/단위 변환 전 자식 Node의 Global 캐시가 남지 않도록 비운다. UE ConvertScene 경로와 같은 처리다.
-	Scene->GetAnimationEvaluator()->Reset();
-	
-	FbxGeometryConverter Converter(Manager);
-	TArray<FFbxMeshNodeData> Results;
+	FbxGeometryConverter Converter{ mManager };
+	TArray<FFbxMeshNodeData> Results{};
 	// Scene의 Node 목록에서 Mesh를 찾는다. Mesh가 없는 Node는 건너뛴다.
 	// 지원하지 않는 Geometry/복수 Mesh Attribute는 오류로 처리하고,
 	// 각 Mesh를 삼각형화한 뒤 새 Mesh에서 Node별 데이터를 추출한다.
-	for (int I = 0; I < Scene->GetNodeCount(); ++I)
-	{
-		FbxNode* Node = Scene->GetNode(I);
-		int MeshCount = 0;
-		for (int A = 0; A < Node->GetNodeAttributeCount(); ++A)
-		{
-			const auto Type = Node->GetNodeAttributeByIndex(A)->GetAttributeType();
-			if (Type == FbxNodeAttribute::eMesh) 
+	for (int I{}; I < mScene->GetNodeCount(); ++I) {
+		FbxNode* Node{ mScene->GetNode(I) };
+		int MeshCount{};
+		for (int A{}; A < Node->GetNodeAttributeCount(); ++A) {
+			const auto Type{ Node->GetNodeAttributeByIndex(A)->GetAttributeType() };
+			if (Type == FbxNodeAttribute::eMesh)
 				++MeshCount;
-			if (Type == FbxNodeAttribute::eNurbs || Type == FbxNodeAttribute::eNurbsSurface || Type == FbxNodeAttribute::ePatch) 
-			{ 
-				OutError = "FBX: unsupported Patch/NURBS: " + FString(Node->GetName()); 
-				return false; 
+			if (Type == FbxNodeAttribute::eNurbs || Type == FbxNodeAttribute::eNurbsSurface || Type == FbxNodeAttribute::ePatch) {
+				OutError = "FBX: unsupported Patch/NURBS: " + FString(Node->GetName());
+				return false;
 			}
 		}
 		if (!MeshCount) continue;
-		if (MeshCount != 1 || !Node->GetMesh()) 
-		{ 
-			OutError = "FBX: unsupported multiple/non-default mesh attributes: " + FString(Node->GetName()); 
-			return false; 
+		if (MeshCount != 1 || !Node->GetMesh()) {
+			OutError = "FBX: unsupported multiple/non-default mesh attributes: " + FString(Node->GetName());
+			return false;
 		}
 
 		// replace를 true로 하였기때문에, 기존 데이터는 사라지고, 삼각형으로 변환된 데이터만 남게 된다.
-		if (!Converter.Triangulate(Node->GetMesh(), true)) 
-		{ 
-			OutError = "FBX: triangulation failed: " + FString(Node->GetName()); 
-			return false; 
+		if (!Converter.Triangulate(Node->GetMesh(), true)) {
+			OutError = "FBX: triangulation failed: " + FString(Node->GetName());
+			return false;
 		}
 		// Triangulate가 기존 Mesh를 교체할 수 있으므로 Node에서 다시 얻는다.
-		FFbxMeshNodeData Result;
-		if (!ReadMeshNode(Node, Node->GetMesh(), Node->EvaluateGlobalTransform(), PathOf(SourcePath).parent_path(), Result, OutWarnings, OutError))
-		{
+		FFbxMeshNodeData Result{};
+		if (!ReadMeshNode(Node, Node->GetMesh(), Node->EvaluateGlobalTransform(), PathOf(mSourcePath).parent_path(), Result, OutWarnings, OutError)) {
 			OutError = "FBX: " + FString(Node->GetName()) + ": " + OutError;
 			return false;
 		}
 		Results.Add(std::move(Result));
 	}
-	if (Results.IsEmpty()) { OutError = "FBX: no mesh nodes"; return false; }
-	MeshNodes = std::move(Results);
+	if (Results.IsEmpty()) {
+		OutError = "FBX: no mesh nodes";
+		return false;
+	}
+	mMeshNodes = std::move(Results);
 	return true;
 }
 
 // Node별로 추출한 Geometry를 하나의 Static 출력 데이터로 합친다.
-// Skin이 있는 Node도 포함하며, 이미 구워진 Position/Normal에 Transform을 다시 적용하지 않는다.
-void FFbxImporter::BuildStaticMesh(FStaticMeshData& OutData) const
-{
+void FFbxImporter::BuildStaticMesh(FStaticMeshData& OutData, bool ExcludeSkeletalMeshes) const {
 	OutData = {};
-	for (const FFbxMeshNodeData& Node : MeshNodes)
+	for (const FFbxMeshNodeData& Node : mMeshNodes) {
+		if (ExcludeSkeletalMeshes && (Node.bHasSkin || mBoneIndices.Contains(Node.Node))) {
+			continue;
+		}
+
 		AppendGeometry(Node.Geometry, OutData);
+	}
 }
 
-
-void FFbxImporter::ClearSkeletonData()
-{
-	Bones.Empty();
-	BoneIndices.Empty();
-	RigidBindMeshes.Empty();
-	for (FFbxMeshNodeData& Mesh : MeshNodes) Mesh.RigidBoneIndex = -1;
+void FFbxImporter::ClearSkeletonData() {
+	mBones.Empty();
+	mBoneIndices.Empty();
+	mBindGlobals.Empty();
 }
 
-// ReadMeshData로 축과 단위를 변환한 Scene에서 Bone 계층과 Bind를 읽는다. 실패 시 Skeleton 결과는 비워 둔다.
-bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError)
-{
+bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError) {
 	ClearSkeletonData();
 	OutWarnings.Empty();
 	OutError.clear();
-	if (!Scene || MeshNodes.IsEmpty()) { OutError = "FBX: read mesh data before skeleton data"; return false; }
+	if (!mScene) {
+		OutError = "FBX: no scene is open";
+		return false;
+	}
 
 	// 여러 Mesh의 Cluster를 모아 Bone 계층과 Bind를 조회한다. Weight 값은 읽지 않는다.
-	TArray<FbxCluster*> Clusters;
-	FbxNode* Root = nullptr;
-	for (const FFbxMeshNodeData& Mesh : MeshNodes)
-	{
-		if (!Mesh.bHasSkin) continue;
-		FbxMesh* Geometry = Mesh.Node->GetMesh();
-		for (int S = 0; S < Geometry->GetDeformerCount(FbxDeformer::eSkin); ++S)
-		{
-			auto* Skin = static_cast<FbxSkin*>(Geometry->GetDeformer(S, FbxDeformer::eSkin));
-			if (!Skin->GetClusterCount()) { OutError = "FBX: Skin has no clusters: " + FString(Mesh.Node->GetName()); return false; }
-			for (int C = 0; C < Skin->GetClusterCount(); ++C)
-			{
-				FbxCluster* Cluster = Skin->GetCluster(C);
-				FbxNode* Link = Cluster->GetLink();
-				if (!Link) { OutError = "FBX: Cluster has no Link: " + FString(Mesh.Node->GetName()); return false; }
-				FbxNode* Candidate = FindSkeletonRoot(Link, Scene, bIsBlender);
-				if (Root && Root != Candidate) { OutError = "FBX: multiple skeleton roots"; return false; }
+	TArray<FbxCluster*> Clusters{};
+	FbxNode* Root{};
+	for (int Index{}; Index < mScene->GetNodeCount(); ++Index) {
+		FbxNode* Node{ mScene->GetNode(Index) };
+		FbxMesh* Geometry{ Node->GetMesh() };
+		if (!Geometry) {
+			continue;
+		}
+		for (int S{}; S < Geometry->GetDeformerCount(FbxDeformer::eSkin); ++S) {
+			auto* Skin{ static_cast<FbxSkin*>(Geometry->GetDeformer(S, FbxDeformer::eSkin)) };
+			if (!Skin->GetClusterCount()) {
+				OutError = "FBX: Skin has no clusters: " + FString(Node->GetName());
+				return false;
+			}
+			for (int C{}; C < Skin->GetClusterCount(); ++C) {
+				FbxCluster* Cluster{ Skin->GetCluster(C) };
+				FbxNode* Link{ Cluster->GetLink() };
+				if (!Link) {
+					OutError = "FBX: Cluster has no Link: " + FString(Node->GetName());
+					return false;
+				}
+				FbxNode* Candidate{ FindSkeletonRoot(Link, mScene, mIsBlender) };
+				if (Root && Root != Candidate) {
+					OutError = "FBX: multiple skeleton roots";
+					return false;
+				}
 				Root = Candidate;
 				Clusters.Add(Cluster);
 			}
 		}
 	}
-	if (!Root) { OutError = "FBX: no skeleton bones"; return false; }
-	TArray<FbxNode*> Nodes;
-	CollectBoneNodes(Root, Nodes);
-	if (Nodes.IsEmpty()) { OutError = "FBX: no skeleton bones"; return false; }
-	// 기존 FSkinWeight::BoneIndex가 uint8이므로 최종 출력으로 표현할 수 있는 Bone 수에 맞춘다.
-	if (Nodes.Num() > 256) { OutError = "FBX: bone count exceeds 256"; return false; }
+	if (!Root) {
+		for (int Index{}; Index < mScene->GetNodeCount(); ++Index) {
+			FbxNode* Node{ mScene->GetNode(Index) };
+			if (!Node->GetSkeleton()) {
+				continue;
+			}
 
-	TMap<FbxNode*, int32> ResultIndices;
-	TSet<FString> Names;
-	TArray<FBoneInfo> ResultBones;
-	TArray<FbxAMatrix> BindGlobals;
-	TArray<FMatrix> BindWorlds;
-	for (int32 I = 0; I < Nodes.Num(); ++I)
-	{
-		FbxNode* Node = Nodes[I];
-		FBoneInfo Bone;
+			FbxNode* Candidate{ FindSkeletonRoot(Node, mScene, mIsBlender) };
+			if (Root && Root != Candidate) {
+				OutError = "FBX: multiple skeleton roots";
+				return false;
+			}
+
+			Root = Candidate;
+		}
+	}
+	if (!Root) {
+		OutError = "FBX: no skeleton bones";
+		return false;
+	}
+	TArray<FbxNode*> Nodes{};
+	CollectBoneNodes(Root, Nodes);
+	if (Nodes.IsEmpty()) {
+		OutError = "FBX: no skeleton bones";
+		return false;
+	}
+
+	TMap<FbxNode*, int32> ResultIndices{};
+	TSet<FString> Names{};
+	TArray<FBoneInfo> ResultBones{};
+	TArray<FbxAMatrix> BindGlobals{};
+	TArray<FMatrix> BindWorlds{};
+	for (int32 I{}; I < Nodes.Num(); ++I) {
+		FbxNode* Node{ Nodes[I] };
+		FBoneInfo Bone{};
 		Bone.Name = Node->GetName();
-		if (Names.Contains(Bone.Name)) { OutError = "FBX: duplicate bone name: " + Bone.Name; return false; }
+		if (Names.Contains(Bone.Name)) {
+			OutError = "FBX: duplicate bone name: " + Bone.Name;
+			return false;
+		}
 		Names.Add(Bone.Name);
-		if (I > 0)
-		{
-			const int32* Parent = ResultIndices.Find(Node->GetParent());
-			if (!Parent) { OutError = "FBX: bone parent is not in skeleton: " + Bone.Name; return false; }
+		if (I > 0) {
+			const int32* Parent{ ResultIndices.Find(Node->GetParent()) };
+			if (!Parent) {
+				OutError = "FBX: bone parent is not in skeleton: " + Bone.Name;
+				return false;
+			}
 			Bone.ParentIndex = *Parent;
 		}
 
-		const FbxAMatrix Global = ReadBindGlobal(Scene, Node, Clusters, OutWarnings);
-		const double GlobalDeterminant = Global.Determinant();
-		if (!IsFiniteMatrix(Global) || !std::isfinite(GlobalDeterminant) || GlobalDeterminant == 0) { OutError = "FBX: invalid Bind Global: " + Bone.Name; return false; }
-		const FbxAMatrix Local = Bone.ParentIndex < 0 ? Global : BindGlobals[Bone.ParentIndex].Inverse() * Global;
-		if (!IsFiniteMatrix(Local)) { OutError = "FBX: non-finite Bind Local: " + Bone.Name; return false; }
-		const FbxVector4 Translation = Local.GetT();
-		const FbxQuaternion Rotation = Local.GetQ();
-		const FbxVector4 Scale = Local.GetS();
+		const FbxAMatrix Global{ ReadBindGlobal(mScene, Node, Clusters, OutWarnings) };
+		const double GlobalDeterminant{ Global.Determinant() };
+		if (!IsFiniteMatrix(Global) || !std::isfinite(GlobalDeterminant) || GlobalDeterminant == 0) {
+			OutError = "FBX: invalid Bind Global: " + Bone.Name;
+			return false;
+		}
+		const FbxAMatrix Local{ Bone.ParentIndex < 0 ? Global : BindGlobals[Bone.ParentIndex].Inverse() * Global };
+		if (!IsFiniteMatrix(Local)) {
+			OutError = "FBX: non-finite Bind Local: " + Bone.Name;
+			return false;
+		}
+		const FbxVector4 Translation{ Local.GetT() };
+		const FbxQuaternion Rotation{ Local.GetQ() };
+		const FbxVector4 Scale{ Local.GetS() };
 		// Scene의 Bind 행렬도 이미 엔진 좌표계이므로 분해한 TRS에 추가 반사를 하지 않는다.
 		Bone.LocalBindPose.Location = ToVector(Translation);
-		Bone.LocalBindPose.Scale = FVector(static_cast<float>(Scale[0]), static_cast<float>(Scale[1]), static_cast<float>(Scale[2]));
+		Bone.LocalBindPose.Scale = FVector{ static_cast<float>(Scale[0]), static_cast<float>(Scale[1]), static_cast<float>(Scale[2]) };
 		// SDK에서 Euler로 변환하여 정확히 +/-90도인 회전도 보존한다. FRotator 저장 순서는 Pitch(Y), Yaw(Z), Roll(X)다.
-		FbxAMatrix EngineRotation;
+		FbxAMatrix EngineRotation{};
 		EngineRotation.SetQ(Rotation);
-		const FbxVector4 Euler = EngineRotation.GetR();
-		Bone.LocalBindPose.Rotation = FRotator(static_cast<float>(Euler[1]), static_cast<float>(Euler[2]), static_cast<float>(Euler[0]));
-		const FMatrix LocalMatrix = Bone.LocalBindPose.GetLocalMatrix();
-		const double LocalDeterminant = LocalMatrix.Determinant();
-		if (!std::isfinite(LocalDeterminant) || LocalDeterminant == 0) { OutError = "FBX: non-finite/zero-scale Bind Local: " + Bone.Name; return false; }
+		const FbxVector4 Euler{ EngineRotation.GetR() };
+		Bone.LocalBindPose.Rotation = FRotator{ static_cast<float>(Euler[1]), static_cast<float>(Euler[2]), static_cast<float>(Euler[0]) };
+		const FMatrix LocalMatrix{ Bone.LocalBindPose.GetLocalMatrix() };
+		const double LocalDeterminant{ LocalMatrix.Determinant() };
+		if (!std::isfinite(LocalDeterminant) || LocalDeterminant == 0) {
+			OutError = "FBX: non-finite/zero-scale Bind Local: " + Bone.Name;
+			return false;
+		}
 		// 런타임과 같은 저장 Local 누적에서 역행렬을 만들어 TRS 분해 후의 자세와 일치시킨다.
-		const FMatrix World = Bone.ParentIndex < 0 ? LocalMatrix : LocalMatrix * BindWorlds[Bone.ParentIndex];
+		const FMatrix World{ Bone.ParentIndex < 0 ? LocalMatrix : LocalMatrix * BindWorlds[Bone.ParentIndex] };
 		Bone.InverseBindPose = World.Inverse();
-		for (int R = 0; R < 4; ++R)
-		{
-			for (int C = 0; C < 4; ++C)
-			{
-				if (!std::isfinite(World.M[R][C]) || !std::isfinite(Bone.InverseBindPose.M[R][C])) { OutError = "FBX: non-finite accumulated Bind: " + Bone.Name; return false; }
+		for (int R{}; R < 4; ++R) {
+			for (int C{}; C < 4; ++C) {
+				if (!std::isfinite(World.M[R][C]) || !std::isfinite(Bone.InverseBindPose.M[R][C])) {
+					OutError = "FBX: non-finite accumulated Bind: " + Bone.Name;
+					return false;
+				}
 			}
 		}
 		ResultIndices.Add(Node, I);
@@ -751,71 +765,80 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 		BindGlobals.Add(Global);
 		BindWorlds.Add(World);
 	}
-	for (FbxCluster* Cluster : Clusters)
-	{
-		if (!ResultIndices.Contains(Cluster->GetLink())) { OutError = "FBX: Cluster Link is outside the selected bone hierarchy"; return false; }
-	}
-
-	// 현재 Global 기준 자료는 Static 출력에 남기고, rigid만 선택된 Bind Global로 다시 읽는다.
-	// 모든 추출이 성공하기 전에는 멤버를 갱신하지 않아 실패 후 부분 결과가 남지 않는다.
-	TMap<FbxNode*, FFbxMeshNodeData> ResultRigidMeshes;
-	constexpr double RigidPoseTolerance = 1e-6;
-	for (const FFbxMeshNodeData& Mesh : MeshNodes)
-	{
-		if (Mesh.bHasSkin) continue;
-		const int32* BoneIndex = ResultIndices.Find(Mesh.Node);
-		if (!BoneIndex) continue;
-		const FbxAMatrix& Bind = BindGlobals[*BoneIndex];
-		const FbxAMatrix Current = Mesh.Node->EvaluateGlobalTransform();
-		double MaxDifference = 0;
-		for (int Row = 0; Row < 4; ++Row)
-			for (int Column = 0; Column < 4; ++Column) MaxDifference = std::max(MaxDifference, std::abs(Current.Get(Row, Column) - Bind.Get(Row, Column)));
-		if (MaxDifference > RigidPoseTolerance) Warn(OutWarnings, "FBX: rigid mesh baked at bind pose (differs from current pose): " + FString(Mesh.Node->GetName()));
-		FFbxMeshNodeData Result;
-		if (!ReadMeshNode(Mesh.Node, Mesh.Node->GetMesh(), Bind, PathOf(SourcePath).parent_path(), Result, OutWarnings, OutError))
-		{
-			OutError = "FBX: " + FString(Mesh.Node->GetName()) + ": " + OutError;
+	for (FbxCluster* Cluster : Clusters) {
+		if (!ResultIndices.Contains(Cluster->GetLink())) {
+			OutError = "FBX: Cluster Link is outside the selected bone hierarchy";
 			return false;
 		}
-		Result.RigidBoneIndex = *BoneIndex;
-		ResultRigidMeshes.Add(Mesh.Node, std::move(Result));
 	}
-	Bones = std::move(ResultBones);
-	BoneIndices = std::move(ResultIndices);
-	RigidBindMeshes = std::move(ResultRigidMeshes);
-	for (FFbxMeshNodeData& Mesh : MeshNodes)
-		if (const FFbxMeshNodeData* Rigid = RigidBindMeshes.Find(Mesh.Node)) Mesh.RigidBoneIndex = Rigid->RigidBoneIndex;
+
+	mBones = std::move(ResultBones);
+	mBoneIndices = std::move(ResultIndices);
+	mBindGlobals = std::move(BindGlobals);
 	return true;
 }
 
 // Node별 Geometry와 Weight를 같은 정점 순서로 합친 뒤, SDK 포인터 없는 엔진 자료를 반환한다.
-bool FFbxImporter::BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>& OutWarnings, FString& OutError) const
-{
+bool FFbxImporter::BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>& OutWarnings, FString& OutError) const {
 	OutData = {};
 	OutWarnings.Empty();
 	OutError.clear();
-	if (!Scene || Bones.IsEmpty()) { OutError = "FBX: read skeleton data before building skeletal mesh"; return false; }
+	if (!mScene || mBones.IsEmpty()) {
+		OutError = "FBX: read skeleton data before building skeletal mesh";
+		return false;
+	}
 
-	FStaticMeshData Geometry;
-	FSkeletalMeshData Result;
-	for (const FFbxMeshNodeData& SourceMesh : MeshNodes)
-	{
-		const FFbxMeshNodeData* Rigid = RigidBindMeshes.Find(SourceMesh.Node);
-		const FFbxMeshNodeData& Mesh = Rigid ? *Rigid : SourceMesh;
-		if (!Mesh.bHasSkin && Mesh.RigidBoneIndex < 0) continue;
-		if (Mesh.bHasSkin)
-		{
-			TArray<FSkinWeight> ControlPointWeights;
-			if (!ReadControlPointWeights(Mesh.Node, BoneIndices, ControlPointWeights, OutWarnings, OutError)) return false;
+	if (mMeshNodes.IsEmpty()) {
+		OutError = "FBX: read mesh data before building skeletal mesh";
+		return false;
+	}
+
+	if (mBones.Num() > 256) {
+		OutError = "FBX: bone count exceeds 256";
+		return false;
+	}
+
+	FStaticMeshData Geometry{};
+	FSkeletalMeshData Result{};
+	for (const FFbxMeshNodeData& SourceMesh : mMeshNodes) {
+		const int32* BoneIndex{ mBoneIndices.Find(SourceMesh.Node) };
+		if (!SourceMesh.bHasSkin && !BoneIndex) {
+			continue;
+		}
+
+		FFbxMeshNodeData RigidMesh{};
+		if (!SourceMesh.bHasSkin) {
+			const FbxAMatrix& Bind{ mBindGlobals[*BoneIndex] };
+			const FbxAMatrix Current{ SourceMesh.Node->EvaluateGlobalTransform() };
+			double MaxDifference{};
+			for (int Row{}; Row < 4; ++Row) {
+				for (int Column{}; Column < 4; ++Column) {
+					MaxDifference = std::max(MaxDifference, std::abs(Current.Get(Row, Column) - Bind.Get(Row, Column)));
+				}
+			}
+
+			if (MaxDifference > 1e-6) {
+				Warn(OutWarnings, "FBX: rigid mesh baked at bind pose (differs from current pose): " + FString(SourceMesh.Node->GetName()));
+			}
+
+			if (!ReadMeshNode(SourceMesh.Node, SourceMesh.Node->GetMesh(), Bind, PathOf(mSourcePath).parent_path(), RigidMesh, OutWarnings, OutError)) {
+				OutError = "FBX: " + FString(SourceMesh.Node->GetName()) + ": " + OutError;
+				return false;
+			}
+		}
+
+		const FFbxMeshNodeData& Mesh{ SourceMesh.bHasSkin ? SourceMesh : RigidMesh };
+		if (Mesh.bHasSkin) {
+			TArray<FSkinWeight> ControlPointWeights{};
+			if (!ReadControlPointWeights(Mesh.Node, mBoneIndices, ControlPointWeights, OutWarnings, OutError)) return false;
 			// UV/Normal 등으로 분리된 Render Vertex에도 원본 Control Point와 같은 Weight를 전달한다.
 			for (int32 CP : Mesh.ControlPointIndices) Result.SkinWeight.Add(ControlPointWeights[CP]);
 		}
-		else
-		{
-			FSkinWeight Weight;
-			Weight.BoneIndex[0] = static_cast<uint8>(Mesh.RigidBoneIndex);
+		else {
+			FSkinWeight Weight{};
+			Weight.BoneIndex[0] = static_cast<uint8>(*BoneIndex);
 			Weight.Weight[0] = 1.0f;
-			for (int32 I = 0; I < Mesh.Geometry.Vertices.Num(); ++I) Result.SkinWeight.Add(Weight);
+			for (int32 I{}; I < Mesh.Geometry.Vertices.Num(); ++I) Result.SkinWeight.Add(Weight);
 		}
 		AppendGeometry(Mesh.Geometry, Geometry);
 	}
@@ -830,11 +853,36 @@ bool FFbxImporter::BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>
 	for (FStaticMaterialSlot& Slot : Geometry.MaterialSlots)
 		Result.MaterialSlots.Add({ std::move(Slot.Name), Slot.BaseColor, std::move(Slot.DiffuseTexturePath), std::move(Slot.NormalTexturePath) });
 	Result.BindAABB = Geometry.AABB;
-	Result.Bones = Bones;
-	Result.SourcePath = SourcePath;
+	Result.Bones = mBones;
+	Result.SourcePath = mSourcePath;
 	if (!Result.Validate(OutError)) return false;
 	OutData = std::move(Result);
 	return true;
+}
+
+FbxScene* FFbxImporter::GetScene() const {
+	return mScene;
+}
+
+const TArray<FFbxMeshNodeData>& FFbxImporter::GetMeshNodes() const {
+	return mMeshNodes;
+}
+
+const TArray<FBoneInfo>& FFbxImporter::GetBones() const {
+	return mBones;
+}
+
+void FFbxImporter::PrepareScene() {
+	FbxRootNodeUtility::RemoveAllFbxRoots(mScene);
+	// Mesh/Bone을 읽기 전에 장면 전체를 엔진 좌표계(+Z 위, +X 앞, 왼손)로 맞춘다.
+	// DeepConvertScene은 Transform뿐 아니라 정점/Normal, Polygon 순서, Pose/Cluster도 변환한다.
+	// 이후 값을 옮길 때 Y나 Quaternion을 다시 반전하지 않는다.
+	const FbxAxisSystem Target{ FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded };
+	if (mScene->GetGlobalSettings().GetAxisSystem() != Target) Target.DeepConvertScene(mScene);
+	// 단위도 설정값만 바꾸는 것이 아니라 Scene 데이터를 cm 기준으로 실제 변환한다.
+	if (mScene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::cm) FbxSystemUnit::cm.ConvertScene(mScene);
+	// 축/단위 변환 전 자식 Node의 Global 캐시가 남지 않도록 비운다. UE ConvertScene 경로와 같은 처리다.
+	mScene->GetAnimationEvaluator()->Reset();
 }
 
 namespace
@@ -1016,8 +1064,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			Outputs.Add(std::move(Skeletal));
 		}
 		FFbxBakedMesh Static;
-		if (Mode == EFbxImportMode::Static) Importer.BuildStaticMesh(Static.StaticMesh);
-		else for (const auto& Mesh : Importer.GetMeshNodes()) if (!Mesh.bHasSkin && Mesh.RigidBoneIndex < 0) AppendGeometry(Mesh.Geometry, Static.StaticMesh);
+		Importer.BuildStaticMesh(Static.StaticMesh, Mode == EFbxImportMode::Skeletal);
 		if (!Static.StaticMesh.Vertices.IsEmpty())
 		{
 			if (!Static.StaticMesh.Validate(OutError)) return false;
