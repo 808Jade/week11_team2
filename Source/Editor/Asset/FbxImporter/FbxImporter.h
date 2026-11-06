@@ -4,6 +4,7 @@
 #include "Core/EngineString.h"
 #include "Render/SkeletalMeshData.h"
 #include "Asset/FbxImporter/FbxMeshBake.h"
+#include "Animation/AnimationClipData.h"
 
 struct FFbxImportResult
 {
@@ -45,6 +46,10 @@ public:
 	void BuildStaticMesh(FStaticMeshData& OutData) const;
 	// ReadMeshData 성공 후 호출한다. Bone 계층/Bind와 rigid의 Bind 기준 Geometry를 만들며 Weight는 만들지 않는다.
 	bool ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError);
+	// ReadSkeletonData 성공 후 호출한다. 스택이 없으면 빈 결과로 성공한다.
+	bool ReadAnimationData(TArray<FString>& OutWarnings, FString& OutError);
+	const TArray<FAnimationClipData>& GetAnimationClips() const { return AnimationClips; }
+
 	// 다음 Skeleton/Mesh 재추출, Open/Close/소멸 전까지만 유효하다.
 	const TArray<FBoneInfo>& GetBones() const { return Bones; }
 	// ReadSkeletonData 성공 후 호출한다. SDK 수명과 독립적인 Geometry/Weight/Bone 출력을 만든다.
@@ -52,12 +57,16 @@ public:
 	// Assets/FBX에 저장한 뒤 미로드 Asset을 등록한다. 이미 로드된 객체는 유지한다.
 	static bool ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError);
 
+
 private:
 	void ClearSkeletonData();
 	FbxManager* Manager = nullptr;
 	FbxScene* Scene = nullptr;
 	FString SourcePath;			// 원본 FBX 파일 경로 문자열
 	TArray<FFbxMeshNodeData> MeshNodes;
+	TArray<FbxNode*> BoneNodes; // Bones와 같은 순서
+	TArray<FAnimationClipData> AnimationClips;
+
 	bool bIsBlender = false;	// Armature 예외 처리용
 	TArray<FBoneInfo> Bones;
 	TMap<FbxNode*, int32> BoneIndices; // Import 중 SDK Node를 출력 Bone 번호로 연결

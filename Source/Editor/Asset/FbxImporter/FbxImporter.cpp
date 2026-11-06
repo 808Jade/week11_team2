@@ -462,6 +462,14 @@ namespace
 		}
 		return true;
 	}
+
+	double GetSceneFrameRate(FbxScene* Scene)
+	{
+		const FbxGlobalSettings& Settings = Scene->GetGlobalSettings();
+		const FbxTime::EMode Mode = Settings.GetTimeMode();
+		const double Rate = Mode == FbxTime::eCustom ? Settings.GetCustomFrameRate() : FbxTime::GetFrameRate(Mode);
+		return std::isfinite(Rate) && Rate > 0.0 ? Rate : 30.0;
+	}
 }
 
 FFbxImporter::~FFbxImporter()
@@ -657,6 +665,8 @@ void FFbxImporter::ClearSkeletonData()
 	Bones.Empty();
 	BoneIndices.Empty();
 	RigidBindMeshes.Empty();
+	BoneNodes.Empty();
+	AnimationClips.Empty();
 	for (FFbxMeshNodeData& Mesh : MeshNodes) Mesh.RigidBoneIndex = -1;
 }
 
@@ -781,10 +791,92 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 		ResultRigidMeshes.Add(Mesh.Node, std::move(Result));
 	}
 	Bones = std::move(ResultBones);
+	BoneNodes = std::move(Nodes);
 	BoneIndices = std::move(ResultIndices);
 	RigidBindMeshes = std::move(ResultRigidMeshes);
 	for (FFbxMeshNodeData& Mesh : MeshNodes)
 		if (const FFbxMeshNodeData* Rigid = RigidBindMeshes.Find(Mesh.Node)) Mesh.RigidBoneIndex = Rigid->RigidBoneIndex;
+	return true;
+}
+
+bool FFbxImporter::ReadAnimationData(TArray<FString>& OutWarnings, FString& OutError)
+{
+	AnimationClips.Empty();
+	OutWarnings.Empty();
+	OutError.clear();
+	if (!Scene || Bones.IsEmpty() || BoneNodes.Num() != Bones.Num())
+	{
+		OutError = "FBX: read skeleton data before animation data";
+		return false;
+	}
+
+	const double Rate = GetSceneFrameRate(Scene);
+	const int32 NumBones = Bones.Num();
+	FbxAnimStack* PreviousStack = Scene->GetCurrentAnimationStack();
+	TArray<FAnimationClipData> Results;
+	TArray<FbxAMatrix> Globals;
+	Globals.SetNum(NumBones);
+
+	for (int S = 0; S < Scene->GetSrcObjectCount<FbxAnimStack>(); ++S)
+	{
+		FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(S);
+		FbxTimeSpan Span = Stack->GetLocalTimeSpan();
+		if (Span.GetDuration().GetSecondDouble() <= 0.0)
+		{
+			Scene->GetGlobalSettings().GetTimelineDefaultTimeSpan(Span);
+		}
+		const double Seconds = Span.GetDuration().GetSecondDouble();
+		if (!std::isfinite(Seconds) || Seconds <= 0.0)
+		{
+			Warn(OutWarnings, "FBX: skipped empty animation: " + FString(Stack->GetName()));
+			continue;
+		}
+
+		// 런타임이 시간 * SampleRate로 프레임을 찾도록 간격을 항상 일정하게 유지한다.
+		const int32 NumFrames = static_cast<int32>(std::llround(Seconds * Rate)) + 1;
+		FAnimationClipData Clip;
+		Clip.Name = Stack->GetName();
+		Clip.SampleRate = static_cast<float>(Rate);
+		Clip.NumFrames = NumFrames;
+		Clip.Duration = static_cast<float>((NumFrames - 1) / Rate);
+		Clip.Tracks.SetNum(NumBones);
+		for (int32 B = 0; B < NumBones; ++B)
+		{
+			FBoneAnimationTrack& Track = Clip.Tracks[B];
+			Track.BoneName = Bones[B].Name;
+			Track.Positions.SetNum(NumFrames);
+			Track.Rotations.SetNum(NumFrames);
+			Track.Scales.SetNum(NumFrames);
+		}
+		Scene->SetCurrentAnimationStack(Stack);
+		Scene->GetAnimationEvaluator()->Reset();
+		const double StartSeconds = Span.GetStart().GetSecondDouble();
+		for (int32 F = 0; F < NumFrames; ++F)
+		{
+			FbxTime Time;
+			Time.SetSecondDouble(StartSeconds + F / Rate);
+			for (int32 B = 0; B < NumBones; ++B)
+			{
+				// 반환값이 평가기 내부 참조이므로 복사해 둔다.
+				Globals[B] = BoneNodes[B]->EvaluateGlobalTransform(Time);
+				const int32 Parent = Bones[B].ParentIndex;
+				const FbxAMatrix Local = Parent < 0 ? Globals[B] : Globals[Parent].Inverse() * Globals[B];
+
+				const FbxQuaternion Q = Local.GetQ();
+				FBoneAnimationTrack& Track = Clip.Tracks[B];
+				Track.Positions[F] = ToVector(Local.GetT());
+				Track.Scales[F] = ToVector(Local.GetS());
+				Track.Rotations[F] = FQuat(static_cast<float>(Q[0]), static_cast<float>(Q[1]), static_cast<float>(Q[2]), static_cast<float>(Q[3]));
+			}
+		}
+		if (!Clip.Validate(OutError)) return false;
+		Results.Add(std::move(Clip));
+	}
+
+	// 샘플링 전 상태로 되돌린다.
+	Scene->SetCurrentAnimationStack(PreviousStack);
+	Scene->GetAnimationEvaluator()->Reset();
+	AnimationClips = std::move(Results);
 	return true;
 }
 
@@ -1013,6 +1105,12 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			Skeletal.Kind = EFbxMeshKind::Skeletal;
 			if (!Importer.BuildSkeletalMesh(Skeletal.SkeletalMesh, Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
+			if (!Importer.ReadAnimationData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
+			OutResult.Warnings.Append(Warnings);
+			for (const FAnimationClipData& Clip : Importer.GetAnimationClips())
+			{
+				HTR_LOG(Info, "FBX animation: {}, frames {}, seconds {}, fps {}, tracks {}", Clip.Name, Clip.NumFrames, Clip.Duration, Clip.SampleRate, Clip.Tracks.Num());
+			}
 			Outputs.Add(std::move(Skeletal));
 		}
 		FFbxBakedMesh Static;
