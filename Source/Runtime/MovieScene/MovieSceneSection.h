@@ -3,7 +3,7 @@
 #include "UObject/Object.h"
 #include "MovieScene/MovieSceneFwd.h"
 #include "MovieScene/MovieSceneFloatChannel.h"
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 #include "MovieSceneSection.generated.h"
 
 // UE FMovieSceneSectionEvalOptions

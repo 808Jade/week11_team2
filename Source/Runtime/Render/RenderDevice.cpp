@@ -5,7 +5,7 @@
 #include "Texture2D.h"
 #include "TextureCube.h"
 #include "PipelineState.h"
-#include "DDSTextureLoader11.h"
+#include <directxtk/DDSTextureLoader.h>
 
 FRenderDevice::FRenderDevice()
 {

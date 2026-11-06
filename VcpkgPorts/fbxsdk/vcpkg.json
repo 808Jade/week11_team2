@@ -1,0 +1,8 @@
+{
+  "name": "fbxsdk",
+  "version": "2020.3.11",
+  "description": "Autodesk FBX SDK headers, import libraries and runtime DLLs",
+  "homepage": "https://aps.autodesk.com/developer/overview/fbx-sdk",
+  "license": "LicenseRef-Autodesk-FBX-SDK",
+  "supports": "windows & x64 & !uwp & !xbox"
+}

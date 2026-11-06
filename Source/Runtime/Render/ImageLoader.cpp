@@ -1,7 +1,7 @@
 #include "EnginePCH.h"
 #include "ImageLoader.h"
 #include "RenderCommand.h"
-#include "DDSTextureLoader11.h"
+#include <directxtk/DDSTextureLoader.h>
 
 #include <algorithm>
 

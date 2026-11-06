@@ -17,25 +17,6 @@ workspace "Hitori"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
--- SlnGenerator가 저장된 사용자 환경 변수를 읽어 이 프로세스에 전달한다.
-local FbxSdkRoot = os.getenv("FBX_SDK_ROOT")
-if not FbxSdkRoot or FbxSdkRoot == "" then
-	error("FBX_SDK_ROOT is missing. Run Setup/SetupFbxSdk.bat, then SlnGenerator.bat.")
-end
-FbxSdkRoot = path.translate(FbxSdkRoot, "/")
-
-IncludeDir = {}
-IncludeDir["ImGui"] = "Source/ThirdParty/ImGui"
-IncludeDir["stb"]   = "Source/ThirdParty/stb"
-IncludeDir["json"]  = "Source/ThirdParty/json"
-IncludeDir["DDSLoader"] = "Source/ThirdParty/DDSLoader"
-IncludeDir["lua"]   = "Source/ThirdParty/lua/src"
-IncludeDir["sol2"]  = "Source/ThirdParty/sol2/include"
-IncludeDir["miniaudio"]  = "Source/ThirdParty/miniaudio"
-
--- premake의 filter는 project()를 만나면 초기화된다.
--- 두 프로젝트가 같은 런타임(/MDd vs /MD)으로 컴파일되지 않으면 링크가 실패하므로
--- 공통 설정을 함수로 묶어 각 프로젝트에서 호출한다.
 function CommonSettings()
 	language   "C++"
 	cppdialect "C++20"
@@ -108,48 +89,6 @@ function CommonSettings()
 end
 
 
--- 외부 라이브러리. 별도 프로젝트로 두면 에디터의 소스 루트가 Source/Editor 하나로 좁혀져
--- Solution Explorer의 "모든 파일 표시"에서 폴더 구조가 그대로 보인다.
-project "ImGui"
-	location "Source/ThirdParty/ImGui"
-	kind     "StaticLib"
-	CommonSettings()
-
-	files
-	{
-		"%{IncludeDir.ImGui}/*.h",
-		"%{IncludeDir.ImGui}/*.cpp",
-		"%{IncludeDir.ImGui}/backends/imgui_impl_win32.*",
-		"%{IncludeDir.ImGui}/backends/imgui_impl_dx11.*",
-	}
-
-	includedirs
-	{
-		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.ImGui}/backends",
-	}
-
-	links
-	{
-		"d3d11.lib",
-		"dxgi.lib",
-		"dxguid.lib",
-		"d3dcompiler.lib",
-	}
-
-
--- Lua 5.4. C로 컴파일한다. lua.c·luac.c는 main이 있는 단독 실행 파일용이라 뺀다.
-project "Lua"
-	location "Source/ThirdParty/lua"
-	kind     "StaticLib"
-	CommonSettings()
-	language "C"   -- CommonSettings의 C++를 덮어쓴다
-
-	files { "%{IncludeDir.lua}/*.h", "%{IncludeDir.lua}/*.c" }
-	removefiles { "%{IncludeDir.lua}/lua.c", "%{IncludeDir.lua}/luac.c" }
-	includedirs { "%{IncludeDir.lua}" }
-
-
 -- 헤더 툴 (UE의 UnrealHeaderTool 역할). 엔진 코드에 의존하지 않고 std만 쓴다.
 -- HitoriEngine / HitoriEditor가 빌드 전에 이 exe로 *.generated.h를 만든다.
 HeaderTool = '"%{wks.location}/Build/Bin/' .. outputdir .. '/HitoriHeaderTool.exe"'
@@ -181,23 +120,13 @@ project "HitoriEngine"
 		"Source/Runtime/**.h",
 		"Source/Runtime/**.hpp",
 		"Source/Runtime/**.cpp",
-		"%{IncludeDir.DDSLoader}/*.h",
-		"%{IncludeDir.DDSLoader}/*.cpp",
 	}
 
 	includedirs
 	{
 		"Source/Runtime",
 		"Intermediate/Generated/Runtime",   -- 추가
-		"%{IncludeDir.stb}",
-		"%{IncludeDir.json}",
-		"%{IncludeDir.DDSLoader}",
-		"%{IncludeDir.miniaudio}",
-		"%{IncludeDir.lua}",
-		"%{IncludeDir.sol2}",
 	}
-
-	links { "Lua" }
 
 	dependson { "HitoriHeaderTool" }
 	prebuildcommands { HeaderTool .. ' Runtime "' .. GeneratedDir .. '/Runtime" "%{wks.location}/Source/Runtime"' }
@@ -211,10 +140,6 @@ project "HitoriEngine"
 	-- 정적 라이브러리가 임포트 라이브러리를 품고 있으면 exe의 /WHOLEARCHIVE가 그것까지 끌어와
 	-- __NULL_IMPORT_DESCRIPTOR 중복 정의(LNK2005)가 난다.
 
-	filter "files:Source/ThirdParty/DDSLoader/**.cpp"
-		enablepch "Off"
-	filter {}
-
 	filter "files:Source/Runtime/Audio/MiniaudioImpl.cpp"
 		enablepch "Off"
 	filter {}
@@ -226,23 +151,12 @@ project "HitoriEditor"
 	CommonSettings()
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
-	includedirs { path.join(FbxSdkRoot, "include") }
 	defines { "FBXSDK_SHARED" }
-	links { "libfbxsdk.lib" }
-
-	for _, Config in ipairs({ "Debug", "Release", "Shipping", "ObjViewer", "Benchmark", "Benchmark_Debug" }) do
-		local SdkConfig = (Config == "Debug" or Config == "Benchmark_Debug") and "debug" or "release"
-		local SdkLibDir = path.join(FbxSdkRoot, "lib/x64", SdkConfig)
-		filter ("configurations:" .. Config)
-			libdirs { SdkLibDir }
-			postbuildcommands { '{COPYFILE} "' .. path.join(SdkLibDir, "libfbxsdk.dll") .. '" "%{cfg.targetdir}"' }
-	end
-	filter {}
 
 	pchheader "EnginePCH.h"
 	pchsource "Source/Editor/EditorPCH.cpp"
 
-	links { "HitoriEngine", "ImGui", "Lua" }
+	links { "HitoriEngine" }
 
 	-- UClass는 헤더의 정적 객체가 등록하므로, exe가 직접 참조하지 않는 클래스의 .obj를 링커가 버리면
 	-- 그 클래스가 등록되지 않아 씬 로드 때 액터가 사라진다. 엔진 .obj를 전부 링크해 막는다.
@@ -269,12 +183,6 @@ project "HitoriEditor"
 		"Source/Programs",
 		"Intermediate/Generated/Runtime",   -- 추가: 엔진 헤더가 include하는 generated.h
 		"Intermediate/Generated/Editor",    -- 추가
-		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.ImGui}/backends",
-		"%{IncludeDir.stb}",
-		"%{IncludeDir.json}",
-		"%{IncludeDir.lua}",
-		"%{IncludeDir.sol2}",
 	}
 
 	links
@@ -307,7 +215,7 @@ project "HitoriGame"
 	pchheader "EnginePCH.h"
 	pchsource "Source/Game/GamePCH.cpp"
 
-	links { "HitoriEngine", "Lua" }
+	links { "HitoriEngine" }
 
 	-- 에디터와 같은 이유. 게임 코드는 라이트 액터 등을 직접 참조하지 않아 특히 빠지기 쉽다.
 	linkoptions { "/WHOLEARCHIVE:HitoriEngine" }
@@ -324,10 +232,6 @@ project "HitoriGame"
 		"Source",
 		"Source/Runtime",
 		"Intermediate/Generated/Runtime",
-		"%{IncludeDir.stb}",
-		"%{IncludeDir.json}",
-		"%{IncludeDir.lua}",
-		"%{IncludeDir.sol2}",
 	}
 
 	links

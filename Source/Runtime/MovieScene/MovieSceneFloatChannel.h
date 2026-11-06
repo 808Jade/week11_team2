@@ -2,7 +2,7 @@
 
 #include "Containers/Array.h"
 #include "MovieScene/MovieSceneFrameTime.h"
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 
 // UE Curves/RealCurve.h와 같은 이름·순서
 enum ERichCurveInterpMode : uint8

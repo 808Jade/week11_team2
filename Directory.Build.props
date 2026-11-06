@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgRoot>$(MSBuildThisFileDirectory).tools\vcpkg\</VcpkgRoot>
+    <VcpkgManifestRoot>$(MSBuildThisFileDirectory)</VcpkgManifestRoot>
+    <VcpkgInstalledDir>$(MSBuildThisFileDirectory)vcpkg_installed\</VcpkgInstalledDir>
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+    <VcpkgConfiguration>Release</VcpkgConfiguration>
+    <VcpkgConfiguration Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Benchmark_Debug'">Debug</VcpkgConfiguration>
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+  </PropertyGroup>
+</Project>

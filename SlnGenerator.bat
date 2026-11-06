@@ -1,7 +1,8 @@
 @echo off
 setlocal
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Setup\SetupFbxSdk.ps1" -GenerateProjects
-set "GenerateExitCode=%ERRORLEVEL%"
-echo.
-if /I not "%~1"=="--no-pause" pause
-exit /b %GenerateExitCode%
+if /I "%~1"=="--no-pause" (
+    call "%~dp0Build.bat" -NoPause
+) else (
+    call "%~dp0Build.bat" %*
+)
+exit /b %ERRORLEVEL%

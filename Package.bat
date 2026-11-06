@@ -13,6 +13,10 @@ rem 첫 번째 인자를 CONFIG에 저장. %~1은 인자를 감싼 따옴표를 
 rem set "VAR=값" 형태로 쓰면 줄 끝 공백이 값에 섞이는 실수를 막을 수 있음
 
 if "%CONFIG%"=="" set "CONFIG=Release"
+if /I not "%CONFIG%"=="Release" if /I not "%CONFIG%"=="Shipping" (
+    echo [Package] Usage: Package.bat [Release^|Shipping]
+    exit /b 1
+)
 rem 인자 없이 실행했으면 기본값 Release 사용
 
 set "ROOT=%~dp0"
@@ -30,14 +34,18 @@ set "VSLANG=1033"
 
 rem ---- 1. 빌드 결과물 확인 ----
 
-rem 2) Build HitoriGame and its dependencies (HitoriEngine, Lua).
+call "%ROOT%Build.bat" -NoPause
+if errorlevel 1 exit /b 1
+
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-for /f "usebackq delims=" %%M in (`"%VSWHERE%" -latest -prerelease -find MSBuild\**\Bin\MSBuild.exe`) do set "MSBUILD=%%M"
+for /f "usebackq delims=" %%M in (`"%VSWHERE%" -latest -prerelease -products * -requires Microsoft.Component.MSBuild Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find MSBuild\Current\Bin\MSBuild.exe`) do set "MSBUILD=%%M"
 if not defined MSBUILD (
     echo [Package] MSBuild not found. Install Visual Studio with the C++ workload.
     exit /b 1
 )
-"%MSBUILD%" "%ROOT%Hitori.slnx" -t:HitoriGame -p:Configuration=%CONFIG% -p:Platform=x64 -m -nologo -v:minimal
+set "Solution=%ROOT%Hitori.sln"
+for /f "usebackq tokens=1 delims=." %%V in (`"%VSWHERE%" -latest -prerelease -products * -requires Microsoft.Component.MSBuild Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion`) do if %%V GEQ 18 set "Solution=%ROOT%Hitori.slnx"
+"%MSBUILD%" "%Solution%" -t:HitoriGame -p:Configuration=%CONFIG% -p:Platform=x64 -m -nologo -v:minimal
 if errorlevel 1 (
     echo [Package] Build failed.
     exit /b 1
@@ -51,13 +59,15 @@ if not exist "%BIN%\HitoriGame.exe" (
 )
 
 rem ---- 2. 출력 폴더 초기화 ----
-if exist "%OUT%" rmdir /s /q "%OUT%"
-rem 이전 패키지가 있으면 통째로 삭제 (/s: 하위 전부, /q: 확인 묻지 않음)
-rem → 지난번에 남은 쓰레기 파일이 섞이지 않도록 매번 깨끗하게 시작
+powershell.exe -NoProfile -Command "$ErrorActionPreference = 'Stop'; $PackageRoot = [IO.Path]::GetFullPath((Join-Path $env:ROOT 'Build\Package')); $OutputDirectory = [IO.Path]::GetFullPath($env:OUT); if ($OutputDirectory -ne (Join-Path $PackageRoot 'Hitori')) { throw 'Unexpected package output directory.' }; if (Test-Path -LiteralPath $OutputDirectory) { Remove-Item -LiteralPath $OutputDirectory -Recurse -Force }"
+if errorlevel 1 exit /b 1
 
 mkdir "%OUT%"
 
 copy /y "%BIN%\HitoriGame.exe" "%OUT%\" >nul
+if errorlevel 1 exit /b 1
+"%ROOT%.tools\vcpkg\vcpkg.exe" z-applocal --target-binary="%OUT%\HitoriGame.exe" --installed-bin-dir="%ROOT%vcpkg_installed\x64-windows\bin"
+if errorlevel 1 exit /b 1
 rem 실행 파일 복사. /y: 덮어쓰기 확인 생략, >nul: 출력 숨김
 
 rem ---- 3. 게임 데이터 폴더 복사 ----

@@ -4,8 +4,8 @@
 #include "Core/Window.h"
 #include "Input/InputSystem.h"
 
-#include <backends/imgui_impl_dx11.h>
-#include <backends/imgui_impl_win32.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 #include <d3dcompiler.h>
 #include <cstring>
 #pragma comment(lib, "d3dcompiler.lib")

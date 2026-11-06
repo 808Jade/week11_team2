@@ -18,10 +18,6 @@
   </Project>
   <Project Path="Source\Programs\HitoriHeaderTool\HitoriHeaderTool.vcxproj" Id="3B065A8A-27FF-78DC-5031-5E613C8958E8">
   </Project>
-  <Project Path="Source\ThirdParty\ImGui\ImGui.vcxproj" Id="C0FF640D-2C14-8DBE-F595-301E616989EF">
-  </Project>
-  <Project Path="Source\ThirdParty\lua\Lua.vcxproj" Id="A705880B-130F-887C-9C8A-9E7C0893937C">
-  </Project>
   <Project Path="Intermediate\ProjectFiles\Shaders.vcxproj" Id="EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF">
   </Project>
 </Solution>
