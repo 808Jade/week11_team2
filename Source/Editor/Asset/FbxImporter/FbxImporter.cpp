@@ -1072,6 +1072,10 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
 				Paths.Add(OutputPath);
 			}
+			if (Mode == EFbxImportMode::Skeletal && !std::filesystem::is_directory(Folder / "Anim")) 
+			{
+				Complete = false;
+			}
 			if (Complete)
 			{
 				// TODO: 현재는 FBX 원본만 비교하므로 외부 Texture만 변경되면 Import를 건너뛰어 변경 내용이 반영되지 않는다.
@@ -1097,6 +1101,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		if (!Importer.ReadMeshData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 		OutResult.Warnings.Append(Warnings);
 		TArray<FFbxBakedMesh> Outputs;
+		TArray<FAnimationClipData> Clips;
 		if (Mode == EFbxImportMode::Skeletal)
 		{
 			if (!Importer.ReadSkeletonData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
@@ -1107,7 +1112,9 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			OutResult.Warnings.Append(Warnings);
 			if (!Importer.ReadAnimationData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
-			for (const FAnimationClipData& Clip : Importer.GetAnimationClips())
+			// Importer.Close()가 클립을 비우므로 저장할 때까지 쓸 사본을 받아 둔다.
+			Clips = Importer.GetAnimationClips();
+			for (const FAnimationClipData& Clip : Clips)
 			{
 				HTR_LOG(Info, "FBX animation: {}, frames {}, seconds {}, fps {}, tracks {}", Clip.Name, Clip.NumFrames, Clip.Duration, Clip.SampleRate, Clip.Tracks.Num());
 			}
@@ -1165,6 +1172,28 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			if (Output.Kind == EFbxMeshKind::Static) CopyTextures(Output.StaticMesh.MaterialSlots);
 			else CopyTextures(Output.SkeletalMesh.MaterialSlots);
 		}
+
+		const auto AnimFolder = Folder / "Anim";
+		const auto LowerName = [](FString Text)
+			{
+				for (char& C : Text) if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
+				return Text;
+			};
+		TSet<FString> ClipFiles;
+		for (int32 I = 0; I < Clips.Num(); ++I)
+		{
+			// ".anim"을 붙여야 "mixamo.com"의 ".com"이 확장자로 잘리지 않는다.
+			const FString Base = AssetFileName(PathOf(Clips[I].Name + ".anim"));
+			FString File = Base + ".anim.bin";
+			int32 Suffix = 1;
+			while (ClipFiles.Contains(LowerName(File))) File = Base + "_" + std::to_string(Suffix++) + ".anim.bin";
+			ClipFiles.Add(LowerName(File));
+
+			const auto Temp = Staged.Folder / ("clip_" + std::to_string(I) + ".tmp");
+			if (!FFbxMeshBake::WriteAnimation(Utf8Path(Temp), Clips[I], OutError)) return false;
+			Staged.Files.Add({ Temp, AnimFolder / PathOf(File) });
+		}
+
 		TArray<FString> Paths;
 		for (const auto& Output : Outputs)
 		{
@@ -1176,7 +1205,19 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			Paths.Add(Utf8Path(Target));
 		}
 		if (Source.Size != std::filesystem::file_size(SourcePath) || Source.ModifiedTime != std::filesystem::last_write_time(SourcePath).time_since_epoch().count()) { OutError = "FBX: source changed during Import; retry"; return false; }
+		if (Mode == EFbxImportMode::Skeletal) std::filesystem::create_directories(AnimFolder);
 		if (!Staged.Commit(OutError)) return false;
+		if (Mode == EFbxImportMode::Skeletal)
+		{
+			for (const auto& Entry : std::filesystem::directory_iterator(AnimFolder))
+			{
+				const FString File = LowerName(Utf8Path(Entry.path().filename()));
+				if (!File.ends_with(".anim.bin") || ClipFiles.Contains(File)) continue;
+				std::error_code EC;
+				std::filesystem::remove(Entry.path(), EC);
+				if (EC) OutResult.Warnings.Add("FBX: cannot remove old clip: " + File);
+			}
+		}
 		OutResult.Paths = std::move(Paths);
 		HTR_LOG(Info, "FBX Import saved: {} ({} files)", Source.Path, OutResult.Paths.Num());
 		return RegisterImported(OutResult.Paths, true, OutResult.Warnings, OutError);

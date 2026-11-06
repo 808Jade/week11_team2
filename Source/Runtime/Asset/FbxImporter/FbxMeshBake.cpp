@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "FbxMeshBake.h"
+#include "Animation/AnimationClipData.h"
 
 #include <fstream>
 #include <cstddef>
@@ -223,5 +224,73 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 	Out.Stream.flush();
 	Out.Stream.close();
 	if (!Out.Stream) { OutError = "FBX binary: write failed: " + Path; return false; }
+	return true;
+}
+
+namespace
+{
+	constexpr uint32 AnimMagic = 0x4D494E41; // ANIM, little endian
+	constexpr uint32 AnimVersion = 1;
+	static_assert(sizeof(FVector) == 12 && sizeof(FQuat) == 16);
+}
+
+bool FFbxMeshBake::WriteAnimation(const FString& Path, const FAnimationClipData& Clip, FString& OutError)
+{
+	OutError.clear();
+	if (!Clip.Validate(OutError)) return false;
+
+	FWriter Out(Path);
+	Out.Pod(AnimMagic);
+	Out.Pod(AnimVersion);
+	Out.String(Clip.Name);
+	Out.Pod(Clip.Duration);
+	Out.Pod(Clip.SampleRate);
+	Out.Pod(Clip.NumFrames);
+	Out.Pod(static_cast<uint32>(Clip.Tracks.Num()));
+	for (const FBoneAnimationTrack& Track : Clip.Tracks)
+	{
+		Out.String(Track.BoneName);
+		Out.Array(Track.Positions);
+		Out.Array(Track.Rotations);
+		Out.Array(Track.Scales);
+	}
+	Out.Stream.flush();
+	Out.Stream.close();
+	if (!Out.Stream) { OutError = "Animation binary: write failed: " + Path; return false; }
+	return true;
+}
+
+bool FFbxMeshBake::ReadAnimation(const FString& Path, FAnimationClipData& OutClip, FString& OutError)
+{
+	OutClip = {};
+	OutError.clear();
+
+	FReader In(Path);
+	FAnimationClipData Clip;
+	uint32 FileMagic = 0, FileVersion = 0, NumTracks = 0;
+	if (!In.Pod(FileMagic) || FileMagic != AnimMagic || !In.Pod(FileVersion) || FileVersion != AnimVersion)
+	{
+		OutError = "Animation binary: invalid header or version: " + Path;
+		return false;
+	}
+	// 트랙 하나는 최소 길이 필드 4개(16바이트)를 차지한다.
+	if (!In.String(Clip.Name) || !In.Pod(Clip.Duration) || !In.Pod(Clip.SampleRate) || !In.Pod(Clip.NumFrames) || !In.Count(NumTracks, 16))
+	{
+		OutError = "Animation binary: truncated header: " + Path;
+		return false;
+	}
+	Clip.Tracks.SetNum(static_cast<int32>(NumTracks));
+	for (FBoneAnimationTrack& Track : Clip.Tracks)
+	{
+		if (!In.String(Track.BoneName) || !In.Array(Track.Positions) || !In.Array(Track.Rotations) || !In.Array(Track.Scales))
+		{
+			OutError = "Animation binary: truncated track: " + Path;
+			return false;
+		}
+	}
+	if (In.Remaining != 0) { OutError = "Animation binary: trailing data: " + Path; return false; }
+	if (!Clip.Validate(OutError)) return false;
+
+	OutClip = std::move(Clip);
 	return true;
 }

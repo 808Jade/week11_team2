@@ -24,6 +24,8 @@ struct FFbxBakedMesh
 	FSkeletalMeshData SkeletalMesh;
 };
 
+struct FAnimationClipData;
+
 // SDK와 독립적인 엔진 자료만 읽고 쓴다. 형식/필드 또는 구운 결과의 의미가 바뀌면 Version을 올린다.
 class FFbxMeshBake
 {
@@ -31,4 +33,9 @@ public:
 	static bool IsBakedPath(const FString& Path);
 	static bool Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError);
 	static bool Write(const FString& Path, const FFbxBakedMesh& Data, FString& OutError);
+
+	static bool WriteAnimation(const FString& Path, const FAnimationClipData& Clip, FString& OutError);
+	static bool ReadAnimation(const FString& Path, FAnimationClipData& OutClip, FString& OutError);
 };
+
+
