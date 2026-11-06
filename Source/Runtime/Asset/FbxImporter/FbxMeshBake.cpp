@@ -167,6 +167,14 @@ bool FFbxMeshBake::IsBakedPath(const FString& Path)
 	return End == ".fbx.bin";
 }
 
+bool FFbxMeshBake::IsAnimationPath(const FString& Path)
+{
+	// 파일 이름 끝이 .anim.bin인지 대소문자를 구분하지 않고 확인한다.
+	FString End = Path.size() >= 9 ? Path.substr(Path.size() - 9) : FString();
+	for (char& C : End) if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
+	return End == ".anim.bin";
+}
+
 bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError)
 {
 	OutData = {};

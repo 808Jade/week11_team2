@@ -1180,6 +1180,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				return Text;
 			};
 		TSet<FString> ClipFiles;
+		TArray<FString> ClipPaths;
 		for (int32 I = 0; I < Clips.Num(); ++I)
 		{
 			// ".anim"을 붙여야 "mixamo.com"의 ".com"이 확장자로 잘리지 않는다.
@@ -1192,6 +1193,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			const auto Temp = Staged.Folder / ("clip_" + std::to_string(I) + ".tmp");
 			if (!FFbxMeshBake::WriteAnimation(Utf8Path(Temp), Clips[I], OutError)) return false;
 			Staged.Files.Add({ Temp, AnimFolder / PathOf(File) });
+			ClipPaths.Add(Utf8Path(AnimFolder / PathOf(File)));
 		}
 
 		TArray<FString> Paths;
@@ -1220,7 +1222,19 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		}
 		OutResult.Paths = std::move(Paths);
 		HTR_LOG(Info, "FBX Import saved: {} ({} files)", Source.Path, OutResult.Paths.Num());
-		return RegisterImported(OutResult.Paths, true, OutResult.Warnings, OutError);
+		if (!RegisterImported(OutResult.Paths, true, OutResult.Warnings, OutError)) return false;
+		for (const FString& ClipPath : ClipPaths)
+		{
+			// 메시와 같은 제한: 이미 로드된 에셋은 재시작 전까지 갱신되지 않는다.
+			if (UAssetManager::FindLoadedAsset(ClipPath))
+				OutResult.Warnings.Add("FBX: clip already loaded; restart the engine to use updated files: " + ClipPath);
+			if (!UAssetManager::LoadAnimationClip(ClipPath, OutError))
+			{
+				OutError = "FBX clip files are available, but asset registration failed: " + OutError;
+				return false;
+			}
+		}
+		return true;
 	}
 	catch (const std::filesystem::filesystem_error& E)
 	{

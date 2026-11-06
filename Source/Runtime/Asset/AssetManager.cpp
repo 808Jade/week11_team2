@@ -12,6 +12,7 @@
 #include "Asset/ObjImporter/ObjImporter.h"
 #include "Asset/FbxImporter/FbxMeshBake.h"
 #include "Render/SkeletalMesh.h"
+#include "Animation/AnimationClip.h"
 
 #include "Render/GeometryGenerator.h"
 #include "UObject/UObjectGlobals.h"
@@ -44,6 +45,9 @@ namespace
 		}
 		if (Extension == ".obj") {
 			return EAssetType::StaticMesh;
+		}
+		if (Extension == ".bin" && FFbxMeshBake::IsAnimationPath(Path)) {
+			return EAssetType::Animation;
 		}
 		if (Extension == ".bin" && FFbxMeshBake::IsBakedPath(Path)) {
 			// 파일을 읽지 않고 구분하도록 FFbxImporter의 저장 이름 규칙을 쓴다
@@ -214,6 +218,12 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 }
 
 void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
+	if (FFbxMeshBake::IsAnimationPath(Path)) {
+		FString Error;
+		if (!LoadAnimationClip(Path, Error)) HTR_LOG(Error, "{}", Error);
+		return;
+	}
+
 	// FBX Asset은 원본 .fbx 대신 Import로 저장한 .fbx.bin만 로드한다.
 	// 원본 해석과 변경 여부 비교는 FFbxImporter::ImportToAssets에서만 수행하며,
 	// 이 로드 경로는 원본 파일이나 FBX SDK 없이 저장된 데이터로 렌더 자원을 만든다.
@@ -587,6 +597,22 @@ URenderAsset* UAssetManager::LoadFbxMesh(const FString& Path, FString& OutError)
 	if (!Asset) { OutError = "FBX binary: mesh resource creation failed: " + Path; return nullptr; }
 	Get().RegisterAsset(Key, Asset);
 	return Asset;
+}
+
+UAnimationClip* UAssetManager::LoadAnimationClip(const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = MakeAssetKey(Path);
+	// GetAssetByPath는 여기로 다시 들어오므로 쓰지 않는다
+	if (URenderAsset* Cached = FindLoadedAsset(Key)) return Cast<UAnimationClip>(Cached);
+
+	FAnimationClipData Data;
+	if (!FFbxMeshBake::ReadAnimation(Path, Data, OutError)) return nullptr;
+
+	UAnimationClip* Clip = NewObject<UAnimationClip>();
+	Clip->SetData(std::move(Data));
+	Get().RegisterAsset(Key, Clip);
+	return Clip;
 }
 
 bool UAssetManager::ReorientStaticMesh(UStaticMesh& Mesh, const std::function<FVector(const FVector&)>& Rotate)

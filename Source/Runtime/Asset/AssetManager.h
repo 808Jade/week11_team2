@@ -16,11 +16,13 @@ enum class EAssetType
 	Texture,
 	Font,
 	StaticMesh,
-	SkeletalMesh
+	SkeletalMesh,
+	Animation
 };
 
 class UStaticMesh;
 class USoundWave;
+class UAnimationClip;
 struct FSkeletalMaterialSlot;
 
 namespace fs = std::filesystem;
@@ -82,6 +84,7 @@ public:
 	USoundWave* LoadSound(const FString& Path);
 	static UStaticMesh* LoadObjStaticMesh(const FString& Path);
 	static URenderAsset* LoadFbxMesh(const FString& Path, FString& OutError);
+	static UAnimationClip* LoadAnimationClip(const FString& Path, FString& OutError);
 
 	FLODGenerateResult GenerateStaticMeshLODs(UStaticMesh& Mesh,const FLODGenerateRequest& Request);
 
