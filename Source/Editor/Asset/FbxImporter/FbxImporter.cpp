@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "FbxImporter.h"
 #include "Asset/AssetManager.h"
+#include "Animation/Skeleton.h"
 
 #include <array>
 #include <fstream>
@@ -1072,7 +1073,12 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
 				Paths.Add(OutputPath);
 			}
-			if (Mode == EFbxImportMode::Skeletal && !std::filesystem::is_directory(Folder / "Anim")) 
+			if (Mode == EFbxImportMode::Skeletal && !std::filesystem::is_directory(Folder / "Anim"))
+			{
+				Complete = false;
+			}
+			// 스켈레톤이 없는 예전 출력은 원본이 그대로여도 다시 구워 스켈레톤 파일을 만든다.
+			if (Mode == EFbxImportMode::Skeletal && (Previous.SkeletonPath.empty() || !std::filesystem::exists(PathOf(Previous.SkeletonPath))))
 			{
 				Complete = false;
 			}
@@ -1171,6 +1177,26 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			};
 			if (Output.Kind == EFbxMeshKind::Static) CopyTextures(Output.StaticMesh.MaterialSlots);
 			else CopyTextures(Output.SkeletalMesh.MaterialSlots);
+		}
+
+		// 뼈 이름과 부모가 같은 스켈레톤 파일이 있으면 공유하고, 없으면 이 FBX 폴더에 새로 만든다.
+		for (auto& Output : Outputs)
+		{
+			if (Output.Kind != EFbxMeshKind::Skeletal) continue;
+			if (USkeleton* Existing = UAssetManager::FindSkeletonAsset(Output.SkeletalMesh.Bones))
+			{
+				// 에셋 경로는 Assets 기준이므로 파일 경로로 되돌려 저장한다.
+				Output.SkeletonPath = "Assets/" + Existing->GetPath();
+			}
+			else
+			{
+				const auto Target = Folder / (Name + ".skeleton.bin");
+				const auto Temp = Staged.Folder / "skeleton.tmp";
+				if (!FFbxMeshBake::WriteSkeleton(Utf8Path(Temp), FSkeletonData::FromMeshBones(Output.SkeletalMesh.Bones), OutError)) return false;
+				Staged.Files.Add({ Temp, Target });
+				Output.SkeletonPath = Utf8Path(Target);
+			}
+			for (FAnimationClipData& Clip : Clips) Clip.SkeletonPath = Output.SkeletonPath;
 		}
 
 		const auto AnimFolder = Folder / "Anim";

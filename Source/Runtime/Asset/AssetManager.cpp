@@ -13,9 +13,11 @@
 #include "Asset/FbxImporter/FbxMeshBake.h"
 #include "Render/SkeletalMesh.h"
 #include "Animation/AnimationClip.h"
+#include "Animation/Skeleton.h"
 
 #include "Render/GeometryGenerator.h"
 #include "UObject/UObjectGlobals.h"
+#include "UObject/UObjectIterator.h"
 
 #include "Engine/Classes/Sound/SoundWave.h"
 
@@ -48,6 +50,9 @@ namespace
 		}
 		if (Extension == ".bin" && FFbxMeshBake::IsAnimationPath(Path)) {
 			return EAssetType::Animation;
+		}
+		if (Extension == ".bin" && FFbxMeshBake::IsSkeletonPath(Path)) {
+			return EAssetType::Skeleton;
 		}
 		if (Extension == ".bin" && FFbxMeshBake::IsBakedPath(Path)) {
 			// 파일을 읽지 않고 구분하도록 FFbxImporter의 저장 이름 규칙을 쓴다
@@ -221,6 +226,12 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	if (FFbxMeshBake::IsAnimationPath(Path)) {
 		FString Error;
 		if (!LoadAnimationClip(Path, Error)) HTR_LOG(Error, "{}", Error);
+		return;
+	}
+
+	if (FFbxMeshBake::IsSkeletonPath(Path)) {
+		FString Error;
+		if (!LoadSkeleton(Path, Error)) HTR_LOG(Error, "{}", Error);
 		return;
 	}
 
@@ -591,6 +602,20 @@ URenderAsset* UAssetManager::LoadFbxMesh(const FString& Path, FString& OutError)
 	else
 	{
 		auto* Mesh = NewObject<USkeletalMesh>();
+		if (!Data.SkeletonPath.empty())
+		{
+			FString SkeletonError;
+			USkeleton* Skeleton = LoadSkeleton(Data.SkeletonPath, SkeletonError);
+			if (Skeleton && Skeleton->GetData().HasSameHierarchy(Data.SkeletalMesh.Bones))
+			{
+				Mesh->SetSkeleton(Skeleton);
+			}
+			else
+			{
+				// 메시는 자기 뼈 정보만으로도 그려지므로 로드를 막지 않고 Build에서 맞는 스켈레톤을 찾게 한다
+				HTR_LOG(Warning, "Skeleton does not fit mesh: {} -> {} {}", Path, Data.SkeletonPath, SkeletonError);
+			}
+		}
 		if (!Mesh->Build(std::move(Data.SkeletalMesh), OutError)) return nullptr;
 		Asset = Mesh;
 	}
@@ -610,9 +635,68 @@ UAnimationClip* UAssetManager::LoadAnimationClip(const FString& Path, FString& O
 	if (!FFbxMeshBake::ReadAnimation(Path, Data, OutError)) return nullptr;
 
 	UAnimationClip* Clip = NewObject<UAnimationClip>();
+	if (!Data.SkeletonPath.empty())
+	{
+		FString SkeletonError;
+		USkeleton* Skeleton = LoadSkeleton(Data.SkeletonPath, SkeletonError);
+		if (!Skeleton) HTR_LOG(Warning, "Clip skeleton load failed: {} {}", Path, SkeletonError);
+		Clip->SetSkeleton(Skeleton);
+	}
 	Clip->SetData(std::move(Data));
 	Get().RegisterAsset(Key, Clip);
 	return Clip;
+}
+
+USkeleton* UAssetManager::LoadSkeleton(const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = MakeAssetKey(Path);
+	// GetAssetByPath는 여기로 다시 들어오므로 쓰지 않는다
+	if (URenderAsset* Cached = FindLoadedAsset(Key)) return Cast<USkeleton>(Cached);
+
+	FSkeletonData Data;
+	if (!FFbxMeshBake::ReadSkeleton(Path, Data, OutError)) return nullptr;
+
+	USkeleton* Skeleton = NewObject<USkeleton>();
+	Skeleton->SetData(std::move(Data));
+	Get().RegisterAsset(Key, Skeleton);
+	return Skeleton;
+}
+
+USkeleton* UAssetManager::FindSkeletonAsset(const TArray<FBoneInfo>& Bones)
+{
+	for (const FString& Path : GetUnloadedAssetPaths(EAssetType::Skeleton))
+	{
+		FString Error;
+		if (!LoadSkeleton(Path, Error)) HTR_LOG(Warning, "{}", Error);
+	}
+	for (TObjectIterator<USkeleton> Itr; Itr; ++Itr)
+	{
+		// 경로가 없으면 파일이 없는 메모리 전용 스켈레톤이다
+		if (!Itr->GetPath().empty() && Itr->GetData().HasSameHierarchy(Bones))
+		{
+			return *Itr;
+		}
+	}
+	return nullptr;
+}
+
+USkeleton* UAssetManager::FindOrCreateSkeleton(const TArray<FBoneInfo>& Bones)
+{
+	if (USkeleton* Asset = FindSkeletonAsset(Bones))
+	{
+		return Asset;
+	}
+	for (TObjectIterator<USkeleton> Itr; Itr; ++Itr)
+	{
+		if (Itr->GetData().HasSameHierarchy(Bones))
+		{
+			return *Itr;
+		}
+	}
+	USkeleton* Skeleton = NewObject<USkeleton>();
+	Skeleton->SetData(FSkeletonData::FromMeshBones(Bones));
+	return Skeleton;
 }
 
 bool UAssetManager::ReorientStaticMesh(UStaticMesh& Mesh, const std::function<FVector(const FVector&)>& Rotate)

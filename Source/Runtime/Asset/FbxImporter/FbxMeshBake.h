@@ -22,9 +22,12 @@ struct FFbxBakedMesh
 	FFbxSourceInfo Source;
 	FStaticMeshData StaticMesh;
 	FSkeletalMeshData SkeletalMesh;
+	// Version 5부터 저장한다. 비어 있으면 로드할 때 뼈 정보로 스켈레톤을 찾거나 만든다.
+	FString SkeletonPath;
 };
 
 struct FAnimationClipData;
+struct FSkeletonData;
 
 // SDK와 독립적인 엔진 자료만 읽고 쓴다. 형식/필드 또는 구운 결과의 의미가 바뀌면 Version을 올린다.
 class FFbxMeshBake
@@ -32,11 +35,15 @@ class FFbxMeshBake
 public:
 	static bool IsBakedPath(const FString& Path);
 	static bool IsAnimationPath(const FString& Path);
+	static bool IsSkeletonPath(const FString& Path);
 	static bool Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError);
 	static bool Write(const FString& Path, const FFbxBakedMesh& Data, FString& OutError);
 
 	static bool WriteAnimation(const FString& Path, const FAnimationClipData& Clip, FString& OutError);
 	static bool ReadAnimation(const FString& Path, FAnimationClipData& OutClip, FString& OutError);
+
+	static bool WriteSkeleton(const FString& Path, const FSkeletonData& Skeleton, FString& OutError);
+	static bool ReadSkeleton(const FString& Path, FSkeletonData& OutSkeleton, FString& OutError);
 };
 
 

@@ -11,6 +11,8 @@
 #include <vector>
 #include "SkeletalMesh.generated.h"
 
+class USkeleton;
+
 struct FSkeletalMeshLODRenderData
 {
 	TArray<FVertex> BindVertices;
@@ -41,6 +43,9 @@ public:
 	const TArray<FBoneInfo>& GetRefSkeleton() const { return RefSkeleton; }
 	int32 GetNumBones() const { return RefSkeleton.Num(); }
 	int32 FindBoneIndex(const FString& Name) const;
+	// Build 전에 지정하지 않으면 Build가 뼈대가 같은 스켈레톤을 찾거나 만듭니다.
+	void SetSkeleton(USkeleton* InSkeleton) { Skeleton = InSkeleton; }
+	USkeleton* GetSkeleton() const { return Skeleton; }
 	const FSkeletalMeshRenderData& GetRenderData() const { return RenderData; }
 	const TArray<FSkeletalMaterialSlot>& GetMaterialSlots() const { return MaterialSlots; }
 	UMaterial* GetMaterial(uint32 SlotIndex) const;
@@ -54,6 +59,7 @@ private:
 	};
 
 	TArray<FBoneInfo> RefSkeleton;
+	USkeleton* Skeleton = nullptr;
 	TArray<FSkeletalMaterialSlot> MaterialSlots;
 	TArray<UMaterial*> Materials;
 	FSkeletalMeshRenderData RenderData;

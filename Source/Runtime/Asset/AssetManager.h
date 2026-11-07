@@ -17,13 +17,16 @@ enum class EAssetType
 	Font,
 	StaticMesh,
 	SkeletalMesh,
-	Animation
+	Animation,
+	Skeleton
 };
 
 class UStaticMesh;
 class USoundWave;
 class UAnimationClip;
+class USkeleton;
 struct FSkeletalMaterialSlot;
+struct FBoneInfo;
 
 namespace fs = std::filesystem;
 
@@ -85,6 +88,11 @@ public:
 	static UStaticMesh* LoadObjStaticMesh(const FString& Path);
 	static URenderAsset* LoadFbxMesh(const FString& Path, FString& OutError);
 	static UAnimationClip* LoadAnimationClip(const FString& Path, FString& OutError);
+	static USkeleton* LoadSkeleton(const FString& Path, FString& OutError);
+	// 뼈대가 같은 스켈레톤 파일(.skeleton.bin)을 찾습니다. 없으면 nullptr입니다.
+	static USkeleton* FindSkeletonAsset(const TArray<FBoneInfo>& Bones);
+	// 파일이 없으면 저장하지 않는 메모리 전용 스켈레톤을 만듭니다. 같은 뼈대끼리는 공유합니다.
+	static USkeleton* FindOrCreateSkeleton(const TArray<FBoneInfo>& Bones);
 
 	FLODGenerateResult GenerateStaticMeshLODs(UStaticMesh& Mesh,const FLODGenerateRequest& Request);
 

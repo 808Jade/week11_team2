@@ -1,8 +1,10 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshAnimationPanel.h"
 #include "Animation/AnimationClip.h"
+#include "Animation/Skeleton.h"
 #include "Asset/AssetManager.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
+#include "Render/SkeletalMesh.h"
 #include "UObject/UObjectIterator.h"
 
 FSkeletalMeshAnimationPanel::FSkeletalMeshAnimationPanel(FSkeletalMeshEditor& InEditor)
@@ -55,6 +57,14 @@ void FSkeletalMeshAnimationPanel::DrawClipCombo()
 
 void FSkeletalMeshAnimationPanel::DrawContent()
 {
+	const USkeletalMesh* Mesh = Editor.GetMesh();
+	const USkeleton* MeshSkeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+	if (MeshSkeleton)
+	{
+		// 경로가 없으면 예전 메시용으로 메모리에만 만든 스켈레톤입니다.
+		ImGui::Text("Mesh Skeleton: %s", MeshSkeleton->GetPath().empty() ? "(not saved, reimport to create a file)" : MeshSkeleton->GetPath().c_str());
+	}
+
 	DrawClipCombo();
 
 	UAnimationClip* Clip = Editor.GetAnimationClip();
@@ -64,6 +74,20 @@ void FSkeletalMeshAnimationPanel::DrawContent()
 	}
 
 	const FAnimationClipData& Data = Clip->GetData();
+
+	const USkeleton* ClipSkeleton = Clip->GetSkeleton();
+	if (!ClipSkeleton)
+	{
+		ImGui::TextUnformatted("Clip Skeleton: unknown (reimport to record it)");
+	}
+	else if (Mesh && (ClipSkeleton == MeshSkeleton || ClipSkeleton->GetData().HasSameHierarchy(Mesh->GetRefSkeleton())))
+	{
+		ImGui::TextUnformatted("Clip Skeleton: same as mesh");
+	}
+	else
+	{
+		ImGui::Text("Clip Skeleton: different (%s)", ClipSkeleton->GetPath().c_str());
+	}
 
 	const int32 NumMatched = Editor.GetNumMatchedAnimationTracks();
 	if (NumMatched == 0)

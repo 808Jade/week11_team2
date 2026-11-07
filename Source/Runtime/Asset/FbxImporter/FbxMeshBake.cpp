@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "FbxMeshBake.h"
 #include "Animation/AnimationClipData.h"
+#include "Animation/SkeletonData.h"
 
 #include <fstream>
 #include <cstddef>
@@ -10,7 +11,9 @@ namespace
 {
 	constexpr uint32 Magic = 0x58424648; // HFBX, little endian
 	// 장면 전체의 축 변환으로 Bone Local 축과 Bind 행렬 표현이 달라져 기존 출력은 다시 굽는다.
-	constexpr uint32 Version = 4;
+	// Version 5는 스켈레톤 경로만 추가했으므로 Version 4 파일도 그대로 읽는다.
+	constexpr uint32 Version = 5;
+	constexpr uint32 MinReadVersion = 4;
 	static_assert(sizeof(FVertex) == 64 && sizeof(FSkinWeight) == 20);
 	// 기존 Binary의 Section 배열을 그대로 읽도록 두 타입의 바이트 배치를 고정한다.
 	static_assert(std::is_trivially_copyable_v<FSkeletalMeshSection> && std::is_standard_layout_v<FSkeletalMeshSection>);
@@ -100,7 +103,7 @@ namespace
 		return true;
 	}
 
-	bool ReadPayload(FReader& In, FFbxBakedMesh& D)
+	bool ReadPayload(FReader& In, FFbxBakedMesh& D, uint32 FileVersion)
 	{
 		auto& Vertices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Vertices : D.SkeletalMesh.BindVertices;
 		auto& Indices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Indices : D.SkeletalMesh.Indices;
@@ -122,6 +125,7 @@ namespace
 			D.SkeletalMesh.Bones.SetNum(static_cast<int32>(N));
 			for (auto& B : D.SkeletalMesh.Bones)
 				if (!In.String(B.Name) || !In.Pod(B.ParentIndex) || !In.Pod(B.LocalBindPose.Location) || !In.Pod(B.LocalBindPose.Rotation) || !In.Pod(B.LocalBindPose.Scale) || !In.Pod(B.InverseBindPose.M)) return false;
+			if (FileVersion >= 5 && !In.String(D.SkeletonPath)) return false;
 			D.SkeletalMesh.SourcePath = D.Source.Path;
 		}
 		return In.Remaining == 0;
@@ -175,6 +179,14 @@ bool FFbxMeshBake::IsAnimationPath(const FString& Path)
 	return End == ".anim.bin";
 }
 
+bool FFbxMeshBake::IsSkeletonPath(const FString& Path)
+{
+	// 파일 이름 끝이 .skeleton.bin인지 대소문자를 구분하지 않고 확인한다.
+	FString End = Path.size() >= 13 ? Path.substr(Path.size() - 13) : FString();
+	for (char& C : End) if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
+	return End == ".skeleton.bin";
+}
+
 bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError)
 {
 	OutData = {};
@@ -183,9 +195,9 @@ bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& Ou
 	FFbxBakedMesh D;
 	uint32 M = 0, V = 0;
 	if (!In.Pod(M) || M != Magic || !In.Pod(V)) { OutError = "FBX binary: invalid header: " + Path; return false; }
-	if (V != Version)
+	if (V < MinReadVersion || V > Version)
 	{
-		OutError = "FBX binary: unsupported version " + std::to_string(V) + " (expected " + std::to_string(Version) + "); reimport the source FBX: " + Path;
+		OutError = "FBX binary: unsupported version " + std::to_string(V) + " (expected " + std::to_string(MinReadVersion) + "-" + std::to_string(Version) + "); reimport the source FBX: " + Path;
 		return false;
 	}
 	if (!In.Pod(D.Kind) || (D.Kind != EFbxMeshKind::Static && D.Kind != EFbxMeshKind::Skeletal)
@@ -197,7 +209,7 @@ bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& Ou
 		OutError = "FBX binary: invalid header: " + Path;
 		return false;
 	}
-	if (!ReadPayload(In, D) || !FinitePayload(D)) { OutError = "FBX binary: invalid/truncated payload: " + Path; return false; }
+	if (!ReadPayload(In, D, V) || !FinitePayload(D)) { OutError = "FBX binary: invalid/truncated payload: " + Path; return false; }
 	if (D.Kind == EFbxMeshKind::Static ? !D.StaticMesh.Validate(OutError) : !D.SkeletalMesh.Validate(OutError)) return false;
 	OutData = std::move(D);
 	return true;
@@ -228,6 +240,7 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 		{
 			Out.String(B.Name); Out.Pod(B.ParentIndex); Out.Pod(B.LocalBindPose.Location); Out.Pod(B.LocalBindPose.Rotation); Out.Pod(B.LocalBindPose.Scale); Out.Pod(B.InverseBindPose.M);
 		}
+		Out.String(D.SkeletonPath);
 	}
 	Out.Stream.flush();
 	Out.Stream.close();
@@ -238,8 +251,13 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 namespace
 {
 	constexpr uint32 AnimMagic = 0x4D494E41; // ANIM, little endian
-	constexpr uint32 AnimVersion = 1;
+	// Version 2는 스켈레톤 경로만 추가했으므로 Version 1 파일도 그대로 읽는다.
+	constexpr uint32 AnimVersion = 2;
+	constexpr uint32 AnimMinReadVersion = 1;
 	static_assert(sizeof(FVector) == 12 && sizeof(FQuat) == 16);
+
+	constexpr uint32 SkeletonMagic = 0x4C454B53; // SKEL, little endian
+	constexpr uint32 SkeletonVersion = 1;
 }
 
 bool FFbxMeshBake::WriteAnimation(const FString& Path, const FAnimationClipData& Clip, FString& OutError)
@@ -250,6 +268,7 @@ bool FFbxMeshBake::WriteAnimation(const FString& Path, const FAnimationClipData&
 	FWriter Out(Path);
 	Out.Pod(AnimMagic);
 	Out.Pod(AnimVersion);
+	Out.String(Clip.SkeletonPath);
 	Out.String(Clip.Name);
 	Out.Pod(Clip.Duration);
 	Out.Pod(Clip.SampleRate);
@@ -276,9 +295,14 @@ bool FFbxMeshBake::ReadAnimation(const FString& Path, FAnimationClipData& OutCli
 	FReader In(Path);
 	FAnimationClipData Clip;
 	uint32 FileMagic = 0, FileVersion = 0, NumTracks = 0;
-	if (!In.Pod(FileMagic) || FileMagic != AnimMagic || !In.Pod(FileVersion) || FileVersion != AnimVersion)
+	if (!In.Pod(FileMagic) || FileMagic != AnimMagic || !In.Pod(FileVersion) || FileVersion < AnimMinReadVersion || FileVersion > AnimVersion)
 	{
 		OutError = "Animation binary: invalid header or version: " + Path;
+		return false;
+	}
+	if (FileVersion >= 2 && !In.String(Clip.SkeletonPath))
+	{
+		OutError = "Animation binary: truncated header: " + Path;
 		return false;
 	}
 	// 트랙 하나는 최소 길이 필드 4개(16바이트)를 차지한다.
@@ -300,5 +324,63 @@ bool FFbxMeshBake::ReadAnimation(const FString& Path, FAnimationClipData& OutCli
 	if (!Clip.Validate(OutError)) return false;
 
 	OutClip = std::move(Clip);
+	return true;
+}
+
+bool FFbxMeshBake::WriteSkeleton(const FString& Path, const FSkeletonData& Skeleton, FString& OutError)
+{
+	OutError.clear();
+	if (!Skeleton.Validate(OutError)) return false;
+
+	FWriter Out(Path);
+	Out.Pod(SkeletonMagic);
+	Out.Pod(SkeletonVersion);
+	Out.Pod(static_cast<uint32>(Skeleton.Bones.Num()));
+	for (const FSkeletonBone& Bone : Skeleton.Bones)
+	{
+		Out.String(Bone.Name);
+		Out.Pod(Bone.ParentIndex);
+		Out.Pod(Bone.RefPose.Location);
+		Out.Pod(Bone.RefPose.Rotation);
+		Out.Pod(Bone.RefPose.Scale);
+	}
+	Out.Stream.flush();
+	Out.Stream.close();
+	if (!Out.Stream) { OutError = "Skeleton binary: write failed: " + Path; return false; }
+	return true;
+}
+
+bool FFbxMeshBake::ReadSkeleton(const FString& Path, FSkeletonData& OutSkeleton, FString& OutError)
+{
+	OutSkeleton = {};
+	OutError.clear();
+
+	FReader In(Path);
+	FSkeletonData Skeleton;
+	uint32 FileMagic = 0, FileVersion = 0, NumBones = 0;
+	if (!In.Pod(FileMagic) || FileMagic != SkeletonMagic || !In.Pod(FileVersion) || FileVersion != SkeletonVersion)
+	{
+		OutError = "Skeleton binary: invalid header or version: " + Path;
+		return false;
+	}
+	// 뼈 하나는 최소 이름 길이, 부모, 변환 float 9개를 차지한다.
+	if (!In.Count(NumBones, sizeof(uint32) + sizeof(int32) + 9 * sizeof(float)))
+	{
+		OutError = "Skeleton binary: truncated header: " + Path;
+		return false;
+	}
+	Skeleton.Bones.SetNum(static_cast<int32>(NumBones));
+	for (FSkeletonBone& Bone : Skeleton.Bones)
+	{
+		if (!In.String(Bone.Name) || !In.Pod(Bone.ParentIndex) || !In.Pod(Bone.RefPose.Location) || !In.Pod(Bone.RefPose.Rotation) || !In.Pod(Bone.RefPose.Scale))
+		{
+			OutError = "Skeleton binary: truncated bone: " + Path;
+			return false;
+		}
+	}
+	if (In.Remaining != 0) { OutError = "Skeleton binary: trailing data: " + Path; return false; }
+	if (!Skeleton.Validate(OutError)) return false;
+
+	OutSkeleton = std::move(Skeleton);
 	return true;
 }
