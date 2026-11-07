@@ -122,11 +122,74 @@ namespace
 		return Node;
 	}
 
-	void CollectBoneNodes(FbxNode* Node, TArray<FbxNode*>& Nodes)
+	// 애니메이션 전용 FBX는 속성 없는 Node도 뼈일 수 있어 bAllowNoAttribute로 함께 모은다.
+	void CollectBoneNodes(FbxNode* Node, TArray<FbxNode*>& Nodes, bool bAllowNoAttribute = false)
 	{
-		if (!IsBoneNode(Node)) return;
+		if (!IsBoneNode(Node) && !(bAllowNoAttribute && !Node->GetNodeAttribute())) return;
 		Nodes.Add(Node);
-		for (int Child = 0; Child < Node->GetChildCount(); ++Child) CollectBoneNodes(Node->GetChild(Child), Nodes);
+		for (int Child = 0; Child < Node->GetChildCount(); ++Child) CollectBoneNodes(Node->GetChild(Child), Nodes, bAllowNoAttribute);
+	}
+
+	// Takes 섹션이 없는 FBX는 SDK가 커브노드를 뼈 속성에는 연결하면서 레이어에는 넣지 않는다.
+	// 그대로 두면 모든 시각의 자세가 같아지므로, 대상을 알 수 있는 스택과 레이어가 하나뿐일 때만 다시 넣는다.
+	int32 RepairDetachedCurveNodes(FbxScene* Scene)
+	{
+		if (Scene->GetSrcObjectCount<FbxAnimStack>() != 1) return 0;
+		FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(0);
+		if (Stack->GetMemberCount<FbxAnimLayer>() != 1) return 0;
+		FbxAnimLayer* Layer = Stack->GetMember<FbxAnimLayer>(0);
+		if (Layer->GetMemberCount<FbxAnimCurveNode>() > 0) return 0;
+
+		int32 Repaired = 0;
+		for (int I = 0; I < Scene->GetSrcObjectCount<FbxAnimCurveNode>(); ++I)
+		{
+			FbxAnimCurveNode* CurveNode = Scene->GetSrcObject<FbxAnimCurveNode>(I);
+			if (CurveNode->GetDstPropertyCount() == 0) continue;
+			Layer->AddMember(CurveNode);
+			++Repaired;
+		}
+		return Repaired;
+	}
+
+	bool HasAnimationCurve(FbxNode* Node, FbxScene* Scene)
+	{
+		for (int S = 0; S < Scene->GetSrcObjectCount<FbxAnimStack>(); ++S)
+		{
+			FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(S);
+			for (int L = 0; L < Stack->GetMemberCount<FbxAnimLayer>(); ++L)
+			{
+				FbxAnimLayer* Layer = Stack->GetMember<FbxAnimLayer>(L);
+				if (Node->LclTranslation.GetCurveNode(Layer) || Node->LclRotation.GetCurveNode(Layer) || Node->LclScaling.GetCurveNode(Layer)) return true;
+			}
+		}
+		return false;
+	}
+
+	// 메시가 없으면 Cluster로 뼈대를 찾을 수 없으므로, 커브가 붙은 Node들의 공통 조상에서 시작한다.
+	// 움직이지 않는 뼈는 그 자손으로 포함되고, 뼈대 밖의 빈 Node는 자연스럽게 빠진다. 커브가 없으면 nullptr이다.
+	FbxNode* FindAnimatedRoot(FbxScene* Scene, bool bIsBlender)
+	{
+		FbxNode* Common = nullptr;
+		for (int I = 0; I < Scene->GetNodeCount(); ++I)
+		{
+			FbxNode* Node = Scene->GetNode(I);
+			if (!HasAnimationCurve(Node, Scene)) continue;
+			if (!Common) { Common = Node; continue; }
+			const auto IsSelfOrAncestor = [](FbxNode* Ancestor, FbxNode* Target)
+			{
+				for (; Target; Target = Target->GetParent()) if (Target == Ancestor) return true;
+				return false;
+			};
+			while (Common && !IsSelfOrAncestor(Common, Node)) Common = Common->GetParent();
+		}
+		if (!Common || Common == Scene->GetRootNode()) return Common;
+
+		FbxNode* Root = FindSkeletonRoot(Common, Scene, bIsBlender);
+		// 속성이 없으면 뼈와 컨테이너를 구분할 수 없어 위 탐색이 공통 조상에서 멈춘다.
+		// 부모 하나를 루트로 포함해야 조상의 스케일과 위치가 그 Node에 남고, 첫 실제 뼈의 Local이 메시의 뼈와 같은 기준이 된다.
+		FbxNode* Parent = Root->GetParent();
+		if (!Root->GetNodeAttribute() && Parent && Parent != Scene->GetRootNode()) Root = Parent;
+		return Root;
 	}
 
 	// 이 Bone의 Bind Global을 Bind Pose → Cluster Link → 현재 Global 순서로 찾는다.
@@ -556,6 +619,10 @@ bool FFbxImporter::Open(const FString& Path, FString& OutError, const FString& E
 		return false;
 	}
 	Extraction.ResolveTextures(Scene);
+	if (const int32 Repaired = RepairDetachedCurveNodes(Scene))
+	{
+		HTR_LOG(Warning, "FBX: reattached {} animation curve nodes missing from the layer: {}", Repaired, Path);
+	}
 
 	// Creator는 Reader가 살아 있을 때 읽어 두고 Blender Armature 예외 판별에 사용한다.
 	const FbxIOFileHeaderInfo* Header = Reader->GetFileHeaderInfo();
@@ -581,7 +648,7 @@ void FFbxImporter::Close()
 
 // 열린 Scene의 축/단위를 변환한 뒤, Mesh Node별 Geometry/Material과 Control Point 대응표를 만든다.
 // 모든 Node 추출이 성공했을 때만 Results를 MeshNodes에 보관한다.
-bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
+bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError, bool bAllowNoMesh)
 {
 	ClearSkeletonData();
 	MeshNodes.Empty();
@@ -646,7 +713,7 @@ bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
 		}
 		Results.Add(std::move(Result));
 	}
-	if (Results.IsEmpty()) { OutError = "FBX: no mesh nodes"; return false; }
+	if (Results.IsEmpty() && !bAllowNoMesh) { OutError = "FBX: no mesh nodes"; return false; }
 	MeshNodes = std::move(Results);
 	return true;
 }
@@ -677,11 +744,18 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 	ClearSkeletonData();
 	OutWarnings.Empty();
 	OutError.clear();
-	if (!Scene || MeshNodes.IsEmpty()) { OutError = "FBX: read mesh data before skeleton data"; return false; }
+	if (!Scene) { OutError = "FBX: read mesh data before skeleton data"; return false; }
 
 	// 여러 Mesh의 Cluster를 모아 Bone 계층과 Bind를 조회한다. Weight 값은 읽지 않는다.
 	TArray<FbxCluster*> Clusters;
 	FbxNode* Root = nullptr;
+	const bool bAnimationOnly = MeshNodes.IsEmpty();
+	if (bAnimationOnly)
+	{
+		Root = FindAnimatedRoot(Scene, bIsBlender);
+		if (!Root) { OutError = "FBX: no mesh nodes or animation curves"; return false; }
+		if (Root == Scene->GetRootNode()) { OutError = "FBX: multiple skeleton roots"; return false; }
+	}
 	for (const FFbxMeshNodeData& Mesh : MeshNodes)
 	{
 		if (!Mesh.bHasSkin) continue;
@@ -704,7 +778,7 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 	}
 	if (!Root) { OutError = "FBX: no skeleton bones"; return false; }
 	TArray<FbxNode*> Nodes;
-	CollectBoneNodes(Root, Nodes);
+	CollectBoneNodes(Root, Nodes, bAnimationOnly);
 	if (Nodes.IsEmpty()) { OutError = "FBX: no skeleton bones"; return false; }
 	// 기존 FSkinWeight::BoneIndex가 uint8이므로 최종 출력으로 표현할 수 있는 Bone 수에 맞춘다.
 	if (Nodes.Num() > 256) { OutError = "FBX: bone count exceeds 256"; return false; }
@@ -714,6 +788,8 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 	TArray<FBoneInfo> ResultBones;
 	TArray<FbxAMatrix> BindGlobals;
 	TArray<FMatrix> BindWorlds;
+	// 메시가 없으면 Bind Pose가 없는 것이 정상이므로 뼈마다 나오는 경고를 출력에 넘기지 않는다.
+	TArray<FString> IgnoredBindWarnings;
 	for (int32 I = 0; I < Nodes.Num(); ++I)
 	{
 		FbxNode* Node = Nodes[I];
@@ -728,7 +804,7 @@ bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutEr
 			Bone.ParentIndex = *Parent;
 		}
 
-		const FbxAMatrix Global = ReadBindGlobal(Scene, Node, Clusters, OutWarnings);
+		const FbxAMatrix Global = ReadBindGlobal(Scene, Node, Clusters, bAnimationOnly ? IgnoredBindWarnings : OutWarnings);
 		const double GlobalDeterminant = Global.Determinant();
 		if (!IsFiniteMatrix(Global) || !std::isfinite(GlobalDeterminant) || GlobalDeterminant == 0) { OutError = "FBX: invalid Bind Global: " + Bone.Name; return false; }
 		const FbxAMatrix Local = Bone.ParentIndex < 0 ? Global : BindGlobals[Bone.ParentIndex].Inverse() * Global;
@@ -1093,6 +1169,41 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			}
 		}
 
+		// 애니메이션 전용 FBX는 .fbx.bin이 없으므로 클립에 기록한 원본 정보로 변경 여부를 판단한다.
+		// 메시가 있는 FBX의 클립은 원본 정보가 비어 있어 여기서 건너뛰지 않는다.
+		if (Mode == EFbxImportMode::Skeletal && std::filesystem::is_directory(Folder / "Anim"))
+		{
+			TArray<FString> ClipPaths;
+			bool bUnchanged = true;
+			for (const auto& Entry : std::filesystem::directory_iterator(Folder / "Anim"))
+			{
+				const FString ClipPath = Utf8Path(Entry.path());
+				if (!FFbxMeshBake::IsAnimationPath(ClipPath)) continue;
+				FAnimationClipData Clip;
+				if (!FFbxMeshBake::ReadAnimation(ClipPath, Clip, ReadError) || Clip.SourcePath != Source.Path || Clip.SourceModifiedTime != Source.ModifiedTime || Clip.SourceSize != Source.Size
+					|| Clip.SkeletonPath.empty() || !std::filesystem::exists(PathOf(Clip.SkeletonPath)))
+				{
+					bUnchanged = false;
+					break;
+				}
+				ClipPaths.Add(ClipPath);
+			}
+			if (bUnchanged && !ClipPaths.IsEmpty())
+			{
+				OutResult.bSkipped = true;
+				HTR_LOG(Info, "FBX Import skipped (source unchanged): {}", Source.Path);
+				for (const FString& ClipPath : ClipPaths)
+				{
+					if (!UAssetManager::LoadAnimationClip(ClipPath, OutError))
+					{
+						OutError = "FBX clip files are available, but asset registration failed: " + OutError;
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+
 		// SDK 추출부터 최종 파일 교체까지 같은 작업 폴더를 유지한다. 실패 시에도 소멸자가 정리한다.
 		std::filesystem::create_directories(Folder / "Textures");
 		FImportFiles Staged;
@@ -1104,17 +1215,25 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		FFbxImporter Importer;
 		if (!Importer.Open(Source.Path, OutError, Utf8Path(Extraction))) return false;
 		TArray<FString> Warnings;
-		if (!Importer.ReadMeshData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
+		// Skeletal Import만 메시 없는 FBX를 허용한다. Static은 저장할 것이 없으므로 기존처럼 실패한다.
+		if (!Importer.ReadMeshData(Warnings, OutError, Mode == EFbxImportMode::Skeletal)) { OutResult.Warnings.Append(Warnings); return false; }
 		OutResult.Warnings.Append(Warnings);
 		TArray<FFbxBakedMesh> Outputs;
 		TArray<FAnimationClipData> Clips;
+		const bool bAnimationOnly = Importer.GetMeshNodes().IsEmpty();
+		// 메시 출력이 없을 때 스켈레톤 파일을 만들 뼈 정보. Importer.Close()가 비우므로 복사해 둔다.
+		TArray<FBoneInfo> AnimationOnlyBones;
 		if (Mode == EFbxImportMode::Skeletal)
 		{
 			if (!Importer.ReadSkeletonData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
 			FFbxBakedMesh Skeletal;
 			Skeletal.Kind = EFbxMeshKind::Skeletal;
-			if (!Importer.BuildSkeletalMesh(Skeletal.SkeletalMesh, Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
+			if (bAnimationOnly)
+			{
+				AnimationOnlyBones = Importer.GetBones();
+			}
+			else if (!Importer.BuildSkeletalMesh(Skeletal.SkeletalMesh, Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
 			if (!Importer.ReadAnimationData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
@@ -1124,7 +1243,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			{
 				HTR_LOG(Info, "FBX animation: {}, frames {}, seconds {}, fps {}, tracks {}", Clip.Name, Clip.NumFrames, Clip.Duration, Clip.SampleRate, Clip.Tracks.Num());
 			}
-			Outputs.Add(std::move(Skeletal));
+			if (!bAnimationOnly) Outputs.Add(std::move(Skeletal));
 		}
 		FFbxBakedMesh Static;
 		if (Mode == EFbxImportMode::Static) Importer.BuildStaticMesh(Static.StaticMesh);
@@ -1136,7 +1255,7 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		}
 		// Scene을 닫아도 추출 파일은 Staged가 소유하므로 아래 Texture 복사까지 살아 있다.
 		Importer.Close();
-		if (Outputs.IsEmpty()) { OutError = "FBX: no mesh output"; return false; }
+		if (Outputs.IsEmpty() && Clips.IsEmpty()) { OutError = "FBX: no mesh or animation output"; return false; }
 		for (const auto& Output : Outputs) Source.Outputs |= static_cast<uint32>(Output.Kind);
 		TMap<FString, FString> Copied;
 		TSet<FString> Names;
@@ -1180,23 +1299,38 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 		}
 
 		// 뼈 이름과 부모가 같은 스켈레톤 파일이 있으면 공유하고, 없으면 이 FBX 폴더에 새로 만든다.
+		const auto ResolveSkeletonPath = [&](const TArray<FBoneInfo>& SkeletonBones, FString& OutPath)
+		{
+			if (USkeleton* Existing = UAssetManager::FindSkeletonAsset(SkeletonBones))
+			{
+				// 에셋 경로는 Assets 기준이므로 파일 경로로 되돌려 저장한다.
+				OutPath = "Assets/" + Existing->GetPath();
+				return true;
+			}
+			const auto Target = Folder / (Name + ".skeleton.bin");
+			const auto Temp = Staged.Folder / "skeleton.tmp";
+			if (!FFbxMeshBake::WriteSkeleton(Utf8Path(Temp), FSkeletonData::FromMeshBones(SkeletonBones), OutError)) return false;
+			Staged.Files.Add({ Temp, Target });
+			OutPath = Utf8Path(Target);
+			return true;
+		};
 		for (auto& Output : Outputs)
 		{
 			if (Output.Kind != EFbxMeshKind::Skeletal) continue;
-			if (USkeleton* Existing = UAssetManager::FindSkeletonAsset(Output.SkeletalMesh.Bones))
-			{
-				// 에셋 경로는 Assets 기준이므로 파일 경로로 되돌려 저장한다.
-				Output.SkeletonPath = "Assets/" + Existing->GetPath();
-			}
-			else
-			{
-				const auto Target = Folder / (Name + ".skeleton.bin");
-				const auto Temp = Staged.Folder / "skeleton.tmp";
-				if (!FFbxMeshBake::WriteSkeleton(Utf8Path(Temp), FSkeletonData::FromMeshBones(Output.SkeletalMesh.Bones), OutError)) return false;
-				Staged.Files.Add({ Temp, Target });
-				Output.SkeletonPath = Utf8Path(Target);
-			}
+			if (!ResolveSkeletonPath(Output.SkeletalMesh.Bones, Output.SkeletonPath)) return false;
 			for (FAnimationClipData& Clip : Clips) Clip.SkeletonPath = Output.SkeletonPath;
+		}
+		if (bAnimationOnly && !Clips.IsEmpty())
+		{
+			FString SkeletonPath;
+			if (!ResolveSkeletonPath(AnimationOnlyBones, SkeletonPath)) return false;
+			for (FAnimationClipData& Clip : Clips)
+			{
+				Clip.SkeletonPath = SkeletonPath;
+				Clip.SourcePath = Source.Path;
+				Clip.SourceModifiedTime = Source.ModifiedTime;
+				Clip.SourceSize = Source.Size;
+			}
 		}
 
 		const auto AnimFolder = Folder / "Anim";
@@ -1246,8 +1380,14 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				if (EC) OutResult.Warnings.Add("FBX: cannot remove old clip: " + File);
 			}
 		}
+		if (bAnimationOnly)
+		{
+			// 텍스처가 없으면 미리 만든 빈 폴더를 남기지 않는다. 비어 있지 않으면 실패하고 그대로 둔다.
+			std::error_code EC;
+			std::filesystem::remove(Folder / "Textures", EC);
+		}
 		OutResult.Paths = std::move(Paths);
-		HTR_LOG(Info, "FBX Import saved: {} ({} files)", Source.Path, OutResult.Paths.Num());
+		HTR_LOG(Info, "FBX Import saved: {} ({} meshes, {} clips)", Source.Path, OutResult.Paths.Num(), ClipPaths.Num());
 		if (!RegisterImported(OutResult.Paths, true, OutResult.Warnings, OutError)) return false;
 		for (const FString& ClipPath : ClipPaths)
 		{

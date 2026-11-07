@@ -39,12 +39,14 @@ public:
 	// 비소유 참조. 다음 Open/Close 또는 이 객체의 소멸 전까지만 유효하다.
 	FbxScene* GetScene() const { return Scene; }
 	// 열린 Scene의 축/단위를 맞추고 Node별 자료를 생성한다. 실패하면 Node 결과는 비운다.
-	bool ReadMeshData(TArray<FString>& OutWarnings, FString& OutError);
+	// bAllowNoMesh면 메시가 없어도 축/단위 변환까지 마치고 빈 결과로 성공한다(애니메이션 전용 FBX).
+	bool ReadMeshData(TArray<FString>& OutWarnings, FString& OutError, bool bAllowNoMesh = false);
 	// 참조는 다음 ReadMeshData/Open/Close/소멸 전까지만 유효하다.
 	const TArray<FFbxMeshNodeData>& GetMeshNodes() const { return MeshNodes; }
 	// Import Static용: Skin 유무와 관계없이 모든 Node를 하나로 합친다.
 	void BuildStaticMesh(FStaticMeshData& OutData) const;
 	// ReadMeshData 성공 후 호출한다. Bone 계층/Bind와 rigid의 Bind 기준 Geometry를 만들며 Weight는 만들지 않는다.
+	// 메시가 없으면 커브가 붙은 Node들로 뼈대를 찾는다.
 	bool ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError);
 	// ReadSkeletonData 성공 후 호출한다. 스택이 없으면 빈 결과로 성공한다.
 	bool ReadAnimationData(TArray<FString>& OutWarnings, FString& OutError);

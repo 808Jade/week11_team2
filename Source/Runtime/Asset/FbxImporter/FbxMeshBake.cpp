@@ -251,8 +251,8 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 namespace
 {
 	constexpr uint32 AnimMagic = 0x4D494E41; // ANIM, little endian
-	// Version 2는 스켈레톤 경로만 추가했으므로 Version 1 파일도 그대로 읽는다.
-	constexpr uint32 AnimVersion = 2;
+	// Version 2는 스켈레톤 경로, Version 3은 원본 정보만 추가했으므로 이전 파일도 그대로 읽는다.
+	constexpr uint32 AnimVersion = 3;
 	constexpr uint32 AnimMinReadVersion = 1;
 	static_assert(sizeof(FVector) == 12 && sizeof(FQuat) == 16);
 
@@ -269,6 +269,9 @@ bool FFbxMeshBake::WriteAnimation(const FString& Path, const FAnimationClipData&
 	Out.Pod(AnimMagic);
 	Out.Pod(AnimVersion);
 	Out.String(Clip.SkeletonPath);
+	Out.String(Clip.SourcePath);
+	Out.Pod(Clip.SourceModifiedTime);
+	Out.Pod(Clip.SourceSize);
 	Out.String(Clip.Name);
 	Out.Pod(Clip.Duration);
 	Out.Pod(Clip.SampleRate);
@@ -301,6 +304,11 @@ bool FFbxMeshBake::ReadAnimation(const FString& Path, FAnimationClipData& OutCli
 		return false;
 	}
 	if (FileVersion >= 2 && !In.String(Clip.SkeletonPath))
+	{
+		OutError = "Animation binary: truncated header: " + Path;
+		return false;
+	}
+	if (FileVersion >= 3 && (!In.String(Clip.SourcePath) || !In.Pod(Clip.SourceModifiedTime) || !In.Pod(Clip.SourceSize)))
 	{
 		OutError = "Animation binary: truncated header: " + Path;
 		return false;

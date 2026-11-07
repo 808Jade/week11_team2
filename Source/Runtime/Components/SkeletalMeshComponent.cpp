@@ -49,11 +49,59 @@ void USkeletalMeshComponent::RefreshBoneTransformsNow()
     UpdateBoneTransformsNow();
 }
 
+namespace
+{
+    // 내보내기 프로그램마다 달라지는 표기를 지운다. 대소문자, 구분자, 끝의 번호를 통일한다.
+    // 예: "mixamorig:Hips", "mixamorig_Hips_01" -> "mixamorig_hips"
+    FString NormalizeBoneName(const FString& Name)
+    {
+        FString Result = Name;
+        for (char& C : Result)
+        {
+            if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
+            else if (C == ':') C = '_';
+        }
+        const size_t LastSeparator = Result.find_last_of('_');
+        if (LastSeparator != FString::npos && LastSeparator + 1 < Result.size()
+            && std::all_of(Result.begin() + LastSeparator + 1, Result.end(), [](char C) { return C >= '0' && C <= '9'; }))
+        {
+            Result.resize(LastSeparator);
+        }
+        return Result;
+    }
+}
+
 TArray<int32> USkeletalMeshComponent::MapAnimationTracks(const FAnimationClipData& Clip) const
 {
+    // 이름이 정확히 같은 트랙을 먼저 연결한다.
     TArray<int32> TrackToBone;
+    TSet<int32> ClaimedBones;
     for (const FBoneAnimationTrack& Track : Clip.Tracks)
-        TrackToBone.Add(FindBoneIndex(Track.BoneName));
+    {
+        const int32 Bone = FindBoneIndex(Track.BoneName);
+        TrackToBone.Add(Bone);
+        if (Bone >= 0) ClaimedBones.Add(Bone);
+    }
+
+    // 남은 트랙은 정리한 이름으로 찾는다. 정리 후 겹치는 이름은 어느 뼈인지 알 수 없어 연결하지 않는다.
+    const TArray<FBoneInfo>& Bones = GetBones();
+    TMap<FString, int32> BoneByName;
+    TSet<FString> AmbiguousNames;
+    for (int32 I = 0; I < Bones.Num(); ++I)
+    {
+        const FString Name = NormalizeBoneName(Bones[I].Name);
+        if (BoneByName.Contains(Name)) AmbiguousNames.Add(Name);
+        else BoneByName.Add(Name, I);
+    }
+    for (int32 I = 0; I < Clip.Tracks.Num(); ++I)
+    {
+        if (TrackToBone[I] >= 0) continue;
+        const FString Name = NormalizeBoneName(Clip.Tracks[I].BoneName);
+        const int32* Bone = BoneByName.Find(Name);
+        if (!Bone || AmbiguousNames.Contains(Name) || ClaimedBones.Contains(*Bone)) continue;
+        TrackToBone[I] = *Bone;
+        ClaimedBones.Add(*Bone);
+    }
     return TrackToBone;
 }
 
