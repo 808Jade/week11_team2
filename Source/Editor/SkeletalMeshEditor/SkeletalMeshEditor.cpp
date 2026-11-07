@@ -7,6 +7,8 @@
 #include "Math/BoxSphereBounds.h"
 #include "Render/SkeletalMesh.h"
 #include "Render/LineBatcher.h"
+#include "Editor/Asset/FbxImporter/FbxImporter.h"
+#include "Animation/AnimSequence.h"
 
 namespace
 {
@@ -207,7 +209,8 @@ void FSkeletalMeshEditor::Tick(float DeltaTime)
 	}
 
 	// 부모 Tick 호출 (PreviewScene Tick)
-	FAssetEditor::Tick(DeltaTime);
+	FAssetEditor::Tick(mSkipAnimationTick ? 0.0f : DeltaTime);
+	mSkipAnimationTick = false;
 
 	const bool bGizmoConsumedInput = UpdateBoneGizmo();
 
@@ -275,7 +278,7 @@ void FSkeletalMeshEditor::SelectBone(int32 BoneIndex)
 
 void FSkeletalMeshEditor::SyncBoneGizmo()
 {
-	if (!MeshComponent || !BoneGizmoTarget || SelectedBoneIndex < 0 || SelectedBoneIndex >= BoneItems.Num())
+	if (!MeshComponent || !BoneGizmoTarget || SelectedBoneIndex < 0 || SelectedBoneIndex >= BoneItems.Num() || IsAnimationPlaying())
 	{
 		BoneGizmo.SetTarget(nullptr);
 		return;
@@ -592,6 +595,7 @@ void FSkeletalMeshEditor::SetSelectedBoneLocalTransform(const FTransform& Transf
 
 	// 원본 애셋 대신 프리뷰 컴포넌트의 포즈만 수정합니다. 본 갱신은 다음 World Tick에서 수행합니다.
 	BoneGizmo.EndDrag();
+	PauseAnimation();
 	MeshComponent->SetBoneLocalTransform(SelectedBoneIndex, Transform);
 }
 
@@ -624,6 +628,7 @@ void FSkeletalMeshEditor::ResetBone(int32 BoneIndex)
 	}
 
 	BoneGizmo.EndDrag();
+	PauseAnimation();
 	FTransform Transform = Mesh->GetRefSkeleton()[BoneIndex].LocalBindPose;
 	MeshComponent->SetBoneLocalTransform(BoneIndex, Transform);
 }
@@ -699,6 +704,15 @@ void FSkeletalMeshEditor::OnRenderLine(FLineBatcher& LineBatcher)
 
 void FSkeletalMeshEditor::ShutdownResources()
 {
+	if (MeshComponent) {
+		MeshComponent->StopAnimation();
+	}
+
+	mPreviewAnimation = nullptr;
+	mAnimationImporter.reset();
+	mAnimationNames.Empty();
+	mAnimationWarnings.Empty();
+	mAnimationSourceWarnings.Empty();
 	BoneGizmo.EndDrag();
 	BoneGizmo.SetTarget(nullptr);
 	BoneGizmoTarget = nullptr;

@@ -5,6 +5,9 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Camera/ViewportCameraMovement.h"
 
+class FFbxImporter;
+class UAnimSequence;
+
 struct FEditorBoneItem
 {
 	int32 BoneIndex;
@@ -28,15 +31,36 @@ struct FBoneGizmoInput
 	bool bCancel = false;
 };
 
-class FSkeletalMeshEditor : public FAssetEditor
-{
+class FSkeletalMeshEditor : public FAssetEditor {
 public:
-	FSkeletalMeshEditor(
-		class UEditorEngine& InEditorEngine,
-		class FEditorManager& InEditorManager,
-		const FString& InAssetPath,
-		class USkeletalMesh& InMesh
-	);
+	FSkeletalMeshEditor(class UEditorEngine& InEditorEngine, class FEditorManager& InEditorManager, const FString& InAssetPath, class USkeletalMesh& InMesh);
+	~FSkeletalMeshEditor() override;
+
+public:
+	bool BrowseAnimationFbx();
+	bool OpenAnimationFbx(const FString& Path);
+	bool ImportAnimation(int32 AnimationIndex, float SampleRate);
+	bool BrowseAnimationAsset();
+	bool LoadAnimationAsset(const FString& Path);
+	bool PlayAnimation();
+	void PauseAnimation();
+	void StopAnimation();
+	void SeekAnimation(float Position);
+	void SetAnimationLooping(bool Looping);
+	void SetAnimationPlayRate(float PlayRate);
+
+	bool IsAnimationPlaying() const;
+	bool IsAnimationLooping() const;
+	float GetAnimationPlayRate() const;
+	float GetAnimationPosition() const;
+	float GetAnimationDuration() const;
+	const UAnimSequence* GetPreviewAnimation() const;
+	const TArray<FString>& GetAnimationNames() const;
+	const FString& GetAnimationSourcePath() const;
+	const FString& GetAnimationAssetPath() const;
+	const FString& GetAnimationName() const;
+	const FString& GetAnimationError() const;
+	const TArray<FString>& GetAnimationWarnings() const;
 
 	////////////////////////////////////////////////////////////
 	// 에디터 공통 인터페이스
@@ -131,6 +155,21 @@ private:
 	int32 PickBone(const FVector2& MousePosition) const;
 	void ApplyBoneGizmoTransform();
 	FQuat GetBoneWorldRotation(int32 BoneIndex) const;
+	bool ReportAnimationError(const FString& Error);
+	FString ChooseAnimationFile(const wchar_t* Filter, const wchar_t* Title);
+
+private:
+	TUniquePtr<FFbxImporter> mAnimationImporter{};
+	UAnimSequence* mPreviewAnimation{};
+	TArray<FString> mAnimationNames{};
+	TArray<FString> mAnimationSourceWarnings{};
+	TArray<FString> mAnimationWarnings{};
+	FString mAnimationSourcePath{};
+	FString mAnimationName{};
+	FString mAnimationError{};
+	float mAnimationPlayRate{ 1.0f };
+	bool mAnimationLooping{ true };
+	bool mSkipAnimationTick{};
 
 	class USkeletalMesh* Mesh = nullptr;
 	class USkeletalMeshComponent* MeshComponent = nullptr;

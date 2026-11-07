@@ -16,11 +16,16 @@ enum class EAssetType
 	Texture,
 	Font,
 	StaticMesh,
-	SkeletalMesh
+	SkeletalMesh,
+	Animation,
+	Skeleton
 };
 
 class UStaticMesh;
 class USoundWave;
+class UAnimSequence;
+class USkeleton;
+struct FBoneInfo;
 struct FSkeletalMaterialSlot;
 
 namespace fs = std::filesystem;
@@ -54,16 +59,7 @@ public:
 	// 경로는 "Assets/Models/a.obj"와 "Models/a.obj"를 같은 에셋으로 본다.
 	// 아직 로드되지 않았으면 여기서 로드하므로 GPU 자원을 만들 수 있는 메인 스레드에서만 부른다.
 	template <typename T>
-	static T* GetAssetByPath(const FString& Path)
-	{
-		URenderAsset* Asset = Get().FindOrLoadAsset(Path);
-
-		if (Asset == nullptr || !Asset->IsA<T>())
-		{
-			return nullptr;
-		}
-		return Cast<T>(Asset);
-	}
+	static T* GetAssetByPath(const FString& Path);
 
 	// 로드를 일으키지 않고 이미 로드된 에셋만 찾는다
 	static URenderAsset* FindLoadedAsset(const FString& Path);
@@ -71,6 +67,7 @@ public:
 	// 스캔으로 등록됐지만 아직 로드되지 않은 에셋의 타입. 그 외에는 None
 	static EAssetType GetUnloadedAssetType(const FString& Path);
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
+	static TArray<FString> GetAssetPaths(EAssetType Type);
 
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
 
@@ -82,6 +79,10 @@ public:
 	USoundWave* LoadSound(const FString& Path);
 	static UStaticMesh* LoadObjStaticMesh(const FString& Path);
 	static URenderAsset* LoadFbxMesh(const FString& Path, FString& OutError);
+	static UAnimSequence* LoadAnimation(const FString& Path, FString& OutError, bool Reload = false);
+	static UAnimSequence* FindLoadedAnimation(const FString& Path);
+	static USkeleton* LoadSkeleton(const FString& Path, FString& OutError);
+	static USkeleton* FindOrCreateSkeleton(const TArray<FBoneInfo>& Bones, FString& OutError);
 
 	FLODGenerateResult GenerateStaticMeshLODs(UStaticMesh& Mesh,const FLODGenerateRequest& Request);
 
@@ -95,11 +96,14 @@ public:
 	static bool BuildMaterialsFromSlots(const TArray<FSkeletalMaterialSlot>& Slots, TArray<UMaterial*>& OutMaterials);
 
 private:
-	URenderAsset* FindOrLoadAsset(const FString& Path);
+	UObject* FindOrLoadAsset(const FString& Path);
 
+private:
 	// 키는 Assets 기준 상대 경로. 로드 가능한 파일의 키 -> 실제 파일 경로
 	TMap<FString, FString> AssetPathMap;
 	TMap<FString, URenderAsset*> AssetMap;
+	TMap<FString, UAnimSequence*> mAnimationMap{};
+	TMap<FString, USkeleton*> mSkeletonMap{};
 	TMap<FString, USoundWave*> SoundMap;
 
 	//TMap<FString, UStaticMesh*> MeshMap;	// KEY: FILE NAME OR 쉐입 첫글자 대문자
@@ -107,3 +111,13 @@ private:
 
 	//TMap<FString, UTexture2D*> TextureMap;
 };
+
+template <typename T>
+T* UAssetManager::GetAssetByPath(const FString& Path) {
+	UObject* Asset{ Get().FindOrLoadAsset(Path) };
+	if (!Asset || !Asset->IsA<T>()) {
+		return nullptr;
+	}
+
+	return Cast<T>(Asset);
+}

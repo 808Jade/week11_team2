@@ -11,6 +11,11 @@
 
 #include "Asset/ObjImporter/ObjImporter.h"
 #include "Asset/FbxImporter/FbxMeshBake.h"
+#include "Asset/Animation/AnimSequenceAsset.h"
+#include "Asset/Animation/SkeletonAsset.h"
+#include "Asset/AssetUtils.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/Skeleton.h"
 #include "Render/SkeletalMesh.h"
 
 #include "Render/GeometryGenerator.h"
@@ -35,6 +40,13 @@ namespace
 	}
 
 	EAssetType GetAssetTypeFromPath(const FString& Path) {
+		if (FAnimSequenceAsset::IsAssetPath(Path)) {
+			return EAssetType::Animation;
+		}
+		if (FSkeletonAsset::IsAssetPath(Path)) {
+			return EAssetType::Skeleton;
+		}
+
 		const FString Extension{ GetAssetExtension(Path) };
 		if (Extension == ".png" || Extension == ".dds") {
 			return EAssetType::Texture;
@@ -55,6 +67,10 @@ namespace
 	// 저장된 씬에 "Assets/..."와 "Models/..."가 섞여 있어 둘 다 같은 키로 바꾼다. 내장 에셋 이름은 그대로 남는다.
 	FString MakeLookupKey(const FString& Path)
 	{
+		if (FAnimSequenceAsset::IsAssetPath(Path) || FSkeletonAsset::IsAssetPath(Path)) {
+			return FAssetUtils::GetAssetKey(Path);
+		}
+
 		FString Key = Path;
 		std::replace(Key.begin(), Key.end(), '\\', '/');
 		if (Key.starts_with("./"))
@@ -196,8 +212,10 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 	const int32 Total = Files.Num();
 	for (int32 i = 0; i < Total; ++i)
 	{
-		FString Key = fs::relative(Files[i], AssetRoot).generic_string();
-		FString Path = Files[i].generic_string();
+		const auto KeyText{ fs::relative(Files[i], AssetRoot).generic_u8string() };
+		const auto PathText{ Files[i].generic_u8string() };
+		FString Key{ KeyText.begin(), KeyText.end() };
+		FString Path{ PathText.begin(), PathText.end() };
 
 		// 경로만 등록한다. 실제 로드는 처음 찾을 때 FindOrLoadAsset에서 한다.
 		if (GetAssetTypeFromPath(Path) != EAssetType::None)
@@ -224,6 +242,22 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	}
 
 	switch (GetAssetTypeFromPath(Path)) {
+	case EAssetType::Skeleton: {
+		FString Error{};
+		if (!LoadSkeleton(Path, Error)) {
+			HTR_LOG(Error, "{}", Error);
+		}
+
+		break;
+	}
+	case EAssetType::Animation: {
+		FString Error{};
+		if (!LoadAnimation(Path, Error)) {
+			HTR_LOG(Error, "{}", Error);
+		}
+
+		break;
+	}
 	case EAssetType::Texture:
 		LoadTexture(Path);
 		break;
@@ -238,8 +272,28 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	}
 }
 
-URenderAsset* UAssetManager::FindOrLoadAsset(const FString& Path)
+UObject* UAssetManager::FindOrLoadAsset(const FString& Path)
 {
+	if (FSkeletonAsset::IsAssetPath(Path)) {
+		FString Error{};
+		USkeleton* Skeleton{ LoadSkeleton(Path, Error) };
+		if (!Skeleton) {
+			HTR_LOG(Error, "{}", Error);
+		}
+
+		return Skeleton;
+	}
+
+	if (FAnimSequenceAsset::IsAssetPath(Path)) {
+		FString Error{};
+		UAnimSequence* Animation{ LoadAnimation(Path, Error) };
+		if (!Animation) {
+			HTR_LOG(Error, "{}", Error);
+		}
+
+		return Animation;
+	}
+
 	// 렌더링 중에도 불리는 내장 에셋("DefaultMaterial" 등)은 키를 만들지 않고 바로 찾는다
 	if (URenderAsset** Found = AssetMap.Find(Path))
 	{
@@ -285,7 +339,7 @@ URenderAsset* UAssetManager::FindLoadedAsset(const FString& Path)
 EAssetType UAssetManager::GetUnloadedAssetType(const FString& Path)
 {
 	const FString Key = MakeLookupKey(Path);
-	if (Get().AssetMap.Contains(Key) || !Get().AssetPathMap.Contains(Key))
+	if (Get().AssetMap.Contains(Key) || Get().mAnimationMap.Contains(Key) || Get().mSkeletonMap.Contains(Key) || !Get().AssetPathMap.Contains(Key))
 	{
 		return EAssetType::None;
 	}
@@ -297,12 +351,118 @@ TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
 	TArray<FString> Paths;
 	for (const auto& [Key, Path] : Get().AssetPathMap)
 	{
-		if (GetAssetTypeFromPath(Key) == Type && !Get().AssetMap.Contains(Key))
+		if (GetAssetTypeFromPath(Key) == Type && !Get().AssetMap.Contains(Key) && !Get().mAnimationMap.Contains(Key) && !Get().mSkeletonMap.Contains(Key))
 		{
 			Paths.Add(Path);
 		}
 	}
 	return Paths;
+}
+
+TArray<FString> UAssetManager::GetAssetPaths(EAssetType Type) {
+	TArray<FString> Paths{};
+	for (const auto& Entry : Get().AssetPathMap) {
+		if (GetAssetTypeFromPath(Entry.first) == Type) {
+			Paths.Add(Entry.first);
+		}
+	}
+
+	std::sort(Paths.begin(), Paths.end());
+	return Paths;
+}
+
+UAnimSequence* UAssetManager::FindLoadedAnimation(const FString& Path) {
+	UAnimSequence** Found{ Get().mAnimationMap.Find(MakeLookupKey(Path)) };
+	return Found ? *Found : nullptr;
+}
+
+UAnimSequence* UAssetManager::LoadAnimation(const FString& Path, FString& OutError, bool Reload) {
+	OutError.clear();
+	if (!FAnimSequenceAsset::IsAssetPath(Path)) {
+		OutError = "Animation asset: expected .anim.bin path: " + Path;
+		return nullptr;
+	}
+
+	const FString Key{ MakeLookupKey(Path) };
+	UAssetManager& Manager{ Get() };
+	UAnimSequence** Cached{ Manager.mAnimationMap.Find(Key) };
+	if (Cached && !Reload) {
+		return *Cached;
+	}
+
+	FString Source{ FAssetUtils::ResolveAssetFilePath(Path) };
+	if (const FString* Registered{ Manager.AssetPathMap.Find(Key) }) {
+		Source = *Registered;
+	}
+
+	UAnimSequence* Sequence{ Cached ? *Cached : NewObject<UAnimSequence>() };
+	if (!FAnimSequenceAsset::Read(Source, *Sequence, OutError)) {
+		if (!Cached) {
+			delete Sequence;
+		}
+
+		return nullptr;
+	}
+
+	Sequence->SetPath(Key);
+	Manager.mAnimationMap.Add(Key, Sequence);
+	Manager.AssetPathMap.Add(Key, Source);
+	return Sequence;
+}
+
+USkeleton* UAssetManager::LoadSkeleton(const FString& Path, FString& OutError) {
+	OutError.clear();
+	if (!FSkeletonAsset::IsAssetPath(Path)) {
+		OutError = "Skeleton asset: expected .skeleton.bin path: " + Path;
+		return nullptr;
+	}
+
+	const FString Key{ MakeLookupKey(Path) };
+	UAssetManager& Manager{ Get() };
+	USkeleton** Cached{ Manager.mSkeletonMap.Find(Key) };
+	const FString* Registered{ Manager.AssetPathMap.Find(Key) };
+	if (Cached && Registered) {
+		return *Cached;
+	}
+
+	const FString Source{ Registered ? *Registered : FAssetUtils::ResolveAssetFilePath(Path) };
+	TArray<FBoneInfo> Bones{};
+	if (!FSkeletonAsset::Read(Source, Bones, OutError)) {
+		return nullptr;
+	}
+
+	if (Cached && !FSkeletonAsset::HaveSameBones((*Cached)->GetRefSkeleton(), Bones)) {
+		OutError = "Skeleton asset: file differs from the cached reference bones: " + Path;
+		return nullptr;
+	}
+
+	USkeleton* Skeleton{ Cached ? *Cached : NewObject<USkeleton>() };
+	if (!Cached) {
+		Skeleton->Initialize(Key, std::move(Bones));
+		Manager.mSkeletonMap.Add(Key, Skeleton);
+	}
+
+	Manager.AssetPathMap.Add(Key, Source);
+	return Skeleton;
+}
+
+USkeleton* UAssetManager::FindOrCreateSkeleton(const TArray<FBoneInfo>& Bones, FString& OutError) {
+	OutError.clear();
+	const FString Key{ FSkeletonAsset::GetGeneratedPath(Bones) };
+	UAssetManager& Manager{ Get() };
+	if (USkeleton** Cached{ Manager.mSkeletonMap.Find(Key) }) {
+		if (FSkeletonAsset::HaveSameBones((*Cached)->GetRefSkeleton(), Bones)) {
+			return *Cached;
+		}
+
+		OutError = "Skeleton asset: generated path collision: " + Key;
+		return nullptr;
+	}
+
+	USkeleton* Skeleton{ NewObject<USkeleton>() };
+	Skeleton->Initialize(Key, Bones);
+	Manager.mSkeletonMap.Add(Key, Skeleton);
+	return Skeleton;
 }
 
 void UAssetManager::CreateDefaultTextures() {
@@ -457,6 +617,8 @@ void UAssetManager::CreateEditorArrowMaterial() {
 void UAssetManager::Shutdown()
 {
 	Get().AssetMap.Empty();
+	Get().mAnimationMap.Empty();
+	Get().mSkeletonMap.Empty();
 	Get().SoundMap.Empty();
 }
 
@@ -580,8 +742,17 @@ URenderAsset* UAssetManager::LoadFbxMesh(const FString& Path, FString& OutError)
 	if (Data.Kind == EFbxMeshKind::Static) Asset = CreateStaticMesh(&Data.StaticMesh);
 	else
 	{
-		auto* Mesh = NewObject<USkeletalMesh>();
-		if (!Mesh->Build(std::move(Data.SkeletalMesh), OutError)) return nullptr;
+		USkeleton* Skeleton{ LoadSkeleton(Data.mSkeletonPath, OutError) };
+		if (!Skeleton) {
+			return nullptr;
+		}
+
+		USkeletalMesh* Mesh{ NewObject<USkeletalMesh>() };
+		if (!Mesh->Build(std::move(Data.SkeletalMesh), *Skeleton, OutError)) {
+			delete Mesh;
+			return nullptr;
+		}
+
 		Asset = Mesh;
 	}
 	if (!Asset) { OutError = "FBX binary: mesh resource creation failed: " + Path; return nullptr; }

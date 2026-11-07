@@ -1,9 +1,14 @@
 #include "EnginePCH.h"
 #include "FbxImporter.h"
 #include "Asset/AssetManager.h"
+#include "Asset/AssetUtils.h"
+#include "Asset/Animation/SkeletonAsset.h"
+#include "Animation/AnimSequence.h"
 
 #include <array>
+#include <cmath>
 #include <fstream>
+#include <limits>
 
 namespace
 {
@@ -464,6 +469,67 @@ namespace
 	}
 }
 
+namespace {
+	class FScopedFbxAnimationStack {
+	public:
+		FScopedFbxAnimationStack(FbxScene* Scene, FbxAnimStack* Stack);
+		~FScopedFbxAnimationStack();
+		FScopedFbxAnimationStack(const FScopedFbxAnimationStack&) = delete;
+		FScopedFbxAnimationStack& operator=(const FScopedFbxAnimationStack&) = delete;
+
+	private:
+		FbxScene* mScene{};
+		FbxAnimStack* mPreviousStack{};
+	};
+
+	FScopedFbxAnimationStack::FScopedFbxAnimationStack(FbxScene* Scene, FbxAnimStack* Stack)
+		: mScene{ Scene },
+		  mPreviousStack{ Scene->GetCurrentAnimationStack() } {
+		mScene->SetCurrentAnimationStack(Stack);
+	}
+
+	FScopedFbxAnimationStack::~FScopedFbxAnimationStack() {
+		mScene->SetCurrentAnimationStack(mPreviousStack);
+	}
+
+	bool ReadSampledTransform(const FbxAMatrix& Matrix, FVector& OutPosition, FQuat& OutRotation, FVector& OutScale) {
+		if (!IsFiniteMatrix(Matrix)) {
+			return false;
+		}
+
+		const FbxVector4 Position{ Matrix.GetT() };
+		const FbxQuaternion Rotation{ Matrix.GetQ() };
+		const FbxVector4 Scale{ Matrix.GetS() };
+		const double RotationLengthSquared{ Rotation[0] * Rotation[0] + Rotation[1] * Rotation[1] + Rotation[2] * Rotation[2] + Rotation[3] * Rotation[3] };
+		if (!std::isfinite(RotationLengthSquared) || RotationLengthSquared <= 0.0) {
+			return false;
+		}
+
+		const double InverseRotationLength{ 1.0 / std::sqrt(RotationLengthSquared) };
+		OutPosition = ToVector(Position);
+		OutRotation = FQuat{ static_cast<float>(Rotation[0] * InverseRotationLength), static_cast<float>(Rotation[1] * InverseRotationLength), static_cast<float>(Rotation[2] * InverseRotationLength), static_cast<float>(Rotation[3] * InverseRotationLength) };
+		OutScale = ToVector(Scale);
+		if (!std::isfinite(OutPosition.X) || !std::isfinite(OutPosition.Y) || !std::isfinite(OutPosition.Z) || !std::isfinite(OutScale.X) || !std::isfinite(OutScale.Y) || !std::isfinite(OutScale.Z) || OutScale.X == 0.0f || OutScale.Y == 0.0f || OutScale.Z == 0.0f) {
+			return false;
+		}
+
+		FbxAMatrix Reconstructed{};
+		Reconstructed.SetTQS(Position, Rotation, Scale);
+		for (int Row{}; Row < 4; ++Row) {
+			for (int Column{}; Column < 4; ++Column) {
+				const double Value{ Matrix.Get(Row, Column) };
+				const double ReconstructedValue{ Reconstructed.Get(Row, Column) };
+				const double Tolerance{ 1e-5 * std::max({ 1.0, std::abs(Value), std::abs(ReconstructedValue) }) };
+				if (!std::isfinite(ReconstructedValue) || std::abs(Value - ReconstructedValue) > Tolerance) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+}
+
 FFbxImporter::~FFbxImporter() {
 	Close();
 }
@@ -860,6 +926,200 @@ bool FFbxImporter::BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>
 	return true;
 }
 
+TArray<FString> FFbxImporter::GetAnimationNames() const {
+	TArray<FString> Names{};
+	if (!mScene) {
+		return Names;
+	}
+
+	for (int Index{}; Index < mScene->GetSrcObjectCount<FbxAnimStack>(); ++Index) {
+		Names.Add(mScene->GetSrcObject<FbxAnimStack>(Index)->GetName());
+	}
+
+	return Names;
+}
+
+bool FFbxImporter::BuildAnimSequence(int32 AnimationIndex, float RequestedSampleRate, UAnimSequence& OutSequence, TArray<FString>& OutWarnings, FString& OutError) const {
+	OutWarnings.Empty();
+	OutError.clear();
+	// 샘플링에 필요한 장면, 스켈레톤, 애니메이션 인덱스와 요청 샘플링률을 검증한다.
+	if (!mScene || mBones.IsEmpty()) {
+		OutError = "FBX animation: read skeleton data before building animation";
+		return false;
+	}
+
+	// FbxScene은 노드와 애니메이션 등의 객체를 담는 장면이며, mScene은 현재 읽어 둔 FBX 장면이다.
+	// GetSrcObjectCount<T>()는 장면에 연결된 객체 중 T 타입만 센다. 여기서는 애니메이션 스택 개수를 구한다.
+	if (AnimationIndex < 0 || AnimationIndex >= mScene->GetSrcObjectCount<FbxAnimStack>()) {
+		OutError = "FBX animation: animation index is out of range";
+		return false;
+	}
+
+	if (!std::isfinite(RequestedSampleRate) || RequestedSampleRate <= 0.0f) {
+		OutError = "FBX animation: sample rate must be finite and positive";
+		return false;
+	}
+
+	// FbxAnimStack은 Walk/Run 같은 애니메이션 하나에 해당하며, 그 애니메이션을 구성하는 레이어들을 담는다.
+	FbxAnimStack* Stack{ mScene->GetSrcObject<FbxAnimStack>(AnimationIndex) };
+	// FbxTimeSpan은 시작과 끝의 시간값을 묶은 구간이다.
+	// GetLocalTimeSpan()은 스택에 저장된 LocalStart/LocalStop을 읽으며, 실제 애니메이션 키의 범위를 조사하지는 않는다.
+	FbxTimeSpan Span{ Stack->GetLocalTimeSpan() };
+	// GetStart()/GetStop()은 구간의 양 끝을 반환하고, FBXSDK_TIME_ZERO는 SDK의 0초 시간값이다.
+	// 저장된 두 시간값이 모두 0이면 아래에서 실제 커브의 범위를 조사해 사용할 구간을 보완한다.
+	if (Span.GetStart() == FBXSDK_TIME_ZERO && Span.GetStop() == FBXSDK_TIME_ZERO) {
+		bool HasCurveRange{};
+		// FbxAnimLayer는 위치/회전 등의 시간에 따른 변화인 애니메이션 커브를 묶는 레이어다.
+		// GetMemberCount<FbxAnimLayer>()로 이 스택에 들어 있는 레이어 수를 구해 각 레이어를 조사한다.
+		for (int LayerIndex{}; LayerIndex < Stack->GetMemberCount<FbxAnimLayer>(); ++LayerIndex) {
+			FbxTimeSpan LayerSpan{};
+			// GetRootNode()는 장면 노드 계층의 최상위 노드를 반환한다.
+			// GetAnimationInterval은 지정한 스택/레이어에서 이 노드와 모든 자식의 커브 시작/끝을 LayerSpan에 기록한다.
+			// 애니메이션을 찾으면 true를 반환한다. 장면 루트에서 호출하므로 선택한 본 외의 노드도 조사 대상이다.
+			if (mScene->GetRootNode()->GetAnimationInterval(LayerSpan, Stack, LayerIndex)) {
+				if (HasCurveRange) {
+					// UnionAssignment는 두 시간 구간을 모두 포함하도록 Span의 시작/끝을 확장한다.
+					Span.UnionAssignment(LayerSpan);
+				} else {
+					Span = LayerSpan;
+					HasCurveRange = true;
+				}
+			}
+		}
+
+		if (HasCurveRange) {
+			OutWarnings.Add("FBX animation: empty stack time range replaced with animation curve range");
+		}
+	}
+
+	// FbxTime은 프레임 번호 자체가 아니라 SDK 내부의 64비트 시간 단위로 한 시점을 나타내는 값 타입이다.
+	const FbxTime Start{ Span.GetStart() };
+	const FbxTime Stop{ Span.GetStop() };
+	// FBXSDK_TIME_INFINITE/MINUS_INFINITE는 양/음의 무한대를 나타내는 특수 시간값이므로 유한한 클립 경계에서 제외한다.
+	if (Start == FBXSDK_TIME_INFINITE || Start == FBXSDK_TIME_MINUS_INFINITE || Stop == FBXSDK_TIME_INFINITE || Stop == FBXSDK_TIME_MINUS_INFINITE || Stop < Start) {
+		OutError = "FBX animation: invalid clip time range";
+		return false;
+	}
+
+	// GetSecondDouble()은 SDK 시간값을 초 단위 double로 바꾼다. 종료 시각에서 시작 시각을 빼서 재생 길이를 구한다.
+	const double StartSeconds{ Start.GetSecondDouble() };
+	const double Duration{ Stop.GetSecondDouble() - StartSeconds };
+	const double RequestedIntervals{ Duration * static_cast<double>(RequestedSampleRate) };
+	// 정수 경계의 오차를 완화한 뒤 구간 수를 올림하여 정한다. 길이가 0이면 구간 없이 한 번만 샘플링한다.
+	const double IntervalCount{ Duration > 0.0 ? std::max(1.0, std::ceil(RequestedIntervals - 1e-7)) : 0.0 };
+	if (!std::isfinite(IntervalCount) || IntervalCount > static_cast<double>(std::numeric_limits<int32>::max() - 1)) {
+		OutError = "FBX animation: sample count exceeds the supported range";
+		return false;
+	}
+
+	// 양 끝점을 포함하므로 샘플 수는 구간 수보다 하나 많으며, 원본 길이를 유지하도록 실제 샘플링률을 맞춘다.
+	const int32 NumSamples{ static_cast<int32>(IntervalCount) + 1 };
+	const float SampleRate{ Duration > 0.0 ? static_cast<float>(IntervalCount / Duration) : RequestedSampleRate };
+	if (!std::isfinite(SampleRate) || SampleRate <= 0.0f) {
+		OutError = "FBX animation: sample rate exceeds the supported range";
+		return false;
+	}
+
+	if (std::abs(static_cast<double>(SampleRate) - RequestedSampleRate) > 1e-5 * RequestedSampleRate) {
+		OutWarnings.Add("FBX animation: sample rate adjusted to " + std::to_string(SampleRate) + " to preserve clip duration and endpoints");
+	}
+
+	// FbxNode는 부모/자식 관계와 변환을 가진 장면 객체이며, 여기서는 각 본에 대응하는 노드의 포인터를 사용한다.
+	// 노드를 새로 만들지 않고 기존 포인터를 본 인덱스 순서로 배치하여 아래의 샘플링에서 조회한다.
+	TArray<FbxNode*> Nodes{};
+	Nodes.SetNum(mBones.Num());
+	for (const auto& Entry : mBoneIndices) {
+		Nodes[Entry.second] = Entry.first;
+	}
+
+	// 모든 본의 위치, 회전, 스케일 키를 같은 샘플 시각에 저장할 공간을 준비한다.
+	TArray<TArray<FVector>> PositionKeys{};
+	TArray<TArray<FQuat>> RotationKeys{};
+	TArray<TArray<FVector>> ScaleKeys{};
+	PositionKeys.SetNum(mBones.Num());
+	RotationKeys.SetNum(mBones.Num());
+	ScaleKeys.SetNum(mBones.Num());
+	for (int32 BoneIndex{}; BoneIndex < mBones.Num(); ++BoneIndex) {
+		PositionKeys[BoneIndex].Reserve(NumSamples);
+		RotationKeys[BoneIndex].Reserve(NumSamples);
+		ScaleKeys[BoneIndex].Reserve(NumSamples);
+	}
+
+	// FScopedFbxAnimationStack은 프로젝트의 보조 클래스로, SDK의 SetCurrentAnimationStack(Stack)을 호출한다.
+	// 이후 변환 평가가 사용할 애니메이션을 선택하고, 함수 종료 시 GetCurrentAnimationStack()으로 보관한 이전 스택을 복원한다.
+	FScopedFbxAnimationStack StackScope{ mScene, Stack };
+	// FbxAMatrix는 이동/회전/크기를 표현하는 double 기반 4x4 아핀 변환 행렬이다.
+	TArray<FbxAMatrix> Globals{};
+	Globals.SetNum(mBones.Num());
+	for (int32 SampleIndex{}; SampleIndex < NumSamples; ++SampleIndex) {
+		// 클립 구간을 균등하게 나누되 마지막 샘플은 원본 종료 시각을 직접 사용하여 끝점을 보존한다.
+		FbxTime Time{ Start };
+		if (SampleIndex == NumSamples - 1) {
+			Time = Stop;
+		} else if (SampleIndex > 0) {
+			// SetSecondDouble()은 초 단위 값을 SDK 시간으로 변환해 저장한다. 클립 내부 경과 시간에 원본 시작 시각을 더한다.
+			Time.SetSecondDouble(StartSeconds + Duration * static_cast<double>(SampleIndex) / IntervalCount);
+		}
+
+		for (int32 BoneIndex{}; BoneIndex < mBones.Num(); ++BoneIndex) {
+			// EvaluateGlobalTransform(Time)은 현재 활성 스택의 애니메이션을 이 시각에 평가해 본의 장면 기준 변환을 구한다.
+			// 부모 변환과 피벗 등의 FBX 변환 규칙을 반영하며, SDK가 반환한 행렬 참조의 값을 Globals에 복사해 보관한다.
+			// Time을 생략하면 기본 특수값인 FBXSDK_TIME_INFINITE가 사용되어 애니메이션 커브를 평가하지 않는다.
+			Globals[BoneIndex] = Nodes[BoneIndex]->EvaluateGlobalTransform(Time);
+			// Determinant()는 행렬식을 반환한다. 0이면 역행렬이 없으므로 아래에서 잘못된 변환으로 처리한다.
+			const double Determinant{ Globals[BoneIndex].Determinant() };
+			if (!IsFiniteMatrix(Globals[BoneIndex]) || !std::isfinite(Determinant) || Determinant == 0.0) {
+				OutError = "FBX animation: invalid global transform: " + mBones[BoneIndex].Name + " at sample " + std::to_string(SampleIndex);
+				return false;
+			}
+
+			// Inverse()는 역행렬을 반환한다. SDK의 행렬 곱 순서에서 부모 Global의 역행렬 * 자식 Global은 부모 기준 Local이다.
+			// 부모가 먼저 저장된 본 순서이므로 같은 시각에 계산한 부모 Global을 바로 사용할 수 있다.
+			// 루트는 글로벌 변환을 그대로 사용하여 스켈레톤 계층 밖 조상의 변환도 반영한다.
+			const int32 ParentIndex{ mBones[BoneIndex].ParentIndex };
+			const FbxAMatrix Local{ ParentIndex < 0 ? Globals[BoneIndex] : Globals[ParentIndex].Inverse() * Globals[BoneIndex] };
+			FVector Position{};
+			FQuat Rotation{};
+			FVector Scale{};
+			// ReadSampledTransform은 프로젝트 함수이며, 내부에서 SDK 행렬의 GetT()/GetQ()/GetS()로 이동/쿼터니언 회전/크기를 추출한다.
+			// 추출한 값을 엔진 타입으로 옮기고 회전을 정규화하며, 이 세 성분(TRS)으로 재현할 수 없는 변환은 거부한다.
+			if (!ReadSampledTransform(Local, Position, Rotation, Scale)) {
+				OutError = "FBX animation: invalid or unsupported TRS transform: " + mBones[BoneIndex].Name + " at sample " + std::to_string(SampleIndex);
+				return false;
+			}
+
+			// q와 -q는 같은 회전이므로 이전 키와 내적이 음수이면 부호를 바꿔 회전 키의 연속성을 유지한다.
+			if (SampleIndex > 0) {
+				const FQuat& Previous{ RotationKeys[BoneIndex].Last() };
+				const float Dot{ Previous.X * Rotation.X + Previous.Y * Rotation.Y + Previous.Z * Rotation.Z + Previous.W * Rotation.W };
+				if (Dot < 0.0f) {
+					Rotation = FQuat{ -Rotation.X, -Rotation.Y, -Rotation.Z, -Rotation.W };
+				}
+			}
+
+			PositionKeys[BoneIndex].Add(Position);
+			RotationKeys[BoneIndex].Add(Rotation);
+			ScaleKeys[BoneIndex].Add(Scale);
+		}
+	}
+
+	// 본별로 모은 키 배열의 소유권을 트랙에 옮겨 런타임에서 사용할 애니메이션 데이터를 구성한다.
+	TArray<FAnimBoneTrack> Tracks{};
+	Tracks.Reserve(mBones.Num());
+	for (int32 BoneIndex{}; BoneIndex < mBones.Num(); ++BoneIndex) {
+		Tracks.Add(FAnimBoneTrack{ BoneIndex, std::move(PositionKeys[BoneIndex]), std::move(RotationKeys[BoneIndex]), std::move(ScaleKeys[BoneIndex]) });
+	}
+
+	// 모든 샘플 생성에 성공한 뒤에만 출력 시퀀스를 갱신한다.
+	USkeleton* Skeleton{ UAssetManager::FindOrCreateSkeleton(mBones, OutError) };
+	if (!Skeleton) {
+		return false;
+	}
+
+	OutSequence.Build(SampleRate, NumSamples, Skeleton, std::move(Tracks));
+	return true;
+}
+
 FbxScene* FFbxImporter::GetScene() const {
 	return mScene;
 }
@@ -879,8 +1139,9 @@ void FFbxImporter::PrepareScene() {
 	// 이후 값을 옮길 때 Y나 Quaternion을 다시 반전하지 않는다.
 	const FbxAxisSystem Target{ FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded };
 	if (mScene->GetGlobalSettings().GetAxisSystem() != Target) Target.DeepConvertScene(mScene);
-	// 단위도 설정값만 바꾸는 것이 아니라 Scene 데이터를 cm 기준으로 실제 변환한다.
-	if (mScene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::cm) FbxSystemUnit::cm.ConvertScene(mScene);
+	if (mScene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::m) {
+		FbxSystemUnit::m.ConvertScene(mScene);
+	}
 	// 축/단위 변환 전 자식 Node의 Global 캐시가 남지 않도록 비운다. UE ConvertScene 경로와 같은 처리다.
 	mScene->GetAnimationEvaluator()->Reset();
 }
@@ -1028,6 +1289,12 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
 				Paths.Add(OutputPath);
 			}
+			if (Complete && Previous.Kind == EFbxMeshKind::Skeletal) {
+				TArray<FBoneInfo> Bones{};
+				const FString SkeletonFile{ FAssetUtils::ResolveAssetFilePath(Previous.mSkeletonPath) };
+				Complete = FSkeletonAsset::Read(SkeletonFile, Bones, ReadError) && FSkeletonAsset::HaveSameBones(Previous.SkeletalMesh.Bones, Bones);
+			}
+
 			if (Complete)
 			{
 				// TODO: 현재는 FBX 원본만 비교하므로 외부 Texture만 변경되면 Import를 건너뛰어 변경 내용이 반영되지 않는다.
@@ -1061,6 +1328,22 @@ bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbx
 			Skeletal.Kind = EFbxMeshKind::Skeletal;
 			if (!Importer.BuildSkeletalMesh(Skeletal.SkeletalMesh, Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
 			OutResult.Warnings.Append(Warnings);
+			Skeletal.mSkeletonPath = FSkeletonAsset::GetGeneratedPath(Skeletal.SkeletalMesh.Bones);
+			const FString SkeletonFile{ FAssetUtils::ResolveAssetFilePath(Skeletal.mSkeletonPath) };
+			const auto SkeletonTarget{ PathOf(SkeletonFile) };
+			if (std::filesystem::exists(SkeletonTarget)) {
+				if (!FSkeletonAsset::Write(SkeletonFile, Skeletal.SkeletalMesh.Bones, OutError)) {
+					return false;
+				}
+			} else {
+				const auto SkeletonTemp{ Staged.Folder / "skeleton.tmp" };
+				if (!FSkeletonAsset::Write(Utf8Path(SkeletonTemp), Skeletal.SkeletalMesh.Bones, OutError)) {
+					return false;
+				}
+				std::filesystem::create_directories(SkeletonTarget.parent_path());
+				Staged.Files.Add({ SkeletonTemp, SkeletonTarget });
+			}
+
 			Outputs.Add(std::move(Skeletal));
 		}
 		FFbxBakedMesh Static;

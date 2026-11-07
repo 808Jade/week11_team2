@@ -11,6 +11,8 @@
 #include <vector>
 #include "SkeletalMesh.generated.h"
 
+class USkeleton;
+
 struct FSkeletalMeshLODRenderData
 {
 	TArray<FVertex> BindVertices;
@@ -36,8 +38,9 @@ class USkeletalMesh : public URenderAsset
 {
 	GENERATED_BODY()
 public:
-	bool Build(FSkeletalMeshData&& ImportData, FString& OutError);
+	bool Build(FSkeletalMeshData&& ImportData, USkeleton& Skeleton, FString& OutError);
 
+	USkeleton* GetSkeleton() const;
 	const TArray<FBoneInfo>& GetRefSkeleton() const { return RefSkeleton; }
 	int32 GetNumBones() const { return RefSkeleton.Num(); }
 	int32 FindBoneIndex(const FString& Name) const;
@@ -54,6 +57,7 @@ private:
 	};
 
 	TArray<FBoneInfo> RefSkeleton;
+	USkeleton* mSkeleton{};
 	TArray<FSkeletalMaterialSlot> MaterialSlots;
 	TArray<UMaterial*> Materials;
 	FSkeletalMeshRenderData RenderData;

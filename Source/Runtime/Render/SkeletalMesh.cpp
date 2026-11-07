@@ -31,8 +31,7 @@ namespace
 	}
 }
 
-bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
-{
+bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, USkeleton& Skeleton, FString& OutError) {
 	// CreateStaticMesh와 같은 기본값: 슬롯/섹션이 없으면 하나씩 채운다
 	if (ImportData.MaterialSlots.IsEmpty())
 	{
@@ -102,6 +101,7 @@ bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
 		sizeof(FGpuSkinVertex) * static_cast<uint32>(GpuSkinVertices.Num()), sizeof(FGpuSkinVertex));
 	LOD.BoneBounds = BuildBoneBounds(LOD, ImportData.Bones.Num());
 
+	mSkeleton = &Skeleton;
 	RefSkeleton = std::move(ImportData.Bones);
 	MaterialSlots = std::move(ImportData.MaterialSlots);
 	Materials = std::move(NewMaterials);
@@ -109,6 +109,10 @@ bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
 	RenderData.LODRenderData.Add(std::move(LOD));
 	RenderStates.Reset();
 	return true;
+}
+
+USkeleton* USkeletalMesh::GetSkeleton() const {
+	return mSkeleton;
 }
 
 int32 USkeletalMesh::FindBoneIndex(const FString& Name) const

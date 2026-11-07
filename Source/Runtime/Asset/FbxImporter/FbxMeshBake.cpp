@@ -8,8 +8,8 @@
 namespace
 {
 	constexpr uint32 Magic = 0x58424648; // HFBX, little endian
-	// 장면 전체의 축 변환으로 Bone Local 축과 Bind 행렬 표현이 달라져 기존 출력은 다시 굽는다.
-	constexpr uint32 Version = 4;
+	constexpr uint32 StaticVersion{ 5 };
+	constexpr uint32 SkeletalVersion{ 6 };
 	static_assert(sizeof(FVertex) == 64 && sizeof(FSkinWeight) == 20);
 	// 기존 Binary의 Section 배열을 그대로 읽도록 두 타입의 바이트 배치를 고정한다.
 	static_assert(std::is_trivially_copyable_v<FSkeletalMeshSection> && std::is_standard_layout_v<FSkeletalMeshSection>);
@@ -99,8 +99,7 @@ namespace
 		return true;
 	}
 
-	bool ReadPayload(FReader& In, FFbxBakedMesh& D)
-	{
+	bool ReadPayload(FReader& In, FFbxBakedMesh& D) {
 		auto& Vertices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Vertices : D.SkeletalMesh.BindVertices;
 		auto& Indices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Indices : D.SkeletalMesh.Indices;
 		auto& Bounds = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.AABB : D.SkeletalMesh.BindAABB;
@@ -121,6 +120,9 @@ namespace
 			D.SkeletalMesh.Bones.SetNum(static_cast<int32>(N));
 			for (auto& B : D.SkeletalMesh.Bones)
 				if (!In.String(B.Name) || !In.Pod(B.ParentIndex) || !In.Pod(B.LocalBindPose.Location) || !In.Pod(B.LocalBindPose.Rotation) || !In.Pod(B.LocalBindPose.Scale) || !In.Pod(B.InverseBindPose.M)) return false;
+			if (!In.String(D.mSkeletonPath) || D.mSkeletonPath.empty()) {
+				return false;
+			}
 			D.SkeletalMesh.SourcePath = D.Source.Path;
 		}
 		return In.Remaining == 0;
@@ -166,21 +168,25 @@ bool FFbxMeshBake::IsBakedPath(const FString& Path)
 	return End == ".fbx.bin";
 }
 
-bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError)
-{
+bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& OutError) {
 	OutData = {};
 	OutError.clear();
-	FReader In(Path);
-	FFbxBakedMesh D;
-	uint32 M = 0, V = 0;
-	if (!In.Pod(M) || M != Magic || !In.Pod(V)) { OutError = "FBX binary: invalid header: " + Path; return false; }
-	if (V != Version)
-	{
-		OutError = "FBX binary: unsupported version " + std::to_string(V) + " (expected " + std::to_string(Version) + "); reimport the source FBX: " + Path;
+	FReader In{ Path };
+	FFbxBakedMesh D{};
+	uint32 FileMagic{};
+	uint32 FileVersion{};
+	if (!In.Pod(FileMagic) || FileMagic != Magic || !In.Pod(FileVersion) || !In.Pod(D.Kind) || (D.Kind != EFbxMeshKind::Static && D.Kind != EFbxMeshKind::Skeletal)) {
+		OutError = "FBX binary: invalid header: " + Path;
 		return false;
 	}
-	if (!In.Pod(D.Kind) || (D.Kind != EFbxMeshKind::Static && D.Kind != EFbxMeshKind::Skeletal)
-		|| !In.Pod(D.Source.Mode) || (D.Source.Mode != EFbxImportMode::Static && D.Source.Mode != EFbxImportMode::Skeletal)
+
+	const uint32 CurrentVersion{ D.Kind == EFbxMeshKind::Skeletal ? SkeletalVersion : StaticVersion };
+	if (FileVersion != CurrentVersion) {
+		OutError = "FBX binary: unsupported version " + std::to_string(FileVersion) + "; reimport the source FBX: " + Path;
+		return false;
+	}
+
+	if (!In.Pod(D.Source.Mode) || (D.Source.Mode != EFbxImportMode::Static && D.Source.Mode != EFbxImportMode::Skeletal)
 		|| !In.Pod(D.Source.Outputs) || D.Source.Outputs == 0 || D.Source.Outputs > 3 || !(D.Source.Outputs & static_cast<uint32>(D.Kind))
 		|| (D.Source.Mode == EFbxImportMode::Static && D.Source.Outputs != static_cast<uint32>(EFbxMeshKind::Static))
 		|| !In.String(D.Source.Path) || !In.Pod(D.Source.ModifiedTime) || !In.Pod(D.Source.Size))
@@ -197,8 +203,13 @@ bool FFbxMeshBake::Read(const FString& Path, FFbxBakedMesh& OutData, FString& Ou
 bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& OutError)
 {
 	OutError.clear();
+	if (D.Kind == EFbxMeshKind::Skeletal && D.mSkeletonPath.empty()) {
+		OutError = "FBX binary: skeletal mesh has no skeleton asset path";
+		return false;
+	}
+
 	FWriter Out(Path);
-	Out.Pod(Magic); Out.Pod(Version); Out.Pod(D.Kind); Out.Pod(D.Source.Mode); Out.Pod(D.Source.Outputs);
+	Out.Pod(Magic); Out.Pod(D.Kind == EFbxMeshKind::Skeletal ? SkeletalVersion : StaticVersion); Out.Pod(D.Kind); Out.Pod(D.Source.Mode); Out.Pod(D.Source.Outputs);
 	Out.String(D.Source.Path); Out.Pod(D.Source.ModifiedTime); Out.Pod(D.Source.Size);
 	const auto& Vertices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Vertices : D.SkeletalMesh.BindVertices;
 	const auto& Indices = D.Kind == EFbxMeshKind::Static ? D.StaticMesh.Indices : D.SkeletalMesh.Indices;
@@ -219,6 +230,7 @@ bool FFbxMeshBake::Write(const FString& Path, const FFbxBakedMesh& D, FString& O
 		{
 			Out.String(B.Name); Out.Pod(B.ParentIndex); Out.Pod(B.LocalBindPose.Location); Out.Pod(B.LocalBindPose.Rotation); Out.Pod(B.LocalBindPose.Scale); Out.Pod(B.InverseBindPose.M);
 		}
+		Out.String(D.mSkeletonPath);
 	}
 	Out.Stream.flush();
 	Out.Stream.close();
