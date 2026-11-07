@@ -87,6 +87,10 @@ public:
 	void SetGizmoMode(EGizmoMode Mode);
 	void SetGizmoSpace(EGizmoSpace Space);
 
+	// 프리뷰할 애니메이션 클립을 선택합니다. nullptr이면 바인드 포즈로 돌아갑니다.
+	void SetAnimationClip(class UAnimationClip* Clip);
+	void SetAnimationPlaying(bool bPlaying);
+	void SetAnimationTime(float Time);
 
 	////////////////////////////////////////////////////////////
 	// Getter
@@ -105,6 +109,12 @@ public:
 	int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
 	bool IsBoneVisualizerVisible() const { return bShowBoneVisualizer; }
 	const FVector4& GetBoneVisualizerColor() const { return BoneVisualizerColor; }
+
+	class UAnimationClip* GetAnimationClip() const { return AnimationClip; }
+	bool IsAnimationPlaying() const { return bAnimationPlaying; }
+	float GetAnimationTime() const { return AnimationTime; }
+	// 선택한 클립의 트랙 중 이 메시의 본과 이름이 일치하는 개수입니다.
+	int32 GetNumMatchedAnimationTracks() const;
 
 protected:
 	// 이 에디터에 연결된 탭을 생성합니다.
@@ -131,6 +141,14 @@ private:
 	int32 PickBone(const FVector2& MousePosition) const;
 	void ApplyBoneGizmoTransform();
 	FQuat GetBoneWorldRotation(int32 BoneIndex) const;
+	// 재생 시간을 진행하고 변경된 포즈를 프리뷰 컴포넌트에 적용합니다.
+	void UpdateAnimation(float DeltaTime);
+
+	class UAnimationClip* AnimationClip = nullptr;
+	TArray<int32> AnimationTrackToBone;
+	float AnimationTime = 0.0f;
+	bool bAnimationPlaying = false;
+	bool bAnimationPoseDirty = false;
 
 	class USkeletalMesh* Mesh = nullptr;
 	class USkeletalMeshComponent* MeshComponent = nullptr;

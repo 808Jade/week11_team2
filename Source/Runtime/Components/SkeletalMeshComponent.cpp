@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshComponent.h"
 #include "Serialization/MathSerialization.h"
+#include "Animation/AnimationClipData.h"
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
 {
@@ -46,6 +47,36 @@ void USkeletalMeshComponent::ResetPose()
 void USkeletalMeshComponent::RefreshBoneTransformsNow()
 {
     UpdateBoneTransformsNow();
+}
+
+TArray<int32> USkeletalMeshComponent::MapAnimationTracks(const FAnimationClipData& Clip) const
+{
+    TArray<int32> TrackToBone;
+    for (const FBoneAnimationTrack& Track : Clip.Tracks)
+        TrackToBone.Add(FindBoneIndex(Track.BoneName));
+    return TrackToBone;
+}
+
+void USkeletalMeshComponent::ApplyAnimationPose(const FAnimationClipData& Clip, const TArray<int32>& TrackToBone, float Time)
+{
+    if (Clip.NumFrames < 1 || TrackToBone.Num() != Clip.Tracks.Num()) return;
+
+    const float FrameTime = FMath::Clamp(Time * Clip.SampleRate, 0.0f, static_cast<float>(Clip.NumFrames - 1));
+    const int32 Frame0 = static_cast<int32>(FrameTime);
+    const int32 Frame1 = FMath::Min(Frame0 + 1, Clip.NumFrames - 1);
+    const float Alpha = FrameTime - static_cast<float>(Frame0);
+
+    for (int32 I = 0; I < Clip.Tracks.Num(); ++I)
+    {
+        if (TrackToBone[I] < 0) continue;
+
+        const FBoneAnimationTrack& Track = Clip.Tracks[I];
+        FTransform Local;
+        Local.Location = Track.Positions[Frame0] + (Track.Positions[Frame1] - Track.Positions[Frame0]) * Alpha;
+        Local.Scale = Track.Scales[Frame0] + (Track.Scales[Frame1] - Track.Scales[Frame0]) * Alpha;
+        Local.Rotation = FMath::Slerp(Track.Rotations[Frame0], Track.Rotations[Frame1], Alpha).ToFRotator();
+        SetBoneLocalTransform(TrackToBone[I], Local);
+    }
 }
 
 void USkeletalMeshComponent::RefreshBoneTransforms()

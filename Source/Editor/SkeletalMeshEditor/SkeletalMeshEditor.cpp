@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "SkeletalMeshEditorTab.h"
+#include "Animation/AnimationClip.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Editor/HitoriEd/EditorEngine.h"
 #include "Engine/World.h"
@@ -206,6 +207,8 @@ void FSkeletalMeshEditor::Tick(float DeltaTime)
 		ViewportClient->SetViewRotation(Camera.Rotation);
 	}
 
+	UpdateAnimation(DeltaTime);
+
 	// 부모 Tick 호출 (PreviewScene Tick)
 	FAssetEditor::Tick(DeltaTime);
 
@@ -221,6 +224,95 @@ void FSkeletalMeshEditor::Tick(float DeltaTime)
 
 	// 드래그 중에는 Gizmo가 포즈를 갱신하므로 역방향 동기화를 멈춥니다.
 	SyncBoneGizmo();
+}
+
+void FSkeletalMeshEditor::SetAnimationClip(UAnimationClip* Clip)
+{
+	if (!MeshComponent)
+	{
+		return;
+	}
+
+	BoneGizmo.EndDrag();
+	// 새 클립에 트랙이 없는 본이 이전 포즈로 남지 않도록 바인드 포즈에서 시작합니다.
+	MeshComponent->ResetPose();
+
+	AnimationClip = Clip;
+	AnimationTime = 0.0f;
+	bAnimationPoseDirty = Clip != nullptr;
+	if (Clip)
+	{
+		AnimationTrackToBone = MeshComponent->MapAnimationTracks(Clip->GetData());
+	}
+	else
+	{
+		AnimationTrackToBone.Empty();
+		bAnimationPlaying = false;
+	}
+}
+
+void FSkeletalMeshEditor::SetAnimationPlaying(bool bPlaying)
+{
+	if (bPlaying)
+	{
+		BoneGizmo.EndDrag();
+	}
+	bAnimationPlaying = bPlaying && AnimationClip;
+}
+
+void FSkeletalMeshEditor::SetAnimationTime(float Time)
+{
+	if (!AnimationClip)
+	{
+		return;
+	}
+
+	BoneGizmo.EndDrag();
+	AnimationTime = FMath::Clamp(Time, 0.0f, AnimationClip->GetData().Duration);
+	bAnimationPoseDirty = true;
+}
+
+int32 FSkeletalMeshEditor::GetNumMatchedAnimationTracks() const
+{
+	int32 NumMatched = 0;
+	for (const int32 Bone : AnimationTrackToBone)
+	{
+		if (Bone >= 0)
+		{
+			++NumMatched;
+		}
+	}
+	return NumMatched;
+}
+
+void FSkeletalMeshEditor::UpdateAnimation(float DeltaTime)
+{
+	if (!AnimationClip || !MeshComponent)
+	{
+		return;
+	}
+
+	const FAnimationClipData& Clip = AnimationClip->GetData();
+	if (bAnimationPlaying)
+	{
+		// 본을 직접 편집하기 시작하면 편집 결과를 덮어쓰지 않도록 재생을 멈춥니다.
+		if (BoneGizmo.IsUsing())
+		{
+			bAnimationPlaying = false;
+		}
+		else if (Clip.Duration > 0.0f)
+		{
+			AnimationTime = std::fmod(AnimationTime + DeltaTime, Clip.Duration);
+			bAnimationPoseDirty = true;
+		}
+	}
+
+	if (bAnimationPoseDirty)
+	{
+		bAnimationPoseDirty = false;
+		MeshComponent->ApplyAnimationPose(Clip, AnimationTrackToBone, AnimationTime);
+		MeshComponent->RefreshBoneTransformsNow();
+	}
 }
 
 void FSkeletalMeshEditor::OnRenderPreview()
@@ -592,6 +684,8 @@ void FSkeletalMeshEditor::SetSelectedBoneLocalTransform(const FTransform& Transf
 
 	// 원본 애셋 대신 프리뷰 컴포넌트의 포즈만 수정합니다. 본 갱신은 다음 World Tick에서 수행합니다.
 	BoneGizmo.EndDrag();
+	bAnimationPlaying = false;
+	bAnimationPoseDirty = false;
 	MeshComponent->SetBoneLocalTransform(SelectedBoneIndex, Transform);
 }
 
@@ -603,6 +697,9 @@ void FSkeletalMeshEditor::ResetPose()
 	}
 
 	BoneGizmo.EndDrag();
+	bAnimationPlaying = false;
+	bAnimationPoseDirty = false;
+	AnimationTime = 0.0f;
 	MeshComponent->ResetPose();
 }
 
@@ -624,6 +721,8 @@ void FSkeletalMeshEditor::ResetBone(int32 BoneIndex)
 	}
 
 	BoneGizmo.EndDrag();
+	bAnimationPlaying = false;
+	bAnimationPoseDirty = false;
 	FTransform Transform = Mesh->GetRefSkeleton()[BoneIndex].LocalBindPose;
 	MeshComponent->SetBoneLocalTransform(BoneIndex, Transform);
 }

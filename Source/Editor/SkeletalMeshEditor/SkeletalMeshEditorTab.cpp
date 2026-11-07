@@ -5,6 +5,7 @@
 #include "Panels/SkeletalMeshInfoPanel.h"
 #include "Panels/SkeletalMeshDetailsPanel.h"
 #include "Panels/SkeletalMeshSettingsPanel.h"
+#include "Panels/SkeletalMeshAnimationPanel.h"
 #include "Panels/BoneHierarchyPanel.h"
 
 FSkeletalMeshEditorTab::FSkeletalMeshEditorTab(FSkeletalMeshEditor& InEditor)
@@ -21,6 +22,7 @@ FSkeletalMeshEditorTab::FSkeletalMeshEditorTab(FSkeletalMeshEditor& InEditor)
 	Panels.Add(MakeUnique<FBoneHierarchyPanel>(InEditor));
 	Panels.Add(MakeUnique<FSkeletalMeshDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FSkeletalMeshSettingsPanel>(InEditor));
+	Panels.Add(MakeUnique<FSkeletalMeshAnimationPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -64,12 +66,15 @@ void FSkeletalMeshEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImV
 	const ImGuiID HierarchyId = ImGui::DockBuilderSplitNode(RemainingId, ImGuiDir_Up, 3.0f / 8.0f, nullptr, &RemainingId);
 	ImGuiID DetailsId = RemainingId;
 	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.40f, nullptr, &DetailsId);
+	// 재생 컨트롤은 타임라인처럼 뷰포트 아래에 둡니다.
+	const ImGuiID AnimationId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Down, 0.18f, nullptr, &ViewportId);
 
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
 	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), InfoId);
 	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), HierarchyId);
 	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), DetailsId);
 	ImGui::DockBuilderDockWindow(Panels[4]->GetWindowName(), SettingsId);
+	ImGui::DockBuilderDockWindow(Panels[5]->GetWindowName(), AnimationId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
