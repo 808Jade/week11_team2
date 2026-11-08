@@ -373,7 +373,7 @@ namespace
 		for (TObjectIterator<USkeletalMesh> Itr; Itr; ++Itr)
 		{
 			const FString Path = Itr->GetPath();
-			if (Path.empty()) continue;
+			if (Path.empty() || UAssetManager::FindLoadedAsset(Path) != *Itr) continue;
 			const bool bSelected = *Itr == Current;
 			ImGui::PushID(*Itr);
 			if (ImGui::Selectable(GetAssetDisplayName(Path).c_str(), bSelected)) Component->SetSkeletalMesh(*Itr);
@@ -422,6 +422,7 @@ namespace
 
 				FString ItemPath = Itr->GetPath();
 				FString ItemFileName = GetAssetDisplayName(ItemPath);
+				if (!ItemPath.empty() && UAssetManager::FindLoadedAsset(ItemPath) != *Itr) continue;
 
 				ImGui::PushID(*Itr);
 
@@ -557,7 +558,8 @@ namespace
 			for (TObjectIterator<UTexture2D> Iterator{}; Iterator; ++Iterator)
 			{
 				UTexture2D* ItemTexture{ *Iterator };
-				if (!ItemTexture->GetResource() || ItemTexture->GetPath().empty())
+				if (!ItemTexture->GetResource() || ItemTexture->GetPath().empty() ||
+					UAssetManager::FindLoadedAsset(ItemTexture->GetPath()) != ItemTexture)
 				{
 					continue;
 				}

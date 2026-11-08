@@ -4,7 +4,8 @@
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
-#include "Asset/FbxImporter/FbxMeshBake.h"
+#include "Asset/FbxImporter/FbxAssetBake.h"
+#include "Asset/FbxImporter/FbxAssetLoader.h"
 #include "Render/Mesh.h"
 #include "Render/SkeletalMesh.h"
 #include <filesystem>
@@ -81,10 +82,10 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
 	}
 
 	// 베이크된 FBX는 파일에 기록된 실제 메시 타입으로 로드합니다.
-	if (!Asset && FFbxMeshBake::IsBakedPath(FilePath))
+	if (!Asset && FFbxAssetBake::IsBakedPath(FilePath))
 	{
 		FString Error;
-		Asset = UAssetManager::LoadFbxMesh(FilePath, Error);
+		Asset = FFbxAssetLoader::LoadAsset(FilePath, Error);
 		if (!Asset)
 		{
 			HTR_LOG(Warning, "Failed to load mesh preview: {} ({})", AssetPath, Error);

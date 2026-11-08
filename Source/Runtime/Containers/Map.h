@@ -97,6 +97,11 @@ public:
 		mMap.reserve(static_cast<size_t>(Capacity));
 	}
 
+	void Swap(TMap& Other) noexcept(noexcept(mMap.swap(Other.mMap)))
+	{
+		mMap.swap(Other.mMap);
+	}
+
 	bool RemoveAndCopyValue(const KeyType& Key, ValueType& OutRemovedValue)
 	{
 		ValueType* Value = Find(Key);

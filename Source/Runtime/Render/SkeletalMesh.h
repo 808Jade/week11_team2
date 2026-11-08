@@ -9,7 +9,10 @@
 #include "Material.h"
 #include <unordered_map>
 #include <vector>
+#include <array>
 #include "SkeletalMesh.generated.h"
+
+class USkeleton;
 
 struct FSkeletalMeshLODRenderData
 {
@@ -22,13 +25,14 @@ struct FSkeletalMeshLODRenderData
 
 	// GPU 스키닝 입력. 포즈와 무관하므로 에셋이 갖고 인스턴스끼리 공유한다
 	TUniquePtr<FVertexBuffer> GpuSkinVertexBuffer;
-	// 본마다 가중치가 있는 정점의 바인드 바운드. 정점이 없는 본은 Min > Max
-	TArray<FBox> BoneBounds;
 };
 
 struct FSkeletalMeshRenderData
 {
 	TArray<FSkeletalMeshLODRenderData> LODRenderData;
+	// All LODs contribute to pose bounds, including meshes viewed in multiple views.
+	TArray<FBox> BoneBounds;
+	FBox BindBounds;
 };
 
 UCLASS()
@@ -37,6 +41,10 @@ class USkeletalMesh : public URenderAsset
 	GENERATED_BODY()
 public:
 	bool Build(FSkeletalMeshData&& ImportData, FString& OutError);
+	bool Build(TArray<FSkeletalMeshData>&& LODs, TArray<UMaterial*>&& InMaterials,
+		const std::array<float, 3>& InScreenThresholds, FString& OutError);
+	USkeleton* GetSkeleton() const { return Skeleton; }
+	void SetSkeleton(USkeleton* InSkeleton) { Skeleton = InSkeleton; }
 
 	const TArray<FBoneInfo>& GetRefSkeleton() const { return RefSkeleton; }
 	int32 GetNumBones() const { return RefSkeleton.Num(); }
@@ -54,6 +62,8 @@ private:
 	};
 
 	TArray<FBoneInfo> RefSkeleton;
+	USkeleton* Skeleton = nullptr;
+	std::array<float, 3> ScreenThresholds{ .30f, .10f, .03f };
 	TArray<FSkeletalMaterialSlot> MaterialSlots;
 	TArray<UMaterial*> Materials;
 	FSkeletalMeshRenderData RenderData;

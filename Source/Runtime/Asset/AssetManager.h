@@ -16,12 +16,16 @@ enum class EAssetType
 	Texture,
 	Font,
 	StaticMesh,
-	SkeletalMesh
+	SkeletalMesh,
+	Skeleton,
+	Material,
+	AnimSequence
 };
 
 class UStaticMesh;
 class USoundWave;
 struct FSkeletalMaterialSlot;
+struct FImageData;
 
 namespace fs = std::filesystem;
 
@@ -73,15 +77,17 @@ public:
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
 
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
+	TMap<FString, URenderAsset*> PrepareAssetRegistration(const TMap<FString, URenderAsset*>& Replacements) const;
+	void CommitAssetRegistration(TMap<FString, URenderAsset*>& Prepared) noexcept;
 
 	//UStaticMesh* GetMesh(FString InName);
 	//UStaticMesh* GetMesh(EPrimitiveType Type); // 오버로드(수정 중)
 
 	UTexture2D* LoadTexture(const FString& InPath, bool bGenerateMips = true);
+	static UTexture2D* CreateTexture(const FImageData& Data, bool bGenerateMips = true);
 	UFont* LoadFontAtlas(const FString& JsonPath, const FString& AtlasTexturePath);
 	USoundWave* LoadSound(const FString& Path);
 	static UStaticMesh* LoadObjStaticMesh(const FString& Path);
-	static URenderAsset* LoadFbxMesh(const FString& Path, FString& OutError);
 
 	FLODGenerateResult GenerateStaticMeshLODs(UStaticMesh& Mesh,const FLODGenerateRequest& Request);
 
@@ -98,7 +104,12 @@ private:
 	URenderAsset* FindOrLoadAsset(const FString& Path);
 
 	// 키는 Assets 기준 상대 경로. 로드 가능한 파일의 키 -> 실제 파일 경로
-	TMap<FString, FString> AssetPathMap;
+	struct FAssetFile
+	{
+		FString Path;
+		EAssetType Type = EAssetType::None;
+	};
+	TMap<FString, FAssetFile> AssetPathMap;
 	TMap<FString, URenderAsset*> AssetMap;
 	TMap<FString, USoundWave*> SoundMap;
 

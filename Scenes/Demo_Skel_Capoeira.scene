@@ -1,0 +1,100 @@
+{
+    "Version": 4,
+    "World": {
+        "Properties": {},
+        "PersistentLevel": {
+            "Properties": {},
+            "Actors": [
+                {
+                    "Class": "ASkeletalMeshActor",
+                    "Name": "X Bot",
+                    "Properties": { "ScriptPath": "Scripts/x_bot_capoeira.lua" },
+                    "Components": [
+                        {
+                            "Class": "USkeletalMeshComponent",
+                            "Name": "USkeletalMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "SkeletalMesh": "Assets/Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin"
+                            },
+                            "OverrideMaterials": [],
+                            "BonePose": []
+                        }
+                    ]
+                },
+                {
+                    "Class": "APawn",
+                    "Name": "CapoeiraCamera",
+                    "Properties": { "bActorEnableCollision": false },
+                    "Components": [
+                        {
+                            "Class": "UCameraComponent",
+                            "Name": "CameraComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 1.25, "Y": -4.4, "Z": 1.65 },
+                                    "Rotation": { "Pitch": 10.0, "Roll": 0.0, "Yaw": 105.9 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ADirectionalLightActor",
+                    "Name": "CapoeiraKeyLight",
+                    "Properties": {},
+                    "Components": [
+                        {
+                            "Class": "UDirectionalLightComponent",
+                            "Name": "UDirectionalLightComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "Intensity": 1.25,
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 3.0 },
+                                    "Rotation": { "Pitch": 48.0, "Roll": 0.0, "Yaw": 65.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UArrowComponent",
+                            "Parent": "UDirectionalLightComponent",
+                            "Properties": { "bHiddenInGame": true },
+                            "OverrideMaterials": [{ "Asset": "EditorArrowMaterial" }]
+                        }
+                    ]
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "Floor",
+                    "Properties": {},
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": -0.1 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 12.0, "Y": 12.0, "Z": 0.2 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": { "StaticMesh": "Cube" },
+                            "OverrideMaterials": []
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

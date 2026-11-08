@@ -413,7 +413,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/Wheezy/Wheezy.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/Wheezy/SK_Wheezy.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -426,9 +426,9 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 100.0,
+                                        "Y": 100.0,
+                                        "Z": 100.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -550,7 +550,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/Mixamo_Idle/Mixamo_Idle.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/Mixamo_Idle/SK_Mixamo_Idle.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -563,9 +563,9 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 100.0,
+                                        "Y": 100.0,
+                                        "Z": 100.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -687,7 +687,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/Marine/Marine.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/Marine/SK_Marine.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -824,7 +824,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/SKM_DKM_Full/SKM_DKM_Full.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/SKM_DKM_Full/SK_DKM_Full.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -837,9 +837,9 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 100.0,
+                                        "Y": 100.0,
+                                        "Z": 100.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -961,7 +961,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/LumaSketchfab/LumaSketchfab.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/LumaSketchfab/SK_LumaSketchfab.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -974,9 +974,9 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 100.0,
+                                        "Y": 100.0,
+                                        "Z": 100.0
                                     }
                                 },
                                 "bAutoActivate": true,

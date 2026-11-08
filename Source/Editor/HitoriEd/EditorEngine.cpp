@@ -104,7 +104,6 @@ bool UEditorEngine::Init()
 	LevelEditorTab->OnOpenScene.AddDynamic(this, &UEditorEngine::OpenScene);
 	LevelEditorTab->OnSaveScene.AddDynamic(this, &UEditorEngine::SaveCurrentScene);
 	LevelEditorTab->OnSaveSceneAs.AddDynamic(this, &UEditorEngine::SaveSceneAs);
-	LevelEditorTab->OnImportFbx.Add([this](EFbxImportMode Mode) { FEditorFileUtils::ImportFbx(Mode); });
 	LevelEditorTab->OnPackageGame.Add([this]() { Packager.Start("Release"); });
 	LevelEditorTab->SetIsPackagingQuery([this]() { return Packager.IsRunning(); });
 

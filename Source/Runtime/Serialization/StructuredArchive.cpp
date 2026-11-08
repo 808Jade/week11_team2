@@ -268,6 +268,11 @@ void FStructuredArchiveSlot::Serialize(void* Data, uint64 DataSize)
 
 //////////// FStructuredArchiveRecord ////////////
 
+bool FStructuredArchiveRecord::HasDocumentTree() const
+{
+	return StructuredArchive.Formatter.HasDocumentTree();
+}
+
 FStructuredArchiveSlot FStructuredArchiveRecord::EnterField(FArchiveFieldName Name)
 {
 	StructuredArchive.SetScope(*this);

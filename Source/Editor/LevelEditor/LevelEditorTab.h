@@ -3,7 +3,7 @@
 #include "Core/Delegate/Delegate.h"
 #include "Editor/EditorUI/EditorTab.h"
 #include "Editor/LevelEditor/LevelEditorToolbar.h"
-#include "Runtime/Asset/FbxImporter/FbxMeshBake.h"
+#include "Asset/FbxImporter/FbxInfo.h"
 
 class FLevelEditorTab : public IEditorTab
 {
@@ -18,7 +18,6 @@ public:
 	TDelegate<> OnOpenScene;
 	TDelegate<> OnSaveScene;
 	TDelegate<> OnSaveSceneAs;
-	TDelegate<EFbxImportMode> OnImportFbx;
 	TDelegate<> OnPackageGame;
 	TDelegate<const FString&> OnLevelLoaded;
 
@@ -46,6 +45,14 @@ public:
 	void UpdateTabName(std::string_view InPath);
 
 private:
+	void DrawFbxImportDialog();
+	FString FbxSourcePath;
+	std::array<char, 4096> FbxOutputDirectory{};
+	FFbxImportOptions FbxOptions;
+	TArray<FString> FbxSkeletonKeys;
+	FString FbxImportError;
+	bool bOpenFbxImport = false;
+
 	std::function<bool()> IsPackaging;
 	FLevelEditorToolbar Toolbar;
 	TArray<TUniquePtr<IEditorPanel>> Panels;

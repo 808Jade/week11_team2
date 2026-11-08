@@ -3,12 +3,14 @@
 
 #include <sol/sol.hpp>
 
+#include "Animation/AnimationAsset.h"
 #include "Components/MovementComponent.h"
 #include "Components/SlidingMovementComponent.h"
 #include "Components/IceVolumeComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/ParticleSubUVComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Core/EngineTimer.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -561,6 +563,19 @@ namespace
 			"IsValid", [](const FLuaComponentRef& R) { return R.Get() != nullptr; },
 			"Name", sol::property([](const FLuaComponentRef& R) { return Deref(R).GetName(); }),
 			"Owner", sol::property([](const FLuaComponentRef& R) { return FLuaActorRef::Make(Deref(R).GetOwner()); }),
+			"PlayAnimation", [](const FLuaComponentRef& Ref, const FString& Path,
+				sol::optional<bool> Looping, sol::optional<float> PlayRate)
+			{
+				auto* Mesh = Cast<USkeletalMeshComponent>(&Deref(Ref));
+				if (!Mesh) throw sol::error("PlayAnimation requires a SkeletalMeshComponent.");
+
+				auto* Asset = UAssetManager::GetAssetByPath<UAnimationAsset>(Path);
+				if (!Asset) throw sol::error("PlayAnimation could not load an animation asset: " + Path);
+
+				FString Error;
+				if (!Mesh->PlayAnimation(Asset, Looping.value_or(false), PlayRate.value_or(1.f), Error))
+					throw sol::error("PlayAnimation failed for " + Path + ": " + Error);
+			},
 			"Location", sol::property(
 				// Getter
 				[](const FLuaComponentRef& Ref)

@@ -3,6 +3,7 @@
 
 #include "Components/SkinnedMeshComponent.h"
 #include "Render/SkeletalMeshObject.h"
+#include "Asset/LOD/StaticMeshLODSelector.h"
 
 FSkeletalMeshSceneProxy::FSkeletalMeshSceneProxy(USkinnedMeshComponent* InComponent)
 	:FPrimitiveSceneProxy(InComponent)
@@ -32,14 +33,17 @@ void FSkeletalMeshSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, const 
 	FSkeletalMeshObject* Object = Skinned->GetMeshObject();
 	if (!Object || !RenderState) return;
 
-	FVertexBuffer* VB = Object->GetVertexBuffer(0);
-	FIndexBuffer* IB = Object->GetIndexBuffer(0);
+	const auto& Bounds = GetBounds();
+	const FLODSelectionInput LODInput{ { Bounds.Center, Bounds.Extent.Dot(Bounds.Extent) }, RenderState.get() };
+	const uint32 LODIndex = View.bOrthographic ? SelectSphereLOD<true>(LODInput, View) : SelectSphereLOD<false>(LODInput, View);
+	FVertexBuffer* VB = Object->GetVertexBuffer(LODIndex);
+	FIndexBuffer* IB = Object->GetIndexBuffer(LODIndex);
 	if (!VB || !IB) return;
 
 	const FVector Delta = GetBounds().Center - View.CameraPosition;
 	const float DistanceSq = Delta.Dot(Delta);
 
-	const FCachedMeshLOD& LOD = GetLOD(0);
+	const FCachedMeshLOD& LOD = GetLOD(LODIndex);
 	for (uint32 i = 0; i < LOD.NumSections; ++i)
 	{
 		const FCachedMeshSection& Section = GetSection(LOD.FirstSection + i);
@@ -48,6 +52,7 @@ void FSkeletalMeshSceneProxy::GetDynamicMeshElements(FRenderQueue& Queue, const 
 		Packet.VertexBuffer = VB;
 		Packet.IndexBuffer = IB;
 		Packet.BoneBuffer = Object->GetBoneMatrixBuffer();
+		Packet.LODIndex = static_cast<uint8>(LODIndex);
 		Packet.Material = Section.Material;
 		Packet.StartIndex = Section.StartIndex;
 		Packet.IndexCount = Section.IndexCount;

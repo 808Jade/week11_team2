@@ -10,8 +10,10 @@
 #include "Render/RenderResourceManager.h"
 
 #include "Asset/ObjImporter/ObjImporter.h"
-#include "Asset/FbxImporter/FbxMeshBake.h"
-#include "Render/SkeletalMesh.h"
+#include "Asset/FbxImporter/FbxAssetBake.h"
+#include "Asset/FbxImporter/FbxAssetLoader.h"
+#include "Asset/FbxImporter/FbxPath.h"
+#include "Render/SkeletalMeshData.h"
 
 #include "Render/GeometryGenerator.h"
 #include "UObject/UObjectGlobals.h"
@@ -45,9 +47,18 @@ namespace
 		if (Extension == ".obj") {
 			return EAssetType::StaticMesh;
 		}
-		if (Extension == ".bin" && FFbxMeshBake::IsBakedPath(Path)) {
-			// 파일을 읽지 않고 구분하도록 FFbxImporter의 저장 이름 규칙을 쓴다
-			return Path.ends_with("_Static.fbx.bin") ? EAssetType::StaticMesh : EAssetType::SkeletalMesh;
+		if (Extension == ".fbxbin") {
+			EFbxAssetType Type;
+			if (!FFbxAssetBake::ReadAssetType(Path, Type)) return EAssetType::None;
+			switch (Type)
+			{
+			case EFbxAssetType::StaticMesh: return EAssetType::StaticMesh;
+			case EFbxAssetType::SkeletalMesh: return EAssetType::SkeletalMesh;
+			case EFbxAssetType::Skeleton: return EAssetType::Skeleton;
+			case EFbxAssetType::Material: return EAssetType::Material;
+			case EFbxAssetType::Texture2D: return EAssetType::Texture;
+			case EFbxAssetType::AnimSequence: return EAssetType::AnimSequence;
+			}
 		}
 		return EAssetType::None;
 	}
@@ -196,13 +207,13 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 	const int32 Total = Files.Num();
 	for (int32 i = 0; i < Total; ++i)
 	{
-		FString Key = fs::relative(Files[i], AssetRoot).generic_string();
-		FString Path = Files[i].generic_string();
+		FString Key = FbxPath::ToString(fs::relative(Files[i], AssetRoot));
+		FString Path = FbxPath::ToString(Files[i]);
 
 		// 경로만 등록한다. 실제 로드는 처음 찾을 때 FindOrLoadAsset에서 한다.
-		if (GetAssetTypeFromPath(Path) != EAssetType::None)
+		if (const EAssetType Type = GetAssetTypeFromPath(Path); Type != EAssetType::None)
 		{
-			AssetPathMap.Add(Key, Path);
+			AssetPathMap.Add(Key, { Path, Type });
 		}
 
 		if (OnProgress)
@@ -214,12 +225,9 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 }
 
 void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
-	// FBX Asset은 원본 .fbx 대신 Import로 저장한 .fbx.bin만 로드한다.
-	// 원본 해석과 변경 여부 비교는 FFbxImporter::ImportToAssets에서만 수행하며,
-	// 이 로드 경로는 원본 파일이나 FBX SDK 없이 저장된 데이터로 렌더 자원을 만든다.
-	if (FFbxMeshBake::IsBakedPath(Path)) {
+	if (FFbxAssetBake::IsBakedPath(Path)) {
 		FString Error;
-		if (!LoadFbxMesh(Path, Error)) HTR_LOG(Error, "{}", Error);
+		if (!FFbxAssetLoader::LoadAsset(Path, Error)) HTR_LOG(Error, "{}", Error);
 		return;
 	}
 
@@ -252,12 +260,12 @@ URenderAsset* UAssetManager::FindOrLoadAsset(const FString& Path)
 		return *Found;
 	}
 
-	const FString* FoundSource = AssetPathMap.Find(Key);
+	const FAssetFile* FoundSource = AssetPathMap.Find(Key);
 	if (FoundSource == nullptr)
 	{
 		return nullptr;
 	}
-	const FString SourcePath = *FoundSource;
+	const FString SourcePath = FoundSource->Path;
 
 	const uint64 LoadStart = FPlatformTime::GetCycles64();
 	LoadAsset(Key, SourcePath);
@@ -285,21 +293,18 @@ URenderAsset* UAssetManager::FindLoadedAsset(const FString& Path)
 EAssetType UAssetManager::GetUnloadedAssetType(const FString& Path)
 {
 	const FString Key = MakeLookupKey(Path);
-	if (Get().AssetMap.Contains(Key) || !Get().AssetPathMap.Contains(Key))
-	{
-		return EAssetType::None;
-	}
-	return GetAssetTypeFromPath(Key);
+	const FAssetFile* File = Get().AssetPathMap.Find(Key);
+	return File && !Get().AssetMap.Contains(Key) ? File->Type : EAssetType::None;
 }
 
 TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
 {
 	TArray<FString> Paths;
-	for (const auto& [Key, Path] : Get().AssetPathMap)
+	for (const auto& [Key, File] : Get().AssetPathMap)
 	{
-		if (GetAssetTypeFromPath(Key) == Type && !Get().AssetMap.Contains(Key))
+		if (File.Type == Type && !Get().AssetMap.Contains(Key))
 		{
-			Paths.Add(Path);
+			Paths.Add(File.Path);
 		}
 	}
 	return Paths;
@@ -468,6 +473,19 @@ void UAssetManager::RegisterAsset(const FString& Key, URenderAsset* Asset)
 	AssetMap[MakeLookupKey(Key)] = Asset;
 }
 
+TMap<FString, URenderAsset*> UAssetManager::PrepareAssetRegistration(const TMap<FString, URenderAsset*>& Replacements) const
+{
+	auto Prepared = AssetMap;
+	for (const auto& [Key, Object] : Replacements) Prepared.Add(MakeLookupKey(Key), Object);
+	return Prepared;
+}
+
+void UAssetManager::CommitAssetRegistration(TMap<FString, URenderAsset*>& Prepared) noexcept
+{
+	// 기존 컴포넌트나 에디터가 사용 중인 객체는 계속 살아 있고, 이후 조회만 새 객체를 반환한다.
+	AssetMap.Swap(Prepared);
+}
+
 UTexture2D* UAssetManager::LoadTexture(const FString& InPath, bool GenerateMips) {
 	if (URenderAsset** Found{ AssetMap.Find(MakeLookupKey(InPath)) }) {
 		return Cast<UTexture2D>(*Found);
@@ -476,6 +494,13 @@ UTexture2D* UAssetManager::LoadTexture(const FString& InPath, bool GenerateMips)
 	FLoadStageTimer DecodeTimer{ "Texture/Decode" };
 	const FImageData Data = ImageLoader::LoadAuto(InPath);
 	DecodeTimer.Stop();
+	UTexture2D* Asset = CreateTexture(Data, GenerateMips);
+	if (Asset) RegisterAsset(InPath, Asset);
+	return Asset;
+}
+
+UTexture2D* UAssetManager::CreateTexture(const FImageData& Data, bool GenerateMips)
+{
 	if (!Data.IsValid())
 	{
 		return nullptr;
@@ -504,7 +529,6 @@ UTexture2D* UAssetManager::LoadTexture(const FString& InPath, bool GenerateMips)
 
 	UTexture2D* Asset{ NewObject<UTexture2D>() };
 	Asset->SetResource(std::move(Resource));
-	RegisterAsset(InPath, Asset);
 
 	return Asset;
 }
@@ -564,31 +588,6 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 	return Mesh;
 }
 
-URenderAsset* UAssetManager::LoadFbxMesh(const FString& Path, FString& OutError)
-{
-	OutError.clear();
-	const FString Key = MakeAssetKey(Path);
-	// GetAssetByPath는 여기로 다시 들어오므로 쓰지 않는다
-	if (URenderAsset* Cached = FindLoadedAsset(Key)) return Cached;
-	FFbxBakedMesh Data;
-	if (!FFbxMeshBake::IsBakedPath(Path) || !FFbxMeshBake::Read(Path, Data, OutError))
-	{
-		if (OutError.empty()) OutError = "FBX binary: expected .fbx.bin: " + Path;
-		return nullptr;
-	}
-	URenderAsset* Asset = nullptr;
-	if (Data.Kind == EFbxMeshKind::Static) Asset = CreateStaticMesh(&Data.StaticMesh);
-	else
-	{
-		auto* Mesh = NewObject<USkeletalMesh>();
-		if (!Mesh->Build(std::move(Data.SkeletalMesh), OutError)) return nullptr;
-		Asset = Mesh;
-	}
-	if (!Asset) { OutError = "FBX binary: mesh resource creation failed: " + Path; return nullptr; }
-	Get().RegisterAsset(Key, Asset);
-	return Asset;
-}
-
 bool UAssetManager::ReorientStaticMesh(UStaticMesh& Mesh, const std::function<FVector(const FVector&)>& Rotate)
 {
 	if (Mesh.GetLODCount() > 1 || Mesh.MeshData.Vertices.IsEmpty())
@@ -622,7 +621,7 @@ void UAssetManager::ForEachObjStaticMesh(const std::function<void(const FString&
 {
 	for (const FString& Path : GetUnloadedAssetPaths(EAssetType::StaticMesh))
 	{
-		if (!FFbxMeshBake::IsBakedPath(Path))
+		if (GetAssetExtension(Path) == ".obj")
 		{
 			GetAssetByPath<UStaticMesh>(Path);
 		}

@@ -1,1091 +1,1646 @@
 #include "EnginePCH.h"
 #include "FbxImporter.h"
-#include "Asset/AssetManager.h"
+#include "Asset/FbxImporter/FbxAssetBake.h"
+#include "Asset/FbxImporter/FbxPath.h"
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstring>
+#include <functional>
+#include <iomanip>
+#include <limits>
+#include <map>
+#include <regex>
+#include <set>
+#include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 
-#include <array>
-#include <fstream>
+#ifndef WITH_FBX_SDK
+#define WITH_FBX_SDK 0
+#endif
+
+#if WITH_FBX_SDK
+#include <fbxsdk.h>
 
 namespace
 {
-	// Node Geometry를 이어 붙이며 정점/Index/Material Slot 참조와 경계를 보정한다.
-	void AppendGeometry(const FStaticMeshData& Mesh, FStaticMeshData& Result)
+FString Lower(FString S) { for (char& C : S) C = static_cast<char>(std::tolower(static_cast<unsigned char>(C))); return S; }
+
+FString NodePath(FbxNode* Node)
+{
+	if (!Node || !Node->GetParent()) return "/";
+	FString Name = Node->GetName();
+	int Occurrence = 0;
+	for (int I = 0; I < Node->GetParent()->GetChildCount(); ++I)
 	{
-		if (Mesh.Vertices.IsEmpty()) return;
-		const uint32 VertexBase = static_cast<uint32>(Result.Vertices.Num());
-		const uint32 IndexBase = static_cast<uint32>(Result.Indices.Num());
-		const uint32 SlotBase = static_cast<uint32>(Result.MaterialSlots.Num());
-		if (Result.Vertices.IsEmpty()) Result.AABB = Mesh.AABB;
-		else Result.AABB.Expand(Mesh.AABB);
-		Result.Vertices.Append(Mesh.Vertices);
-		for (uint32 Index : Mesh.Indices) Result.Indices.Add(VertexBase + Index);
-		Result.MaterialSlots.Append(Mesh.MaterialSlots);
-		for (const FStaticMeshSection& Section : Mesh.Sections)
-			Result.Sections.Add({ IndexBase + Section.StartIndex, Section.IndexCount, SlotBase + Section.MaterialSlotIndex });
+		FbxNode* Sibling = Node->GetParent()->GetChild(I);
+		if (Sibling == Node) break;
+		if (Name == Sibling->GetName()) ++Occurrence;
+	}
+	return NodePath(Node->GetParent()) + Name + "[" + std::to_string(Occurrence) + "]/";
+}
+
+bool HasAttribute(FbxNode* Node, FbxNodeAttribute::EType Type)
+{
+	for (int I = 0; Node && I < Node->GetNodeAttributeCount(); ++I)
+		if (Node->GetNodeAttributeByIndex(I)->GetAttributeType() == Type) return true;
+	return false;
+}
+
+bool IsCompensation(FbxCluster* Cluster)
+{
+	return Cluster && !std::strcmp(Cluster->GetUserDataID(), "Maya_ClusterHint") &&
+		!std::strcmp(Cluster->GetUserData(), "CompensationCluster");
+}
+
+// UE FFbxScene::Internal_GetRootSkeleton의 상향 경계와 Blender Armature 예외를 따른다.
+FbxNode* FindRoot(FbxScene* Scene, FbxNode* Link, bool bBlender)
+{
+	FbxNode* Root = Link;
+	while (Root && Root->GetParent() && Root->GetParent() != Scene->GetRootNode())
+	{
+		FbxNode* Parent = Root->GetParent();
+		FbxNodeAttribute* Attribute = Parent->GetNodeAttribute();
+		if (!Attribute) break;
+		const auto Type = Attribute->GetAttributeType();
+		const bool bArmature = bBlender && Lower(Parent->GetName()) == "armature" &&
+			(!Parent->GetParent() || Parent->GetParent() == Scene->GetRootNode());
+		if (Type != FbxNodeAttribute::eSkeleton && Type != FbxNodeAttribute::eMesh &&
+			(Type != FbxNodeAttribute::eNull || bArmature)) break;
+		if (Type == FbxNodeAttribute::eMesh && static_cast<FbxMesh*>(Attribute)->GetDeformerCount(FbxDeformer::eSkin)) break;
+		Root = Parent;
+	}
+	return Root;
+}
+
+bool CollisionName(FString Name)
+{
+	Name = Lower(Name);
+	// 후속 충돌 임포트는 이 분류에서 별도 데이터 경로로 연결한다.
+	for (const char* Prefix : { "ucx_", "ubx_", "usp_", "ucp_", "mcdcX_" })
+		if (Name.starts_with(Lower(Prefix))) return true;
+	return false;
+}
+
+FbxAMatrix Geometry(FbxNode* Node)
+{
+	FbxAMatrix Out;
+	Out.SetT(Node->GetGeometricTranslation(FbxNode::eSourcePivot));
+	Out.SetR(Node->GetGeometricRotation(FbxNode::eSourcePivot));
+	Out.SetS(Node->GetGeometricScaling(FbxNode::eSourcePivot));
+	return Out;
+}
+
+FVector Reflect(const FbxVector4& V) { return FVector(static_cast<float>(V[0]), static_cast<float>(-V[1]), static_cast<float>(V[2])); }
+
+FMatrix EngineMatrix(const FbxAMatrix& M, double UnitScale, bool bEngineInput = true)
+{
+	const FbxVector4 O = M.MultT(FbxVector4(0, 0, 0));
+	const FVector X = Reflect(M.MultT(FbxVector4(1, 0, 0)) - O);
+	const FVector Y = Reflect(M.MultT(FbxVector4(0, 1, 0)) - O) * (bEngineInput ? -1.f : 1.f);
+	const FVector Z = Reflect(M.MultT(FbxVector4(0, 0, 1)) - O);
+	const FVector T = Reflect(O) * static_cast<float>(UnitScale);
+	return FMatrix(X.X, X.Y, X.Z, 0, Y.X, Y.Y, Y.Z, 0, Z.X, Z.Y, Z.Z, 0, T.X, T.Y, T.Z, 1);
+}
+
+bool FiniteMatrix(const FMatrix& M)
+{
+	for (int R = 0; R < 4; ++R) for (int C = 0; C < 4; ++C) if (!std::isfinite(M.M[R][C])) return false;
+	return std::abs(M.Determinant()) > 1.e-12f;
+}
+
+struct FBoneTRS
+{
+	FVector Translation;
+	FQuat Rotation;
+	FVector Scale;
+};
+
+FBoneTRS ConvertBoneTRS(const FbxAMatrix& Local, double UnitScale)
+{
+	const FbxQuaternion Q = Local.GetQ();
+	const FbxVector4 S = Local.GetS();
+	return { Reflect(Local.GetT()) * static_cast<float>(UnitScale),
+		FQuat(static_cast<float>(Q[0]), static_cast<float>(-Q[1]), static_cast<float>(Q[2]), static_cast<float>(-Q[3])).Normalized(),
+		FVector(static_cast<float>(S[0]), static_cast<float>(S[1]), static_cast<float>(S[2])) };
+}
+
+FName UnqualifiedBoneName(const FString& Name)
+{
+	const auto Separator = Name.find_last_of(':');
+	return FName(Separator == FString::npos ? Name : Name.substr(Separator + 1));
+}
+
+// 기존 Week11 에셋의 이름은 보존하고, 다른 DCC namespace에서 온 본은 고유한 짧은 이름으로도 찾는다.
+class FTargetBoneNames
+{
+public:
+	explicit FTargetBoneNames(const FReferenceSkeleton& Skeleton)
+	{
+		for (int32 Index = 0; Index < Skeleton.GetNum(); ++Index)
+		{
+			const auto& Name = Skeleton.RefBoneInfo[Index].Name;
+			Add(Exact, FName(Name), Index);
+			Add(Unqualified, UnqualifiedBoneName(Name), Index);
+		}
 	}
 
-	// Cluster의 Bone별 Weight를 Control Point별로 모으고, 동일 Bone 합산 후 상위 Influence를 정규화한다.
-	bool ReadControlPointWeights(FbxNode* Node, const TMap<FbxNode*, int32>& BoneIndices, TArray<FSkinWeight>& Result, TArray<FString>& Warnings, FString& Error)
+	int32 Find(const FString& Name) const
 	{
-		FbxMesh* Mesh = Node->GetMesh();
-		const int32 Count = Mesh->GetControlPointsCount();
-		TArray<TMap<int32, double>> Influences;
-		Influences.SetNum(Count);
-		bool bWarnedLinkMode = false;
-		for (int S = 0; S < Mesh->GetDeformerCount(FbxDeformer::eSkin); ++S)
+		if (const auto It = Exact.find(FName(Name)); It != Exact.end()) return It->second;
+		if (const auto It = Unqualified.find(UnqualifiedBoneName(Name)); It != Unqualified.end()) return It->second;
+		return INDEX_NONE;
+	}
+
+private:
+	using FIndices = std::unordered_map<FName, int32, FNameHash>;
+	static void Add(FIndices& Indices, FName Name, int32 Index)
+	{
+		const auto [It, bAdded] = Indices.emplace(Name, Index);
+		if (!bAdded) It->second = INDEX_NONE;
+	}
+	FIndices Exact, Unqualified;
+};
+
+bool Near(const FbxAMatrix& A, const FbxAMatrix& B)
+{
+	for (int R = 0; R < 4; ++R) for (int C = 0; C < 4; ++C)
+		if (std::abs(A.Get(R, C) - B.Get(R, C)) > 1.e-4 * (1 + std::abs(A.Get(R, C)))) return false;
+	return true;
+}
+
+FbxFileTexture* FileTexture(FbxSurfaceMaterial* Material, const char* PropertyName)
+{
+	const FbxProperty Property = Material ? Material->FindProperty(PropertyName) : FbxProperty();
+	return Property.IsValid() ? Property.GetSrcObject<FbxFileTexture>(0) : nullptr;
+}
+
+// FBX UV에 적용하는 2D affine 변환. 엔진의 V 반전은 이 변환 이후에 수행한다.
+struct FUVTransform
+{
+	double M[2][3]{ {1, 0, 0}, {0, 1, 0} };
+	bool bValid = true;
+	FbxVector2 Apply(const FbxVector2& UV) const
+	{
+		return { M[0][0] * UV[0] + M[0][1] * UV[1] + M[0][2], M[1][0] * UV[0] + M[1][1] * UV[1] + M[1][2] };
+	}
+};
+
+FUVTransform UVTransform(FbxFileTexture* Texture)
+{
+	FUVTransform Out;
+	if (!Texture) return Out;
+	FbxAMatrix Scale, Rotation, Translation, ScalePivot, InvScalePivot, RotationPivot, InvRotationPivot;
+	Scale.SetS(FbxVector4(Texture->GetScaleU(), Texture->GetScaleV(), 1));
+	Rotation.SetR(FbxVector4(Texture->GetRotationU(), Texture->GetRotationV(), Texture->GetRotationW()));
+	Translation.SetT(FbxVector4(Texture->GetTranslationU(), Texture->GetTranslationV(), 0));
+	const FbxDouble3 SP = Texture->ScalingPivot.Get(), RP = Texture->RotationPivot.Get();
+	ScalePivot.SetT(FbxVector4(SP[0], SP[1], SP[2])); InvScalePivot.SetT(FbxVector4(-SP[0], -SP[1], -SP[2]));
+	RotationPivot.SetT(FbxVector4(RP[0], RP[1], RP[2])); InvRotationPivot.SetT(FbxVector4(-RP[0], -RP[1], -RP[2]));
+	const FbxAMatrix Matrix = Translation * RotationPivot * Rotation * InvRotationPivot * ScalePivot * Scale * InvScalePivot;
+	FbxVector4 O = Matrix.MultT(FbxVector4(0, 0, 0)), U = Matrix.MultT(FbxVector4(1, 0, 0)), V = Matrix.MultT(FbxVector4(0, 1, 0));
+	if (Texture->GetSwapUV()) { std::swap(O[0], O[1]); std::swap(U[0], U[1]); std::swap(V[0], V[1]); }
+	for (int I = 0; I < 2; ++I)
+	{
+		Out.M[I][0] = U[I] - O[I]; Out.M[I][1] = V[I] - O[I]; Out.M[I][2] = O[I];
+		for (double Value : Out.M[I]) Out.bValid &= std::isfinite(Value);
+	}
+	Out.bValid &= Texture->GetMappingType() == FbxTexture::eUV;
+	return Out;
+}
+
+bool Near(const FUVTransform& A, const FUVTransform& B)
+{
+	for (int R = 0; R < 2; ++R) for (int C = 0; C < 3; ++C)
+		if (std::abs(A.M[R][C] - B.M[R][C]) > 1.e-6 * (1 + std::max(std::abs(A.M[R][C]), std::abs(B.M[R][C])))) return false;
+	return true;
+}
+
+struct FSurfaceUV
+{
+	FString Set;
+	FUVTransform Transform;
+	FbxGeometryElementTangent* Tangents = nullptr;
+	FbxGeometryElementBinormal* Binormals = nullptr;
+};
+
+template<class T> bool CornerVector(T* Element, FbxMesh* Mesh, int Polygon, int Corner, FbxVector4& Out)
+{
+	if (!Element) return false;
+	int Index;
+	switch (Element->GetMappingMode())
+	{
+	case FbxLayerElement::eByControlPoint: Index = Mesh->GetPolygonVertex(Polygon, Corner); break;
+	case FbxLayerElement::eByPolygonVertex: Index = Mesh->GetPolygonVertexIndex(Polygon) + Corner; break;
+	case FbxLayerElement::eByPolygon: Index = Polygon; break;
+	case FbxLayerElement::eAllSame: Index = 0; break;
+	default: return false;
+	}
+	if (Element->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+	{
+		if (Index < 0 || Index >= Element->GetIndexArray().GetCount()) return false;
+		Index = Element->GetIndexArray().GetAt(Index);
+	}
+	if (Index < 0 || Index >= Element->GetDirectArray().GetCount()) return false;
+	Out = Element->GetDirectArray().GetAt(Index);
+	return std::isfinite(Out[0]) && std::isfinite(Out[1]) && std::isfinite(Out[2]);
+}
+
+bool ImportTangent(const FSurfaceUV& UV, FbxMesh* Mesh, int Polygon, int Corner, const FMatrix& GeometryTransform, FVertex& Vertex)
+{
+	FbxVector4 T, B;
+	if (!CornerVector(UV.Tangents, Mesh, Polygon, Corner, T)) return false;
+	if (!CornerVector(UV.Binormals, Mesh, Polygon, Corner, B))
+	{
+		FbxVector4 N;
+		if (!Mesh->GetPolygonVertexNormal(Polygon, Corner, N) || !std::isfinite(T[3]) || std::abs(std::abs(T[3]) - 1) > 1.e-4) return false;
+		B = N.CrossProduct(T) * T[3];
+	}
+	auto Direction = [&](const FbxVector4& V) { return GeometryTransform.TransformVector(FVector(static_cast<float>(V[0]), static_cast<float>(V[1]), static_cast<float>(V[2]))); };
+	const FVector GT = Direction(T), GB = Direction(B);
+	// 최종 UV의 Jacobian 역행렬로 원본 T/B를 옮긴다. 두 번째 행의 부호는 1-V 변환이다.
+	const auto& M = UV.Transform.M;
+	const double J00 = M[0][0], J01 = M[0][1], J10 = -M[1][0], J11 = -M[1][1];
+	const double Det = J00 * J11 - J01 * J10;
+	if (!std::isfinite(Det) || std::abs(Det) < 1.e-12) return false;
+	FVector Tangent = GT * static_cast<float>(J11 / Det) + GB * static_cast<float>(-J10 / Det);
+	const FVector Bitangent = GT * static_cast<float>(-J01 / Det) + GB * static_cast<float>(J00 / Det);
+	Tangent = (Tangent - Vertex.Normal * Vertex.Normal.Dot(Tangent)).GetSafeNormal();
+	const float Orientation = Vertex.Normal.Cross(Tangent).Dot(Bitangent);
+	if (!std::isfinite(Orientation) || std::abs(Orientation) < 1.e-8f || Tangent.SizeSquared() < 1.e-8f) return false;
+	Vertex.Tangent = FVector4(Tangent, Orientation < 0 ? -1.f : 1.f);
+	return true;
+}
+
+struct FMeshItem
+{
+	FbxNode* Node = nullptr;
+	FbxMesh* Mesh = nullptr;
+	FbxNode* Rig = nullptr;
+	FbxNode* LODGroupNode = nullptr;
+	FString UnitKey;
+	FString Label;
+	int LOD = -1;
+};
+
+struct FRig
+{
+	FbxNode* Root = nullptr;
+	std::set<FbxNode*> Needed;
+	bool bHasTransformAnimation = false;
+	std::vector<FbxNode*> Bones;
+	std::unordered_map<FbxNode*, uint16> Indices;
+	FReferenceSkeleton Reference;
+	FbxAMatrix ParentBind;
+	FString MeshSkeletonKey;
+	bool bHasMesh = false;
+
+	void IncludeBoneAndParents(FbxNode* Node)
+	{
+		for (; Node; Node = Node->GetParent())
+			if (!Needed.insert(Node).second || Node == Root) break;
+	}
+};
+
+struct FOutputGroup
+{
+	FString Identity;
+	FString Label;
+	FbxNode* Root = nullptr;
+	std::vector<FMeshItem*> Items;
+};
+
+struct FCornerKey
+{
+	int CP;
+	int Surface;
+	FVertex Vertex;
+	bool operator==(const FCornerKey& Other) const { return CP == Other.CP && Surface == Other.Surface && !std::memcmp(&Vertex, &Other.Vertex, sizeof(Vertex)); }
+};
+struct FCornerHash
+{
+	size_t operator()(const FCornerKey& Key) const
+	{
+		uint64 Hash = static_cast<uint32>(Key.CP) ^ (static_cast<uint64>(Key.Surface) << 32);
+		for (size_t I = 0; I < sizeof(FVertex); ++I) Hash = (Hash ^ reinterpret_cast<const uint8*>(&Key.Vertex)[I]) * 1099511628211ull;
+		return Hash;
+	}
+};
+
+class FImport
+{
+public:
+	FbxScene* Scene;
+	FFbxImportOptions Options;
+	FString SourceKey;
+	fs::path Source;
+	fs::path Destination;
+	double UnitScale = 1;
+	bool bBlender = false;
+	TArray<FFbxAssetData>& Output;
+	TArray<FString>& Warnings;
+	FString& Error;
+	std::vector<FMeshItem> Meshes;
+	std::map<FString, FRig> Rigs;
+	std::unordered_map<FbxNode*, FbxAMatrix> ClusterBones;
+	std::unordered_map<FbxMesh*, FbxAMatrix> ClusterMeshes;
+	std::unordered_map<FbxNode*, FbxAMatrix> BindCache;
+	std::unordered_map<FbxSurfaceMaterial*, FString> Materials;
+	std::unordered_set<FbxSurfaceMaterial*> SkippedOpacityTextures;
+	std::unordered_map<FString, FString> Textures;
+	std::unordered_map<FString, FString> FileOwners;
+	std::unordered_set<FString> Warned;
+	std::vector<FbxPose*> Poses;
+	std::map<FString, FFbxAssetData> SelectedSkeletons;
+
+	FImport(FbxScene* S, const FFbxImportOptions& O, const FString& K, const fs::path& P, const fs::path& D,
+		TArray<FFbxAssetData>& Out, TArray<FString>& W, FString& E)
+		: Scene(S), Options(O), SourceKey(K), Source(P), Destination(D), Output(Out), Warnings(W), Error(E) {}
+
+	void Warn(const FString& Message) { if (Warned.insert(Message).second) Warnings.Add(Message); }
+	FString MakeKey(const char* Prefix, const FString& Label, const FString& Identity);
+	FFbxAssetData Data(EFbxAssetType Type, const FString& Key, const FString& Identity)
+	{
+		FFbxAssetData Out; Out.Type = Type; Out.Key = Key; Out.SourcePath = SourceKey; Out.SourceObject = Identity; Out.Options = Options; return Out;
+	}
+	void Gather(FbxNode* Node, bool bParentVisible, FbxNode* LODGroup = nullptr, int LOD = -1);
+	void FindRigs();
+	void PreparePoses();
+	bool PoseMatrix(FbxPose* Pose, FbxNode* Node, FbxAMatrix& Out);
+	FbxAMatrix Bind(FbxNode* Node);
+	FbxAMatrix MeshBind(const FMeshItem& Item);
+	bool BuildRig(FRig& Rig);
+	bool LoadSelectedSkeleton(const FString& Key);
+	bool ChooseMeshSkeleton(FRig& Rig);
+	bool CookAnimations(FRig& Rig);
+	FString Material(FbxSurfaceMaterial* SourceMaterial);
+	FString Texture(FbxProperty Property);
+	FString OpacityTexture(FbxSurfaceMaterial* Material, const FString& DiffuseKey, const FString& OpacityKey, const FString& Identity, ESamplerState Sampler);
+	FSurfaceUV SurfaceUV(FbxSurfaceMaterial* SourceMaterial, FbxMesh* Mesh, const FString& Context);
+	bool CookMesh(const FOutputGroup& Group);
+	bool AppendMesh(const FMeshItem& Item, FFbxAssetData& Asset, int LOD, std::map<uint32, std::vector<uint32>>& Sections);
+	void LODThresholds(const FOutputGroup& Group, FFbxAssetData& Asset);
+	bool Run();
+};
+
+FString FImport::MakeKey(const char* Prefix, const FString& Label, const FString& Identity)
+{
+	const FString TypePrefix = FString(Prefix) + "_";
+	auto StripPrefix = [&](FString Name)
+	{
+		if (Lower(Name).starts_with(Lower(TypePrefix))) Name.erase(0, TypePrefix.size());
+		else if (TypePrefix == "SK_" && Lower(Name).starts_with("skm_")) Name.erase(0, 4);
+		return FbxPath::FileName(Name);
+	};
+	FString SourceStem = FbxPath::ToString(Source.stem());
+	const FString LowerStem = Lower(SourceStem);
+	for (const FString MeshPrefix : { "skm_", "sk_", "sm_" })
+	{
+		if (LowerStem.starts_with(MeshPrefix))
 		{
-			auto* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(S, FbxDeformer::eSkin));
-			if (Skin->GetSkinningType() == FbxSkin::eDualQuaternion || Skin->GetSkinningType() == FbxSkin::eBlend)
+			SourceStem.erase(0, MeshPrefix.size());
+			break;
+		}
+	}
+	const FString SourceName = StripPrefix(std::move(SourceStem));
+	const FString ObjectName = StripPrefix(Label);
+	const FString Base = TypePrefix + SourceName + (Lower(SourceName) == Lower(ObjectName) ? "" : "_" + ObjectName);
+	FString Candidate = FbxPath::ToString(Destination / FbxPath::FromString(Base + ".fbxbin"));
+	FString Key;
+	if (!FbxPath::GetAssetKey(Candidate, Key, Error, false)) return {};
+	bool Conflict = false;
+	if (auto It = FileOwners.find(Lower(Key)); It != FileOwners.end()) Conflict = It->second != Identity;
+	if (fs::exists(FbxPath::FromString(Candidate)))
+	{
+		FString PreviousSource, PreviousObject;
+		// 읽을 수 없는 파일은 덮어쓰지 않고 별도 안정 이름을 선택한다.
+		if (!FFbxAssetBake::ReadSourceIdentity(Candidate, PreviousSource, PreviousObject)) Conflict = true;
+		else Conflict |= Lower(PreviousSource) != Lower(SourceKey) || PreviousObject != Identity;
+	}
+	if (Conflict)
+	{
+		std::ostringstream Hash; Hash << std::hex << FbxPath::StableHash(SourceKey + "/" + Identity);
+		Candidate = FbxPath::ToString(Destination / FbxPath::FromString(Base + "_" + Hash.str() + ".fbxbin"));
+		if (!FbxPath::GetAssetKey(Candidate, Key, Error, false)) return {};
+		if (fs::exists(FbxPath::FromString(Candidate)))
+		{
+			FString PreviousSource, PreviousObject;
+			if (!FFbxAssetBake::ReadSourceIdentity(Candidate, PreviousSource, PreviousObject) ||
+				Lower(PreviousSource) != Lower(SourceKey) || PreviousObject != Identity) { Error = "Output identity collision: " + Key; return {}; }
+		}
+	}
+	FileOwners[Lower(Key)] = Identity;
+	return Key;
+}
+
+void FImport::Gather(FbxNode* Node, bool ParentVisible, FbxNode* Group, int LOD)
+{
+	const bool Visible = Node->Visibility.Get() > 0 && (!Node->VisibilityInheritance.Get() || ParentVisible);
+	for (int A = 0; A < Node->GetNodeAttributeCount(); ++A)
+	{
+		auto* Attribute = Node->GetNodeAttributeByIndex(A);
+		if (Attribute->GetAttributeType() != FbxNodeAttribute::eMesh || !Visible || CollisionName(Node->GetName())) continue;
+		auto* Mesh = static_cast<FbxMesh*>(Attribute);
+		FMeshItem Item; Item.Node = Node; Item.Mesh = Mesh; Item.LODGroupNode = Group; Item.LOD = LOD;
+		Item.Label = Group ? Group->GetName() : Node->GetName();
+		Item.UnitKey = Group ? NodePath(Group) : NodePath(Node) + "Mesh[" + std::to_string(A) + "]";
+		if (!Group)
+		{
+			std::smatch Match;
+			const FString Name = Node->GetName();
+			if (std::regex_match(Name, Match, std::regex("(.+)_LOD([0-9]+)", std::regex::icase)))
 			{
-				// TODO: 현재는 Dual Quaternion/Blend도 Linear Skinning으로 처리하여 원본의 변형 방식을 보존하지 못한다.
-				// 해당 변형 방식에 필요한 데이터를 출력에 보존하고, 런타임 Skinning도 이를 사용하도록 확장해야 한다.
-				Warnings.Add("FBX: Dual Quaternion/Blend skin imported as Linear: " + FString(Node->GetName()));
+				Item.Label = Match[1].str();
+				Item.UnitKey = NodePath(Node->GetParent()) + "NamedLOD/" + Item.Label;
+				try { Item.LOD = std::stoi(Match[2].str()); } catch (...) { Item.LOD = 4; }
 			}
+		}
+		if (Item.LOD < 4) Meshes.push_back(std::move(Item));
+		else Warn("LOD4 and later geometry is omitted: " + Item.UnitKey);
+	}
+	const bool NewGroup = !Group && HasAttribute(Node, FbxNodeAttribute::eLODGroup);
+	for (int I = 0; I < Node->GetChildCount(); ++I)
+		Gather(Node->GetChild(I), Visible, NewGroup ? Node : Group, NewGroup ? I : LOD);
+}
+
+void FImport::FindRigs()
+{
+	std::set<FbxNode*> Links;
+	auto MatchesSelectedRoot = [](FbxNode* Node, FName RootName)
+	{
+		return (!Node->GetNodeAttribute() || HasAttribute(Node, FbxNodeAttribute::eNull)) &&
+			UnqualifiedBoneName(Node->GetName()) == RootName;
+	};
+	const auto SelectedMesh = Options.bImportOnlyAnimations
+		? SelectedSkeletons.end() : SelectedSkeletons.find(Options.SkeletalMeshSkeletonKey);
+	const FName MeshRootName = SelectedMesh == SelectedSkeletons.end()
+		? NAME_None : UnqualifiedBoneName(SelectedMesh->second.RefSkeleton.RefBoneInfo[0].Name);
+	for (int N = 0; N < Scene->GetNodeCount(); ++N)
+	{
+		FbxNode* Node = Scene->GetNode(N);
+		if (HasAttribute(Node, FbxNodeAttribute::eSkeleton) ||
+			(SelectedMesh != SelectedSkeletons.end() && MatchesSelectedRoot(Node, MeshRootName)))
+			Links.insert(Node);
+	}
+	for (auto& Item : Meshes)
+	{
+		for (int D = 0; D < Item.Mesh->GetDeformerCount(FbxDeformer::eSkin); ++D)
+		{
+			auto* Skin = static_cast<FbxSkin*>(Item.Mesh->GetDeformer(D, FbxDeformer::eSkin));
+			if (D) Warn("Additional Skin deformers are ignored: " + NodePath(Item.Node));
+			if (Skin->GetSkinningType() != FbxSkin::eLinear && Skin->GetSkinningType() != FbxSkin::eRigid)
+				Warn("DQ/Blend skinning is imported as Linear: " + NodePath(Item.Node));
 			for (int C = 0; C < Skin->GetClusterCount(); ++C)
 			{
 				FbxCluster* Cluster = Skin->GetCluster(C);
-				const int32* BoneIndex = BoneIndices.Find(Cluster->GetLink());
-				if (!BoneIndex) { Error = "FBX: weight Cluster Link is outside skeleton: " + FString(Node->GetName()); return false; }
-				if (Cluster->GetLinkMode() != FbxCluster::eNormalize && !bWarnedLinkMode)
+				if (!Cluster || !Cluster->GetLink() || IsCompensation(Cluster)) continue;
+				FbxNode* Link = Cluster->GetLink(); Links.insert(Link);
+				FbxAMatrix B, M; Cluster->GetTransformLinkMatrix(B); Cluster->GetTransformMatrix(M);
+				if (auto It = ClusterBones.find(Link); It != ClusterBones.end())
+				{ if (!Near(It->second, B)) Warn("Conflicting bind matrices; selected bind pose retained: " + NodePath(Link)); }
+				else ClusterBones.emplace(Link, B);
+				if (auto It = ClusterMeshes.find(Item.Mesh); It != ClusterMeshes.end())
+				{ if (!Near(It->second, M)) Warn("Conflicting mesh bind matrices; first Cluster fallback retained: " + NodePath(Item.Node)); }
+				else ClusterMeshes.emplace(Item.Mesh, M);
+				if (D == 0)
 				{
-					Warnings.Add("FBX: TotalOne/Additive weights normalized for Linear skinning: " + FString(Node->GetName()));
-					bWarnedLinkMode = true;
-				}
-				const int Entries = Cluster->GetControlPointIndicesCount();
-				const int* Points = Cluster->GetControlPointIndices();
-				const double* Weights = Cluster->GetControlPointWeights();
-				if (Entries < 0 || (Entries > 0 && (!Points || !Weights))) { Error = "FBX: invalid Cluster weight arrays: " + FString(Node->GetName()); return false; }
-				for (int I = 0; I < Entries; ++I)
-				{
-					const int CP = Points[I];
-					const double Weight = Weights[I];
-					if (CP < 0 || CP >= Count || !std::isfinite(Weight) || Weight < 0) { Error = "FBX: invalid Control Point index or weight: " + FString(Node->GetName()); return false; }
-					if (Weight == 0) continue;
-					double& Sum = Influences[CP].FindOrAdd(*BoneIndex);
-					Sum += Weight;
-					if (!std::isfinite(Sum)) { Error = "FBX: weight sum overflow: " + FString(Node->GetName()); return false; }
+					FbxNode* Root = FindRoot(Scene, Link, bBlender);
+					if (Item.Rig && Item.Rig != Root) { Error = "One mesh references incompatible rig roots: " + NodePath(Item.Node); return; }
+					Item.Rig = Root;
 				}
 			}
 		}
-		Result.SetNum(Count);
-		for (int32 CP = 0; CP < Count; ++CP)
-		{
-			TArray<std::pair<int32, double>> Sorted;
-			for (const auto& Influence : Influences[CP]) Sorted.Add({ Influence.first, Influence.second });
-			if (Sorted.IsEmpty())
-			{
-				// TODO: 현재는 양수 Weight가 없는 Control Point가 하나라도 있으면 Import 전체가 실패한다.
-				// 이런 정점의 처리 정책을 먼저 정하고, 임의 Bone에 귀속하지 않으면서 Import를 계속할 대체 처리를 추가해야 한다.
-				Error = "FBX: Control Point has no positive influence: " + FString(Node->GetName()) + " [" + std::to_string(CP) + "]";
-				return false;
-			}
-			// 동률은 Bone 번호로 정렬하여 TMap 순회 순서와 관계없이 같은 결과를 만든다.
-			std::sort(Sorted.begin(), Sorted.end(), [](const auto& A, const auto& B)
-			{
-				return A.second != B.second ? A.second > B.second : A.first < B.first;
-			});
-			const int32 Used = std::min(MaxBoneInfluences, Sorted.Num());
-			double Sum = 0;
-			for (int32 I = 0; I < Used; ++I) Sum += Sorted[I].second;
-			if (!std::isfinite(Sum)) { Error = "FBX: weight sum overflow: " + FString(Node->GetName()); return false; }
-			FSkinWeight Weight;
-			for (int32 I = 0; I < Used; ++I)
-			{
-				Weight.BoneIndex[I] = static_cast<uint8>(Sorted[I].first);
-				Weight.Weight[I] = static_cast<float>(Sorted[I].second / Sum);
-			}
-			Result[CP] = Weight;
-		}
-		return true;
 	}
-
-	bool IsBoneNode(FbxNode* Node)
+	auto AddRig = [this](FbxNode* Link) -> FRig*
 	{
-		const FbxNodeAttribute* Attribute = Node->GetNodeAttribute();
-		if (!Attribute) return false;
-		const auto Type = Attribute->GetAttributeType();
-		return Type == FbxNodeAttribute::eSkeleton || Type == FbxNodeAttribute::eNull || Type == FbxNodeAttribute::eMesh;
-	}
+		FbxNode* Root = FindRoot(Scene, Link, bBlender);
+		if (!Root || Root == Scene->GetRootNode()) return nullptr;
+		auto& Rig = Rigs[NodePath(Root)]; Rig.Root = Root;
+		Rig.IncludeBoneAndParents(Link);
+		return &Rig;
+	};
+	for (FbxNode* Link : Links) AddRig(Link);
 
-	FbxNode* FindSkeletonRoot(FbxNode* Node, FbxScene* Scene, bool bIsBlender)
+	std::unordered_map<FbxNode*, FRig*> RigsByRoot;
+	for (auto& [Path, Rig] : Rigs) RigsByRoot.emplace(Rig.Root, &Rig);
+	auto FindContainingRig = [&RigsByRoot](FbxNode* Node) -> FRig*
 	{
-		while (FbxNode* Parent = Node->GetParent())
-		{
-			if (Parent == Scene->GetRootNode() || !IsBoneNode(Parent)) break;
-			const auto Type = Parent->GetNodeAttribute()->GetAttributeType();
-			// Blender의 Armature 컨테이너는 Bone에서 제외한다. 그 Transform은 Root의 Global에 남는다.
-			if (bIsBlender && Type == FbxNodeAttribute::eNull && Parent->GetParent() == Scene->GetRootNode() && _stricmp(Parent->GetName(), "armature") == 0) break;
-			// UE GetRootSkeleton처럼 Skin Mesh가 Bone의 조상인 경우 그 Mesh까지 올라가지 않는다.
-			if (Type == FbxNodeAttribute::eMesh && Parent->GetMesh()->GetDeformerCount(FbxDeformer::eSkin) > 0) break;
-			Node = Parent;
-		}
-		return Node;
-	}
-
-	void CollectBoneNodes(FbxNode* Node, TArray<FbxNode*>& Nodes)
-	{
-		if (!IsBoneNode(Node)) return;
-		Nodes.Add(Node);
-		for (int Child = 0; Child < Node->GetChildCount(); ++Child) CollectBoneNodes(Node->GetChild(Child), Nodes);
-	}
-
-	// 이 Bone의 Bind Global을 Bind Pose → Cluster Link → 현재 Global 순서로 찾는다.
-	// "Bone missing from Bind Pose"는 파일의 모든 Bind Pose에서 이 Node를 찾지 못했다는 뜻이다.
-	// 파일 전체에 Bind Pose가 없거나 Import에 실패했다는 뜻은 아니다. Weight 없는 IK/보조 Bone도
-	// Skeleton에 포함하므로, 이런 Bone의 Bind Pose 항목이 원본에 없으면 같은 경고가 발생할 수 있다.
-	// Bind Pose에 있으면 저장된 Global 행렬을 사용한다. 없으면 경고를 남긴 뒤 이 Node를 Link로
-	// 참조하는 Cluster의 TransformLinkMatrix를 사용하고, 그런 Cluster도 없으면 현재 Global을 사용한다.
-	// 현재 Global을 사용하는 경우 원래 Bind 시점의 자세를 복구하는 것은 아니며, 현재 자세를 Bind로 삼는다.
-	// Bone 자체는 제외하지 않는다. 호출부가 반환된 Global로 Local Bind와 Inverse Bind를 구성한다.
-	FbxAMatrix ReadBindGlobal(FbxScene* Scene, FbxNode* Node, const TArray<FbxCluster*>& Clusters, TArray<FString>& Warnings)
-	{
-		FbxAMatrix Global;
-		for (int I = 0; I < Scene->GetPoseCount(); ++I)
-		{
-			FbxPose* Pose = Scene->GetPose(I);
-			if (!Pose->IsBindPose()) continue;
-			const int Index = Pose->Find(Node);
-			if (Index < 0) continue;
-			const FbxMatrix& Matrix = Pose->GetMatrix(Index);
-			std::copy_n(static_cast<const double*>(Matrix), 16, static_cast<double*>(Global));
-			return Global;
-		}
-		Warnings.Add("Bone missing from Bind Pose; using Cluster Link or current Global: " + FString(Node->GetName()));
-		for (FbxCluster* Cluster : Clusters)
-		{
-			if (Cluster->GetLink() != Node) continue;
-			Cluster->GetTransformLinkMatrix(Global);
-			return Global;
-		}
-		return Node->EvaluateGlobalTransform();
-	}
-
-	bool IsFiniteMatrix(const FbxAMatrix& Matrix)
-	{
-		const double* Values = Matrix;
-		return std::all_of(Values, Values + 16, [](double Value) { return std::isfinite(Value); });
-	}
-
-	using FVertexKey = std::pair<int32, std::array<float, 9>>;
-
-	// OBJ Importer와 같은 방식으로 정점 조합의 해시를 만든다.
-	struct FVertexKeyHash
-	{
-		size_t operator()(const FVertexKey& Key) const
-		{
-			size_t Hash = std::hash<int32>{}(Key.first);
-			for (float Value : Key.second)
-				Hash = Hash * 31 + std::hash<float>{}(Value);
-			return Hash;
-		}
+		for (; Node; Node = Node->GetParent())
+			if (auto It = RigsByRoot.find(Node); It != RigsByRoot.end()) return It->second;
+		return nullptr;
 	};
 
-	std::filesystem::path PathOf(const FString& Text)
+	for (auto& Item : Meshes)
 	{
-		return std::filesystem::path(std::u8string(Text.begin(), Text.end()));
+		const bool bSkinned = Item.Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0;
+		if (Item.Rig || (!bSkinned && !Options.bConvertStaticsInBoneHierarchyToSkeletals)) continue;
+		FRig* Rig = FindContainingRig(Item.Node);
+		if (!Rig) continue;
+		Item.Rig = Rig->Root;
+		if (!bSkinned) Rig->IncludeBoneAndParents(Item.Node);
 	}
+	for (const auto& Item : Meshes)
+		if (Item.Rig) Rigs.at(NodePath(Item.Rig)).bHasMesh = true;
 
-	void Warn(TArray<FString>& Warnings, const FString& Text)
+	// Animation-only root hints must not change how meshes were classified above.
+	if (const auto Selected = SelectedSkeletons.find(Options.AnimationSkeletonKey);
+		(Options.bImportAnimations || Options.bImportOnlyAnimations) && Selected != SelectedSkeletons.end())
 	{
-		if (std::find(Warnings.begin(), Warnings.end(), Text) == Warnings.end()) Warnings.Add(Text);
-	}
-
-	FVector ToVector(const FbxVector4& Value)
-	{
-		return FVector(static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]));
-	}
-
-	// Mapping은 대상 칸을, Reference는 그 칸이 값인지 값 배열의 Index인지를 결정한다.
-	template <typename Element, typename Value>
-	bool ReadElement(const Element* Layer, int ControlPoint, int PolygonVertex, int Polygon, Value& OutValue, FString& Error)
-	{
-		int Index;
-		switch (Layer->GetMappingMode())
+		const FName RootName = UnqualifiedBoneName(Selected->second.RefSkeleton.RefBoneInfo[0].Name);
+		for (int I = 0; I < Scene->GetNodeCount(); ++I)
 		{
-		case FbxLayerElement::eByControlPoint: Index = ControlPoint; break;
-		case FbxLayerElement::eByPolygonVertex: Index = PolygonVertex; break;
-		case FbxLayerElement::eByPolygon: Index = Polygon; break;
-		case FbxLayerElement::eAllSame: Index = 0; break;
-		default: Error = "unsupported layer mapping"; return false;
+			FbxNode* Node = Scene->GetNode(I);
+			if (MatchesSelectedRoot(Node, RootName) && !FindContainingRig(Node))
+				if (FRig* Rig = AddRig(Node)) RigsByRoot.emplace(Rig->Root, Rig);
 		}
-		if (Layer->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+	}
+
+	// As in Interchange, transform animation contributes to an established joint hierarchy.
+	// A curve on an unrelated scene object does not establish a new skeleton root.
+	std::vector<FbxAnimLayer*> AnimationLayers;
+	for (int I = 0; I < Scene->GetSrcObjectCount<FbxAnimStack>(); ++I)
+	{
+		FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(I);
+		for (int L = 0; L < Stack->GetMemberCount<FbxAnimLayer>(); ++L)
+			AnimationLayers.push_back(Stack->GetMember<FbxAnimLayer>(L));
+	}
+	if (!AnimationLayers.empty())
+	{
+		for (int I = 0; I < Scene->GetNodeCount(); ++I)
 		{
-			if (Index < 0 || Index >= Layer->GetIndexArray().GetCount()) { Error = "layer index array out of range"; return false; }
-			Index = Layer->GetIndexArray().GetAt(Index);
+			FbxNode* Node = Scene->GetNode(I);
+			FRig* Rig = FindContainingRig(Node);
+			if (!Rig) continue;
+			if (!Rig->Needed.contains(Node))
+			{
+				const auto* Attribute = Node->GetNodeAttribute();
+				const auto* Mesh = Node->GetMesh();
+				if (Attribute && Attribute->GetAttributeType() != FbxNodeAttribute::eNull &&
+					(!Options.bConvertStaticsInBoneHierarchyToSkeletals ||
+					 !Mesh || Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0)) continue;
+			}
+			const bool bAnimated = std::any_of(AnimationLayers.begin(), AnimationLayers.end(), [Node](FbxAnimLayer* Layer)
+			{
+				return Node->LclTranslation.IsAnimated(Layer) || Node->LclRotation.IsAnimated(Layer) ||
+					Node->LclScaling.IsAnimated(Layer);
+			});
+			if (bAnimated)
+			{
+				Rig->IncludeBoneAndParents(Node);
+				Rig->bHasTransformAnimation = true;
+			}
 		}
-		else if (Layer->GetReferenceMode() != FbxLayerElement::eDirect)
+	}
+}
+
+void FImport::PreparePoses()
+{
+	if (!Scene->GetPoseCount()) Scene->GetFbxManager()->CreateMissingBindPoses(Scene);
+	for (int I = 0; I < Scene->GetPoseCount(); ++I)
+	{
+		FbxPose* Pose = Scene->GetPose(I);
+		if (Pose && Pose->IsBindPose()) Poses.push_back(Pose);
+	}
+	if (Poses.empty() && !Rigs.empty()) Warn("No usable BindPose; Cluster bind matrices and evaluated reference transforms are used");
+}
+
+bool FImport::PoseMatrix(FbxPose* Pose, FbxNode* Node, FbxAMatrix& Out)
+{
+	const int Index = Pose->Find(Node);
+	if (Index < 0) return false;
+	// BindPose는 노드별로 검증한다.
+	FbxArray<FbxNode*> Ancestors, Deformers, DeformerAncestors, Wrong;
+	bool Valid = Pose->IsValidBindPoseVerbose(Node, Ancestors, Deformers, DeformerAncestors, Wrong, 1.e-4);
+	if (!Valid)
+	{
+		for (int A = 0; A < Ancestors.GetCount(); ++A)
+			Pose->Add(Ancestors[A], Ancestors[A]->EvaluateGlobalTransform(FBXSDK_TIME_ZERO));
+		Valid = Pose->IsValidBindPose(Node);
+		if (!Valid)
 		{
-			Error = "unsupported layer reference mode";
+			FbxNode* Parent = Node->GetParent();
+			for (; Parent; Parent = Parent->GetParent())
+				if (auto* Attribute = Parent->GetNodeAttribute(); Attribute && Attribute->GetAttributeType() == FbxNodeAttribute::eNull) break;
+			Valid = Parent && Pose->IsValidBindPose(Parent);
+		}
+	}
+	if (!Valid) return false;
+	const FbxMatrix& Matrix = Pose->GetMatrix(Index);
+	for (int R = 0; R < 4; ++R) Out.SetRow(R, Matrix.GetRow(R));
+	if (Pose->IsLocalMatrix(Index)) Out = Bind(Node->GetParent()) * Out;
+	return true;
+}
+
+FbxAMatrix FImport::Bind(FbxNode* Node)
+{
+	if (!Node || Node == Scene->GetRootNode()) return FbxAMatrix();
+	if (auto It = BindCache.find(Node); It != BindCache.end()) return It->second;
+	FbxAMatrix Result;
+	bool Found = false;
+	for (FbxPose* Pose : Poses)
+	{
+		FbxAMatrix Candidate;
+		if (!PoseMatrix(Pose, Node, Candidate)) continue;
+		if (Found) { if (!Near(Result, Candidate)) Warn("Multiple BindPoses differ; first valid pose retained: " + NodePath(Node)); }
+		else { Result = Candidate; Found = true; }
+	}
+	if (auto It = ClusterBones.find(Node); It != ClusterBones.end())
+	{
+		if (Found && !Near(Result, It->second)) Warn("BindPose and Cluster differ; BindPose retained: " + NodePath(Node));
+		if (!Found) { Result = It->second; Found = true; }
+	}
+	if (!Found) Result = Node->EvaluateGlobalTransform(FBXSDK_TIME_ZERO);
+	BindCache.emplace(Node, Result);
+	return Result;
+}
+
+FbxAMatrix FImport::MeshBind(const FMeshItem& Item)
+{
+	for (FbxPose* Pose : Poses)
+	{
+		FbxAMatrix Result;
+		if (PoseMatrix(Pose, Item.Node, Result))
+		{
+			if (auto It = ClusterMeshes.find(Item.Mesh); It != ClusterMeshes.end() && !Near(Result, It->second))
+				Warn("Mesh BindPose and Cluster differ; BindPose retained: " + NodePath(Item.Node));
+			return Result;
+		}
+	}
+	if (auto It = ClusterMeshes.find(Item.Mesh); It != ClusterMeshes.end()) return It->second;
+	return Bind(Item.Node);
+}
+
+bool FImport::BuildRig(FRig& Rig)
+{
+	Rig.ParentBind = Bind(Rig.Root->GetParent());
+	const FbxAMatrix FrameInverse = Options.bBakeSkeletalMeshes ? FbxAMatrix() : Rig.ParentBind.Inverse();
+	if (!FiniteMatrix(EngineMatrix(Rig.ParentBind, UnitScale))) { Error = "Singular rig parent bind transform"; return false; }
+	std::function<bool(FbxNode*, int)> Visit = [&](FbxNode* Node, int Parent)
+	{
+		if (!Rig.Needed.contains(Node)) return true;
+		if (Rig.Bones.size() >= 65536) { Error = "More than 65536 bones in a rig"; return false; }
+		const uint16 Index = static_cast<uint16>(Rig.Bones.size());
+		Rig.Bones.push_back(Node); Rig.Indices[Node] = Index;
+		const FbxAMatrix Global = FrameInverse * Bind(Node);
+		const FbxAMatrix Local = Parent < 0 ? Global : (FrameInverse * Bind(Rig.Bones[Parent])).Inverse() * Global;
+		const FMatrix Converted = EngineMatrix(Local, UnitScale);
+		if (!FiniteMatrix(Converted)) { Error = "Invalid bind transform: " + NodePath(Node); return false; }
+		const FBoneTRS TRS = ConvertBoneTRS(Local, UnitScale);
+		FTransform Transform(TRS.Rotation.ToFRotator(), TRS.Translation, TRS.Scale);
+		const FMatrix Rebuilt = Transform.GetLocalMatrix();
+		bool Difference = false;
+		for (int R = 0; R < 4; ++R) for (int C = 0; C < 4; ++C)
+			Difference |= std::abs(Rebuilt.M[R][C] - Converted.M[R][C]) > 1.e-3f * (1 + std::abs(Converted.M[R][C]));
+		if (Difference) Warn("Bone transform is approximated as TRS: " + NodePath(Node));
+		Rig.Reference.RefBoneInfo.Add({ Node->GetName(), Parent });
+		Rig.Reference.RefBonePose.Add(Transform);
+		for (int C = 0; C < Node->GetChildCount(); ++C) if (!Visit(Node->GetChild(C), Index)) return false;
+		return true;
+	};
+	return Visit(Rig.Root, -1) && Rig.Reference.Validate(Error);
+}
+
+bool FImport::LoadSelectedSkeleton(const FString& Key)
+{
+	if (Key.empty() || SelectedSkeletons.contains(Key)) return true;
+	FString Path;
+	if (!FbxPath::ResolveKey(Key, Path, Error)) return false;
+	if (!FFbxAssetBake::IsBakedPath(Path))
+	{ Error = "Selected Skeleton must be a .fbxbin asset: " + Key; return false; }
+	FFbxAssetData Skeleton;
+	if (!FFbxAssetBake::ReadBaked(Path, Skeleton, Error)) return false;
+	if (Skeleton.Type != EFbxAssetType::Skeleton)
+	{ Error = "Selected asset is not a Skeleton: " + Key; return false; }
+	Skeleton.Key = Key;
+	SelectedSkeletons.emplace(Key, std::move(Skeleton));
+	return true;
+}
+
+bool FImport::ChooseMeshSkeleton(FRig& Rig)
+{
+	if (!Options.SkeletalMeshSkeletonKey.empty())
+	{
+		auto& Target = SelectedSkeletons.at(Options.SkeletalMeshSkeletonKey).RefSkeleton;
+		const FTargetBoneNames Names(Target);
+		FReferenceSkeleton MeshReference = Rig.Reference;
+		for (auto& Bone : MeshReference.RefBoneInfo)
+		{
+			const int32 Match = Names.Find(Bone.Name);
+			if (Match != INDEX_NONE) Bone.Name = Target.RefBoneInfo[Match].Name;
+		}
+		FString Reason;
+		if (!Target.MergeBonesFrom(MeshReference, Reason))
+		{
+			Warn("Skeletal mesh group skipped for " + Options.SkeletalMeshSkeletonKey +
+				" [" + NodePath(Rig.Root) + "]: " + Reason);
+			return true;
+		}
+		Rig.Reference = std::move(MeshReference);
+		Rig.MeshSkeletonKey = Options.SkeletalMeshSkeletonKey;
+		return true;
+	}
+	const FString Identity = "Skeleton:" + NodePath(Rig.Root);
+	Rig.MeshSkeletonKey = MakeKey("SKEL", Rig.Root->GetName(), Identity);
+	if (Rig.MeshSkeletonKey.empty()) return false;
+	auto Asset = Data(EFbxAssetType::Skeleton, Rig.MeshSkeletonKey, Identity);
+	Asset.RefSkeleton = Rig.Reference;
+	Output.Add(std::move(Asset));
+	return true;
+}
+
+struct FAnimatedTime
+{
+	double Start = std::numeric_limits<double>::infinity();
+	double Stop = -std::numeric_limits<double>::infinity();
+	bool IsValid() const { return std::isfinite(Start) && std::isfinite(Stop) && Start <= Stop; }
+	void Include(const FAnimatedTime& Other)
+	{
+		Start = std::min(Start, Other.Start);
+		Stop = std::max(Stop, Other.Stop);
+	}
+};
+
+FAnimatedTime FindTransformKeyTimes(FbxNode* Node, const std::vector<FbxAnimLayer*>& Layers)
+{
+	FAnimatedTime Result;
+	FbxProperty Properties[]{ Node->LclTranslation, Node->LclRotation, Node->LclScaling };
+	for (FbxAnimLayer* Layer : Layers)
+	{
+		for (auto& Property : Properties)
+		{
+			auto* CurveNode = Property.GetCurveNode(Layer);
+			if (!CurveNode) continue;
+			for (unsigned Channel = 0; Channel < CurveNode->GetChannelsCount(); ++Channel)
+			{
+				for (int Index = 0; Index < CurveNode->GetCurveCount(Channel); ++Index)
+				{
+					auto* Curve = CurveNode->GetCurve(Channel, Index);
+					if (!Curve || Curve->KeyGetCount() == 0) continue;
+					Result.Include({ Curve->KeyGetTime(0).GetSecondDouble(),
+						Curve->KeyGetTime(Curve->KeyGetCount() - 1).GetSecondDouble() });
+				}
+			}
+		}
+	}
+	return Result;
+}
+
+bool BuildAnimationBoneMap(const FRig& Rig, const FReferenceSkeleton& Target,
+	std::vector<int32>& SourceToTarget, int32& SourceRoot, FString& Reason)
+{
+	const FTargetBoneNames Names(Target);
+	const auto& SourceBones = Rig.Reference.RefBoneInfo;
+	for (int32 Index = 0; Index < SourceBones.Num(); ++Index)
+	{
+		if (Names.Find(SourceBones[Index].Name) != 0) continue;
+		if (SourceRoot != INDEX_NONE) { Reason = "Multiple source bones match the Skeleton root"; return false; }
+		SourceRoot = Index;
+	}
+	if (SourceRoot == INDEX_NONE)
+	{
+		Reason = "Source has no joint matching Skeleton root " + Target.RefBoneInfo[0].Name;
+		return false;
+	}
+
+	SourceToTarget.resize(SourceBones.Num(), INDEX_NONE);
+	SourceToTarget[SourceRoot] = 0;
+	std::vector<bool> InRoot(SourceBones.Num(), false);
+	InRoot[SourceRoot] = true;
+	std::unordered_set<int32> UsedBones{ 0 };
+	for (int32 Index = SourceRoot + 1; Index < SourceBones.Num(); ++Index)
+	{
+		const auto& Bone = SourceBones[Index];
+		if (!InRoot[Bone.ParentIndex]) continue;
+		InRoot[Index] = true;
+		const int32 Match = Names.Find(Bone.Name);
+		if (Match == INDEX_NONE) continue;
+		if (!UsedBones.insert(Match).second ||
+			Target.RefBoneInfo[Match].ParentIndex != SourceToTarget[Bone.ParentIndex])
+		{
+			Reason = "Different parent chain or ambiguous mapping for animation bone " + Bone.Name;
 			return false;
 		}
-		if (Index < 0 || Index >= Layer->GetDirectArray().GetCount()) { Error = "layer direct array out of range"; return false; }
-		OutValue = Layer->GetDirectArray().GetAt(Index);
+		SourceToTarget[Index] = Match;
+	}
+	return true;
+}
+
+bool GetAnimationSampleRange(FbxAnimStack& Stack, const FFbxImportOptions& Options, FAnimatedTime Animated,
+	double Rate, FFbxAnimationData& Clip, FString& Reason)
+{
+	FAnimatedTime Range = Animated;
+	if (Options.AnimationRange == EFbxAnimationRange::Timeline)
+	{
+		const FbxTimeSpan Span = Stack.GetLocalTimeSpan();
+		const FAnimatedTime Timeline{ Span.GetStart().GetSecondDouble(), Span.GetStop().GetSecondDouble() };
+		if (Timeline.IsValid() && (Timeline.Start < Timeline.Stop || Animated.Start == Animated.Stop))
+			Range = Timeline;
+	}
+	else if (Options.AnimationRange == EFbxAnimationRange::SetRange)
+	{
+		Range = { Options.FirstAnimationFrame / Rate, Options.LastAnimationFrame / Rate };
+	}
+
+	double Frames = (Range.Stop - Range.Start) * Rate;
+	if (!Range.IsValid() || !std::isfinite(Frames))
+	{ Reason = "Invalid animation time range"; return false; }
+	if (std::abs(Frames - std::round(Frames)) > 1.e-4)
+	{
+		auto Align = [Mode = Options.FrameAlignment](double Frame)
+		{
+			if (Mode == EFbxFrameAlignment::Floor) return std::floor(Frame);
+			if (Mode == EFbxFrameAlignment::Ceiling) return std::ceil(Frame);
+			return std::round(Frame);
+		};
+		if (Options.FrameAlignment == EFbxFrameAlignment::None)
+		{ Reason = "Animation length is not on a sample boundary; set Frame Alignment"; return false; }
+		const double First = Align(Range.Start * Rate);
+		const double Last = Align(Range.Stop * Rate);
+		Range = { First / Rate, Last / Rate };
+		Frames = Last - First;
+	}
+	const double LastKey = std::round(Frames);
+	const double TimeLimit = FBXSDK_TIME_INFINITE.GetSecondDouble();
+	if (Range.Start <= -TimeLimit || Range.Start + LastKey / Rate >= TimeLimit)
+	{ Reason = "Animation time exceeds the FBX time range"; return false; }
+	if (!std::isfinite(LastKey) || LastKey < 0 || LastKey >= FFbxAnimationData::MaxKeys)
+	{ Reason = "Animation sample count exceeds the .fbxbin limit"; return false; }
+	Clip.StartTime = Range.Start;
+	Clip.FrameRate = static_cast<float>(Rate);
+	Clip.NumberOfKeys = static_cast<int32>(LastKey) + 1;
+	return true;
+}
+
+bool FImport::CookAnimations(FRig& Rig)
+{
+	const FString& SkeletonKey = Options.AnimationSkeletonKey.empty()
+		? Rig.MeshSkeletonKey : Options.AnimationSkeletonKey;
+	if (SkeletonKey.empty())
+	{
+		Warn("Animation skipped because the rig has no imported mesh or selected Skeleton: " + NodePath(Rig.Root));
+		return true;
+	}
+	const auto Selected = SelectedSkeletons.find(SkeletonKey);
+	const auto& Target = Selected != SelectedSkeletons.end() ? Selected->second.RefSkeleton : Rig.Reference;
+	std::vector<int32> SourceToTarget;
+	int32 SourceRoot = INDEX_NONE;
+	FString Reason;
+	if (!BuildAnimationBoneMap(Rig, Target, SourceToTarget, SourceRoot, Reason))
+	{
+		Warn("Animation rig skipped for " + SkeletonKey + " [" + NodePath(Rig.Root) + "]: " + Reason);
 		return true;
 	}
 
-	// SDK 기본 추출은 동일 파일명의 공유 Texture 경로를 잘못 연결할 수 있어 원본 전체 경로로 대응시킨다.
-	// Open 중에만 사용하는 상태다. 추출 파일의 수명은 호출자가 관리하는 작업 폴더를 따른다.
-	struct FEmbeddedExtraction
+	const auto& Settings = Scene->GetGlobalSettings();
+	double Rate = Options.CustomBoneAnimationSampleRate;
+	if (Rate == 0)
 	{
-		std::filesystem::path Folder;
-		TMap<FString, FString> Files;
-		FString Error;
-
-		static FString Key(const char* Name)
+		const auto TimeMode = Settings.GetTimeMode();
+		Rate = TimeMode == FbxTime::eCustom ? Settings.GetCustomFrameRate() : FbxTime::GetFrameRate(TimeMode);
+		if (!std::isfinite(Rate) || Rate <= 0)
 		{
-			const auto Text = PathOf(Name).lexically_normal().generic_u8string();
-			return FString(Text.begin(), Text.end());
+			Rate = 30.0;
+			Warn("FBX source has no valid frame rate; sampling animation at 30 Hz");
+		}
+	}
+	const bool bBake = Selected != SelectedSkeletons.end() && SkeletonKey != Rig.MeshSkeletonKey
+		? Selected->second.Options.bBakeSkeletalMeshes : Options.bBakeSkeletalMeshes;
+	FbxNode* Root = Rig.Bones[SourceRoot];
+	const FbxAMatrix RootParentBind = Bind(Root->GetParent());
+	const FbxAMatrix FrameInverse = bBake ? FbxAMatrix() : RootParentBind.Inverse();
+
+	std::map<FString, int32> Occurrences;
+	for (int StackIndex = 0; StackIndex < Scene->GetSrcObjectCount<FbxAnimStack>(); ++StackIndex)
+	{
+		auto* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
+		const FString StackName = Stack->GetName();
+		const int32 Occurrence = Occurrences[StackName]++;
+		std::vector<FbxAnimLayer*> Layers;
+		for (int LayerIndex = 0; LayerIndex < Stack->GetMemberCount<FbxAnimLayer>(); ++LayerIndex)
+		{
+			auto* Layer = Stack->GetMember<FbxAnimLayer>(LayerIndex);
+			if (Layer && !Layer->Mute.Get()) Layers.push_back(Layer);
+		}
+		if (std::any_of(Layers.begin(), Layers.end(), [](auto* Layer) { return Layer->Solo.Get(); }))
+			std::erase_if(Layers, [](auto* Layer) { return !Layer->Solo.Get(); });
+
+		std::vector<int32> TrackIndices;
+		FAnimatedTime Animated;
+		bool bSkippedUnmatched = false;
+		for (int32 Index = 0; Index < static_cast<int32>(Rig.Bones.size()); ++Index)
+		{
+			const auto TrackTimes = FindTransformKeyTimes(Rig.Bones[Index], Layers);
+			if (!TrackTimes.IsValid()) continue;
+			if (SourceToTarget[Index] == INDEX_NONE) { bSkippedUnmatched = true; continue; }
+			TrackIndices.push_back(Index);
+			Animated.Include(TrackTimes);
+		}
+		const FString Context = StackName + " [" + NodePath(Rig.Root) + "]";
+		if (bSkippedUnmatched)
+			Warn("Animation tracks outside the matched Skeleton are ignored: " + Context);
+		if (TrackIndices.empty()) continue;
+		// Ancestor motion affects the root in the same imported frame as its bind pose.
+		FAnimatedTime Ancestors;
+		for (FbxNode* Node = Root->GetParent(); Node; Node = Node->GetParent())
+			Ancestors.Include(FindTransformKeyTimes(Node, Layers));
+		if (Ancestors.IsValid())
+		{
+			if (std::find(TrackIndices.begin(), TrackIndices.end(), SourceRoot) == TrackIndices.end())
+				TrackIndices.insert(TrackIndices.begin(), SourceRoot);
+			Animated.Include(Ancestors);
 		}
 
-		static FbxCallback::State Read(void* User, FbxClassId Hint, const char* Name, const void* Data, size_t Size)
+		FFbxAnimationData Clip;
+		if (!GetAnimationSampleRange(*Stack, Options, Animated, Rate, Clip, Reason))
 		{
-			// 현재 Import 대상은 이미지다. 다른 Embedded media는 디스크에 추출하지 않는다.
-			if (Hint != FbxVideo::ClassId) return FbxCallback::eHandled;
-			auto& State = *static_cast<FEmbeddedExtraction*>(User);
-			if (!State.Error.empty()) return FbxCallback::eFailure;
-			try
+			Warn("Animation skipped " + Context + ": " + Reason);
+			continue;
+		}
+		if (static_cast<uint64>(Clip.NumberOfKeys) * TrackIndices.size() * 3 > FFbxAnimationData::MaxChannelKeys)
+		{
+			Warn("Animation exceeds the channel key limit: " + Context);
+			continue;
+		}
+		for (const int32 Index : TrackIndices)
+		{
+			auto& Track = Clip.BoneAnimationTracks.AddDefaulted_GetRef();
+			Track.Name = Target.RefBoneInfo[SourceToTarget[Index]].Name;
+		}
+		Scene->SetCurrentAnimationStack(Stack);
+		Scene->GetAnimationEvaluator()->Reset();
+		bool bValid = true;
+		for (int32 Key = 0; Key < Clip.NumberOfKeys && bValid; ++Key)
+		{
+			FbxTime Time;
+			Time.SetSecondDouble(Clip.StartTime + Key / Rate);
+			for (int32 Track = 0; Track < Clip.BoneAnimationTracks.Num(); ++Track)
 			{
-				if (!Name || !*Name || !Data || !Size) { State.Error = "FBX: empty embedded texture"; return FbxCallback::eFailure; }
-				const FString Original = Key(Name);
-				if (State.Files.Contains(Original)) return FbxCallback::eHandled;
-				// 서로 다른 폴더의 동일 파일명도 보존하며, 원본 경로를 추출 대상 경로로 사용하지 않는다.
-				const auto Directory = State.Folder / std::to_string(State.Files.Num());
-				std::filesystem::create_directory(Directory);
-				const auto Target = Directory / PathOf(Name).filename();
-				std::ofstream File(Target, std::ios::binary | std::ios::trunc);
-				File.write(static_cast<const char*>(Data), static_cast<std::streamsize>(Size));
-				File.close();
-				if (!File) { State.Error = "FBX: cannot extract embedded texture: " + Original; return FbxCallback::eFailure; }
-				const auto Text = Target.generic_u8string();
-				State.Files.Add(Original, FString(Text.begin(), Text.end()));
-				return FbxCallback::eHandled;
-			}
-			catch (const std::exception& Exception)
-			{
-				State.Error = "FBX: embedded texture extraction failed: " + FString(Exception.what());
-				return FbxCallback::eFailure;
+				const int32 SourceIndex = TrackIndices[Track];
+				FbxNode* Node = Rig.Bones[SourceIndex];
+				const FbxAMatrix Global = Node->EvaluateGlobalTransform(Time);
+				const FbxAMatrix Local = SourceIndex == SourceRoot ? FrameInverse * Global
+					: Node->GetParent()->EvaluateGlobalTransform(Time).Inverse() * Global;
+				if (!FiniteMatrix(EngineMatrix(Local, UnitScale)))
+				{
+					Warn("Animation has an invalid or singular transform: " + Context + " " + NodePath(Node));
+					bValid = false;
+					break;
+				}
+				const FBoneTRS TRS = ConvertBoneTRS(Local, UnitScale);
+				auto& Raw = Clip.BoneAnimationTracks[Track].InternalTrackData;
+				Raw.PosKeys.Add(TRS.Translation);
+				Raw.RotKeys.Add(TRS.Rotation);
+				Raw.ScaleKeys.Add(TRS.Scale);
 			}
 		}
+		if (!bValid) continue;
 
-		void ResolveTextures(FbxScene* Scene) const
+		const FString Identity = "Animation:" + NodePath(Rig.Root) + StackName + "[" + std::to_string(Occurrence) + "]";
+		const FString Label = (StackName.empty() ? FString("Take") : StackName)
+			+ (Rigs.size() > 1 ? "_" + FString(Rig.Root->GetName()) : "");
+		const FString Key = MakeKey("AS", Label, Identity);
+		if (Key.empty()) return false;
+		auto Asset = Data(EFbxAssetType::AnimSequence, Key, Identity);
+		Asset.SkeletonKey = SkeletonKey;
+		Asset.Animation = std::move(Clip);
+		Output.Add(std::move(Asset));
+	}
+	return true;
+}
+
+FSurfaceUV FImport::SurfaceUV(FbxSurfaceMaterial* Material, FbxMesh* Mesh, const FString& Context)
+{
+	FSurfaceUV Out;
+	FbxStringList Names; Mesh->GetUVSetNames(Names);
+	const FString First = Names.GetCount() ? Names[0].Buffer() : "";
+	FbxFileTexture* Inputs[]{ FileTexture(Material, FbxSurfaceMaterial::sDiffuse), FileTexture(Material, FbxSurfaceMaterial::sNormalMap),
+		SkippedOpacityTextures.contains(Material) ? nullptr : FileTexture(Material, FbxSurfaceMaterial::sTransparentColor) };
+	FString Sets[3]; bool Missing = false;
+	for (int I = 0; I < 3; ++I) if (Inputs[I])
+	{
+		const FString Requested = Inputs[I]->UVSet.Get().Buffer();
+		for (int N = 0; N < Names.GetCount(); ++N) if (Requested == Names[N].Buffer()) { Sets[I] = Requested; break; }
+		if (Sets[I].empty() && (Requested.empty() || Requested == "default")) Sets[I] = First;
+		if (Sets[I].empty())
 		{
-			for (int I = 0; I < Scene->GetSrcObjectCount<FbxFileTexture>(); ++I)
-			{
-				FbxFileTexture* Texture = Scene->GetSrcObject<FbxFileTexture>(I);
-				if (const FString* Extracted = Files.Find(Key(Texture->GetFileName()))) Texture->SetFileName(Extracted->c_str());
-			}
+			Missing = true;
+			Warn("UV set not found: " + Context + ", texture=" + Inputs[I]->GetName() + ", requested=" + Requested);
+		}
+	}
+	Out.Set = First;
+	for (const auto& Set : Sets) if (!Set.empty()) { Out.Set = Set; break; }
+	bool DifferentSets = false;
+	for (int I = 0; I < 3; ++I) DifferentSets |= !Missing && Inputs[I] && Sets[I] != Out.Set;
+	if (DifferentSets)
+		Warn("Different texture UV sets: " + Context + ", diffuse=" + Sets[0] + ", normal=" + Sets[1] + ", opacity=" + Sets[2] + "; selected=" + Out.Set + ", UV transforms ignored");
+	else if (Missing)
+		Warn("UV fallback: " + Context + "; selected=" + Out.Set + ", UV transforms ignored");
+	else
+	{
+		FUVTransform Selected; bool HasSelected = false, Invalid = false, Different = false;
+		for (auto* Input : Inputs) if (Input)
+		{
+			const FUVTransform Transform = UVTransform(Input); Invalid |= !Transform.bValid;
+			if (HasSelected) Different |= !Near(Selected, Transform);
+			else { Selected = Transform; HasSelected = true; }
+		}
+		if (Invalid)
+			Warn("Unsupported or invalid texture UV mapping: " + Context + "; UV transforms ignored");
+		else if (Different)
+			Warn("Different texture UV transforms: " + Context + "; selected=" + Out.Set + ", UV transforms ignored");
+		else Out.Transform = Selected;
+	}
+	// UV 세트가 속한 레이어의 탄젠트를 사용한다. 다른 세트의 기저를 재사용하지 않는다.
+	for (int L = 0; L < Mesh->GetLayerCount(); ++L)
+	{
+		auto* Layer = Mesh->GetLayer(L); const auto UVSets = Layer->GetUVSets();
+		for (int U = 0; U < UVSets.GetCount(); ++U)
+			if (UVSets[U] && Out.Set == UVSets[U]->GetName()) { Out.Tangents = Layer->GetTangents(); Out.Binormals = Layer->GetBinormals(); return Out; }
+	}
+	return Out;
+}
+
+FString FImport::Texture(FbxProperty Property)
+{
+	if (!Property.IsValid()) return {};
+	if (Property.GetSrcObjectCount<FbxLayeredTexture>()) Warn("Layered textures are not converted: " + FString(Property.GetNameAsCStr()));
+	if (!Property.GetSrcObjectCount<FbxFileTexture>()) return {};
+	if (Property.GetSrcObjectCount<FbxFileTexture>() > 1) Warn("Only the first texture connection is used: " + FString(Property.GetNameAsCStr()));
+	auto* T = Property.GetSrcObject<FbxFileTexture>(0);
+	std::vector<fs::path> Candidates;
+	if (T->GetFileName()[0]) Candidates.push_back(FbxPath::FromString(T->GetFileName()));
+	if (T->GetRelativeFileName()[0]) Candidates.push_back(Source.parent_path() / FbxPath::FromString(T->GetRelativeFileName()));
+	if (T->GetFileName()[0]) Candidates.push_back(Source.parent_path() / FbxPath::FromString(T->GetFileName()).filename());
+	FString SourceTexture;
+	for (auto Candidate : Candidates)
+	{
+		if (!Candidate.is_absolute()) Candidate = Source.parent_path() / Candidate;
+		if (fs::is_regular_file(Candidate)) { SourceTexture = FbxPath::ToString(Candidate); break; }
+	}
+	if (SourceTexture.empty()) { Error = "Texture file not found: " + FString(T->GetFileName()); return {}; }
+	// 입력 텍스처도 원본과 같이 외부에서 읽을 수 있다. 결과에는 픽셀/압축 블록만 남긴다.
+	SourceTexture = FbxPath::ToString(fs::canonical(FbxPath::FromString(SourceTexture)));
+	const FString TextureKey = SourceTexture;
+	if (auto It = Textures.find(Lower(TextureKey)); It != Textures.end()) return It->second;
+	FImageData Image = ImageLoader::LoadAuto(SourceTexture);
+	if (!Image.IsValid()) { Error = "Texture format is not supported by the existing image loader: " + SourceTexture; return {}; }
+	// 임시 내장 경로 대신 소스 FBX 안의 논리 이름으로 출력 이름을 고정한다.
+	int TextureIndex = 0;
+	for (; TextureIndex < Scene->GetTextureCount() && Scene->GetTexture(TextureIndex) != T; ++TextureIndex) {}
+	FString Identity = "Texture:" + FString(T->GetName()) + "[" + std::to_string(TextureIndex) + "]/" + FbxPath::ToString(FbxPath::FromString(T->GetFileName()).filename());
+	const FString Key = MakeKey("T", T->GetName(), Identity);
+	if (Key.empty()) return {};
+	auto Asset = Data(EFbxAssetType::Texture2D, Key, Identity); Asset.Texture = std::move(Image);
+	Output.Add(std::move(Asset)); Textures[Lower(TextureKey)] = Key;
+	return Key;
+}
+
+FString FImport::OpacityTexture(FbxSurfaceMaterial* Material, const FString& DiffuseKey, const FString& OpacityKey,
+	const FString& Identity, ESamplerState Sampler)
+{
+	const FImageData* Diffuse = nullptr; const FImageData* Opacity = nullptr;
+	for (const auto& Asset : Output) if (Asset.Type == EFbxAssetType::Texture2D)
+	{
+		if (Asset.Key == DiffuseKey) Diffuse = &Asset.Texture;
+		if (Asset.Key == OpacityKey) Opacity = &Asset.Texture;
+	}
+	if (!Opacity) { Error = "Missing opacity image: " + FString(Material->GetName()); return {}; }
+	auto Supported = [](const FImageData& Image)
+	{
+		switch (Image.Format)
+		{
+		case DXGI_FORMAT_R8G8B8A8_UNORM: case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8A8_UNORM: case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8X8_UNORM: case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+			return Image.BytesPerPixel == 4;
+		case DXGI_FORMAT_R8_UNORM: case DXGI_FORMAT_A8_UNORM: return Image.BytesPerPixel == 1;
+		default: return false;
 		}
 	};
-
-	// Material의 지정 속성에 연결된 첫 File Texture를 찾아 원본 또는 추출 파일의 절대 경로를 반환한다.
-	// 절대 경로 → FBX 폴더+상대 경로 → FBX 폴더+파일명 순으로 탐색하며, 파일 복사/이미지 로딩은 하지 않는다.
-	// 연결이 없으면 빈 경로를 반환하고, 파일 누락이나 지원하지 않는 Texture 방식은 경고로 알린다.
-	FString ReadTexture(FbxSurfaceMaterial* Material, const char* PropertyName, const std::filesystem::path& Folder, const char* UVName, TArray<FString>& Warnings)
+	if (!Supported(*Opacity) || (Diffuse && !Supported(*Diffuse)))
 	{
-		const FbxProperty Property = Material->FindProperty(PropertyName);
-		if (!Property.IsValid()) return {};
-		if (Property.GetSrcObjectCount<FbxLayeredTexture>() > 0)
-		{
-			Warn(Warnings, "Layered texture is unsupported: " + FString(Material->GetName()));
-			return {};
-		}
-		const int Count = Property.GetSrcObjectCount<FbxFileTexture>();
-		if (!Count) return {};
-		if (Count > 1) Warn(Warnings, "Only the first file texture is used: " + FString(Material->GetName()));
-		FbxFileTexture* Texture = Property.GetSrcObject<FbxFileTexture>(0);
-		const FString TextureUV = Texture->UVSet.Get().Buffer();
-		if (!TextureUV.empty() && TextureUV != "default" && TextureUV != UVName) Warn(Warnings, "Texture requests an unused UV set: " + TextureUV);
-		const auto FileName = PathOf(Texture->GetFileName());
-		const auto RelativeName = PathOf(Texture->GetRelativeFileName());
-		const auto Relative = RelativeName.empty() ? FileName : RelativeName;
-		const auto Leaf = FileName.empty() ? RelativeName.filename() : FileName.filename();
-		const std::array<std::filesystem::path, 3> Candidates = { FileName.is_absolute() ? FileName : std::filesystem::path(), !Relative.empty() && !Relative.is_absolute() ? Folder / Relative : std::filesystem::path(), Leaf.empty() ? std::filesystem::path() : Folder / Leaf };
-		for (const auto& Candidate : Candidates)
-		{
-			std::error_code EC;
-			if (Candidate.empty() || !std::filesystem::is_regular_file(Candidate, EC)) continue;
-			const auto Absolute = std::filesystem::absolute(Candidate, EC);
-			if (EC) continue;
-			const auto Text = Absolute.lexically_normal().generic_u8string();
-			return FString(Text.begin(), Text.end());
-		}
-		Warn(Warnings, "Texture file not found: " + FString(Material->GetName()) + "/" + PropertyName + " : " + Texture->GetFileName());
+		Warn("Opacity baking skipped: " + FString(Material->GetName()) +
+			"; unsupported image format (diffuse=" + (Diffuse ? std::to_string(Diffuse->Format) : "none") +
+			", opacity=" + std::to_string(Opacity->Format) + "); original Diffuse and scalar opacity used");
 		return {};
 	}
-
-	// Node의 Material 순서를 유지하여 Slot 표를 만들고 이름, Diffuse 색상, Diffuse/Normal Texture 경로를 채운다.
-	// NormalMap 경로를 찾지 못하면 Bump를 대신 조회하고, Material이 없는 Node에는 기본 Slot 하나를 만든다.
-	// 여기서는 Slot 표만 만들며, 삼각형별 Slot 지정과 Section 구성은 ReadMeshNode에서 처리한다.
-	void ReadMaterials(FbxNode* Node, const std::filesystem::path& Folder, const char* UVName, TArray<FStaticMaterialSlot>& Slots, TArray<FString>& Warnings)
+	auto Pixel = [](const FImageData& Image, uint32 X, uint32 Y) -> std::array<uint8, 4>
 	{
-		for (int I = 0; I < std::max(1, Node->GetMaterialCount()); ++I)
+		const uint8* P = Image.Pixels.GetData() + static_cast<size_t>(Y) * Image.GetRowPitch() + X * Image.BytesPerPixel;
+		switch (Image.Format)
 		{
-			FStaticMaterialSlot Slot;
-			Slot.Name = "Default";
-			FbxSurfaceMaterial* Material = I < Node->GetMaterialCount() ? Node->GetMaterial(I) : nullptr;
-			if (Material)
+		case DXGI_FORMAT_R8_UNORM: return { P[0], P[0], P[0], 255 };
+		case DXGI_FORMAT_A8_UNORM: return { 255, 255, 255, P[0] };
+		case DXGI_FORMAT_B8G8R8A8_UNORM: case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return { P[2], P[1], P[0], P[3] };
+		case DXGI_FORMAT_B8G8R8X8_UNORM: case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB: return { P[2], P[1], P[0], 255 };
+		default: return { P[0], P[1], P[2], P[3] };
+		}
+	};
+	const auto AlphaSource = FileTexture(Material, FbxSurfaceMaterial::sTransparentColor)->GetAlphaSource();
+	bool UseAlpha = AlphaSource == FbxTexture::eBlack;
+	if (AlphaSource == FbxTexture::eNone)
+		for (uint32 Y = 0; Y < Opacity->Height && !UseAlpha; ++Y)
+			for (uint32 X = 0; X < Opacity->Width && !UseAlpha; ++X) UseAlpha = Pixel(*Opacity, X, Y)[3] != 255;
+	auto Address = [Sampler](int Value, uint32 Size)
+	{
+		const int Count = static_cast<int>(Size);
+		return static_cast<uint32>(Sampler == ESamplerState::LinearWrap ? ((Value % Count) + Count) % Count : std::clamp(Value, 0, Count - 1));
+	};
+	auto OpacityAt = [&](int X, int Y)
+	{
+		const auto P = Pixel(*Opacity, Address(X, Opacity->Width), Address(Y, Opacity->Height));
+		// 알파/불투명도 마스크는 수치 데이터다. RGB 밝기를 사용할 때도 sRGB 디코딩하지 않는다.
+		return UseAlpha ? static_cast<double>(P[3]) : .2126 * P[0] + .7152 * P[1] + .0722 * P[2];
+	};
+	FImageData Image;
+	Image.Width = Diffuse ? Diffuse->Width : Opacity->Width; Image.Height = Diffuse ? Diffuse->Height : Opacity->Height;
+	Image.Format = DXGI_FORMAT_R8G8B8A8_UNORM; Image.BytesPerPixel = 4;
+	Image.Pixels.SetNum(static_cast<int32>(Image.Width * Image.Height * 4));
+	for (uint32 Y = 0; Y < Image.Height; ++Y) for (uint32 X = 0; X < Image.Width; ++X)
+	{
+		const auto Color = Diffuse ? Pixel(*Diffuse, X, Y) : std::array<uint8, 4>{ 255, 255, 255, 255 };
+		uint8* P = Image.Pixels.GetData() + (static_cast<size_t>(Y) * Image.Width + X) * 4;
+		std::copy_n(Color.begin(), 3, P);
+		const double SX = (X + .5) * Opacity->Width / Image.Width - .5, SY = (Y + .5) * Opacity->Height / Image.Height - .5;
+		const int IX = static_cast<int>(std::floor(SX)), IY = static_cast<int>(std::floor(SY));
+		const double FX = SX - IX, FY = SY - IY;
+		const double Top = OpacityAt(IX, IY) * (1 - FX) + OpacityAt(IX + 1, IY) * FX;
+		const double Bottom = OpacityAt(IX, IY + 1) * (1 - FX) + OpacityAt(IX + 1, IY + 1) * FX;
+		P[3] = static_cast<uint8>(std::clamp(std::lround(Top * (1 - FY) + Bottom * FY), 0l, 255l));
+	}
+	const FString SourceObject = "OpacityTexture:" + Identity;
+	const FString Key = MakeKey("T", FString(Material->GetName()) + "_Opacity", SourceObject);
+	if (Key.empty()) return {};
+	auto Asset = Data(EFbxAssetType::Texture2D, Key, SourceObject); Asset.Texture = std::move(Image);
+	Output.Add(std::move(Asset));
+	return Key;
+}
+
+FString FImport::Material(FbxSurfaceMaterial* M)
+{
+	if (!M) return "DefaultMaterial";
+	if (auto It = Materials.find(M); It != Materials.end()) return It->second;
+	int SourceIndex = 0;
+	for (; SourceIndex < Scene->GetMaterialCount() && Scene->GetMaterial(SourceIndex) != M; ++SourceIndex) {}
+	const FString Identity = "Material:" + FString(M->GetName()) + "[" + std::to_string(SourceIndex) + "]";
+	const FString Key = MakeKey("M", M->GetName(), Identity);
+	if (Key.empty()) return {};
+	auto Asset = Data(EFbxAssetType::Material, Key, Identity);
+	FbxProperty TransparentColor = M->FindProperty(FbxSurfaceMaterial::sTransparentColor);
+	float DiffuseFactor = 1.f;
+	if (auto* Lambert = FbxCast<FbxSurfaceLambert>(M))
+	{
+		const FbxDouble3 Color = Lambert->Diffuse.Get();
+		const double Factor = Lambert->DiffuseFactor.Get();
+		DiffuseFactor = static_cast<float>(Factor);
+		// UE Interchange의 FBX SDK 경로와 같이 기본값인 투명도 입력은 변환하지 않는다.
+		const bool bConvertTransparency = TransparentColor.IsValid()
+			&& (TransparentColor.GetSrcObjectCount<FbxTexture>() > 0 || !FbxProperty::HasDefaultValue(TransparentColor));
+		const double Opacity = bConvertTransparency ? std::clamp(1. - Lambert->TransparencyFactor.Get(), 0., 1.) : 1.;
+		// Diffuse를 선형 색상으로 해석하는 임포트 기본값이다. 강도 계수도 선형 공간에서 곱한다.
+		Asset.Material.DiffuseOrFactor = FVector4(static_cast<float>(Color[0] * Factor), static_cast<float>(Color[1] * Factor),
+			static_cast<float>(Color[2] * Factor), static_cast<float>(Opacity));
+		Asset.Material.ShadingModel = ELightingModel::Lambert;
+		Asset.Material.SpecularFactor = 0.f;
+		const FbxDouble3 Emissive = Lambert->Emissive.Get();
+		Asset.Material.EmissiveColor = FVector(static_cast<float>(Emissive[0]), static_cast<float>(Emissive[1]), static_cast<float>(Emissive[2]));
+		Asset.Material.EmissiveFactor = static_cast<float>(Lambert->EmissiveFactor.Get());
+	}
+	else Warn("Unsupported material model; engine default used: " + FString(M->GetName()));
+	if (auto* Phong = FbxCast<FbxSurfacePhong>(M))
+	{
+		Asset.Material.ShadingModel = ELightingModel::Phong;
+		const FbxDouble3 Specular = Phong->Specular.Get();
+		Asset.Material.SpecularColor = FVector(static_cast<float>(Specular[0]), static_cast<float>(Specular[1]), static_cast<float>(Specular[2]));
+		Asset.Material.SpecularFactor = static_cast<float>(Phong->SpecularFactor.Get());
+		// Phong의 반사 벡터 지수를 Blinn-Phong의 하프 벡터 지수로 근사한다.
+		Asset.Material.Shininess = static_cast<float>(4. * std::max(0., Phong->Shininess.Get()));
+	}
+	for (const char* PropertyName : { FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor,
+		FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor })
+	{
+		const FbxProperty Property = M->FindProperty(PropertyName);
+		if (Property.IsValid() && Property.GetSrcObjectCount<FbxTexture>() > 0)
+			Warn("Unsupported material texture: " + FString(M->GetName()) + ", property=" + PropertyName + "; constant color/factor used");
+	}
+	auto* Diffuse = FileTexture(M, FbxSurfaceMaterial::sDiffuse); auto* Normal = FileTexture(M, FbxSurfaceMaterial::sNormalMap);
+	auto* Opacity = FileTexture(M, FbxSurfaceMaterial::sTransparentColor);
+	auto* Sampler = Diffuse ? Diffuse : (Normal ? Normal : Opacity);
+	const FString SamplerName = Diffuse ? "Diffuse" : (Normal ? "Normal" : "Opacity");
+	for (auto* Input : { Diffuse, Normal, Opacity }) if (Input)
+	{
+		if (Input != Sampler && (Sampler->GetWrapModeU() != Input->GetWrapModeU() || Sampler->GetWrapModeV() != Input->GetWrapModeV()))
+			Warn("Different texture Wrap modes: " + FString(M->GetName()) + "; " + SamplerName + " Wrap selected");
+		if (Input->GetWrapModeU() != Input->GetWrapModeV())
+			Warn("Unsupported mixed U/V Wrap modes: " + FString(M->GetName()) + ", texture=" + Input->GetName() +
+				(Input == Sampler ? "; LinearClamp selected" : "; " + SamplerName + " Wrap selected"));
+	}
+	if (Sampler && Sampler->GetWrapModeU() == Sampler->GetWrapModeV() && Sampler->GetWrapModeU() == FbxTexture::eRepeat)
+		Asset.Material.SamplerState = ESamplerState::LinearWrap;
+	Asset.Material.DiffuseTexture = Texture(M->FindProperty(FbxSurfaceMaterial::sDiffuse));
+	if (!Error.empty()) return {};
+	if (!Asset.Material.DiffuseTexture.empty())
+	{
+		// 색상 맵이 있으면 DiffuseFactor를 RGB 공통 배율로 사용한다. W는 불투명도다.
+		Asset.Material.DiffuseOrFactor.X = Asset.Material.DiffuseOrFactor.Y = Asset.Material.DiffuseOrFactor.Z = DiffuseFactor;
+	}
+	Asset.Material.NormalTexture = Texture(M->FindProperty(FbxSurfaceMaterial::sNormalMap));
+	if (!Error.empty()) return {};
+	const FbxProperty Bump = M->FindProperty(FbxSurfaceMaterial::sBump);
+	if (!Normal && Bump.IsValid() && Bump.GetSrcObjectCount<FbxTexture>() > 0)
+		Warn("Unsupported Bump map: " + FString(M->GetName()) + "; normal input left empty");
+	Asset.Material.BlendState = Asset.Material.DiffuseOrFactor.W < 1.f ? EBlendState::AlphaBlend : EBlendState::Opaque;
+	const FString OpacityKey = Texture(TransparentColor);
+	if (!Error.empty()) return {};
+	if (!OpacityKey.empty())
+	{
+		const FString BakedTexture = OpacityTexture(M, Asset.Material.DiffuseTexture, OpacityKey, Identity, Asset.Material.SamplerState);
+		if (!Error.empty()) return {};
+		if (!BakedTexture.empty())
+		{
+			Asset.Material.DiffuseTexture = BakedTexture;
+			// 연결된 맵이 불투명도 입력을 제공한다. 상수 계수와 원본 Diffuse 알파를 중복 적용하지 않는다.
+			Asset.Material.DiffuseOrFactor.W = 1.f;
+			Asset.Material.BlendState = EBlendState::AlphaBlend;
+		}
+		else SkippedOpacityTextures.insert(M);
+	}
+	Output.Add(std::move(Asset)); Materials[M] = Key;
+	return Key;
+}
+
+bool FImport::AppendMesh(const FMeshItem& Item, FFbxAssetData& Asset, int LODIndex, std::map<uint32, std::vector<uint32>>& Sections)
+{
+	auto& LOD = Asset.LODs[LODIndex]; auto& Mesh = LOD.MeshData;
+	FRig* Rig = Item.Rig ? &Rigs.at(NodePath(Item.Rig)) : nullptr;
+	FbxAMatrix Full;
+	if (Rig)
+	{
+		// Cluster.Transform은 이미 글로벌이다. Bake off는 루트 부모만 제거한다.
+		Full = (Options.bBakeSkeletalMeshes ? FbxAMatrix() : Rig->ParentBind.Inverse()) * MeshBind(Item) * Geometry(Item.Node);
+	}
+	else if (Options.bBakeStaticMeshes) Full = Item.Node->EvaluateGlobalTransform(FBXSDK_TIME_ZERO) * Geometry(Item.Node);
+	// Static Bake off는 자기 노드 변환도 적용하지 않는다. Combine이 배치를 대신 복원하지 않는다.
+	const FMatrix Transform = EngineMatrix(Full, UnitScale, false);
+	if (!FiniteMatrix(Transform)) { Error = "Invalid mesh transform: " + NodePath(Item.Node); return false; }
+	const FMatrix NormalMatrix = Transform.Inverse().GetTransposed();
+	const bool Reverse = Transform.Determinant() < 0;
+	std::vector<uint32> MaterialMap;
+	std::vector<FSurfaceUV> Surfaces;
+	std::vector<int> SurfaceGroups;
+	const int SlotCount = std::max(1, Item.Node->GetMaterialCount());
+	for (int I = 0; I < SlotCount; ++I)
+	{
+		FbxSurfaceMaterial* SourceMaterial = I < Item.Node->GetMaterialCount() ? Item.Node->GetMaterial(I) : nullptr;
+		const FString Key = Material(SourceMaterial);
+		if (!Error.empty()) return false;
+		const FSurfaceUV UV = SurfaceUV(SourceMaterial, Item.Mesh, NodePath(Item.Node) + (SourceMaterial ? SourceMaterial->GetName() : "Default"));
+		int SurfaceGroup = I;
+		for (int Previous = 0; Previous < I; ++Previous)
+			if (UV.Set == Surfaces[Previous].Set && Near(UV.Transform, Surfaces[Previous].Transform)) { SurfaceGroup = SurfaceGroups[Previous]; break; }
+		Surfaces.push_back(UV); SurfaceGroups.push_back(SurfaceGroup);
+		int Index = -1;
+		for (int M = 0; M < Asset.MaterialKeys.Num(); ++M) if (Asset.MaterialKeys[M] == Key) { Index = M; break; }
+		if (Index < 0)
+		{
+			Index = Asset.MaterialKeys.Num(); Asset.MaterialKeys.Add(Key);
+			// 모든 LOD는 애셋 단위 슬롯 인덱스를 사용한다.
+			for (auto& Existing : Asset.LODs)
 			{
-				Slot.Name = Material->GetName();
-				const FbxProperty Diffuse = Material->FindProperty(FbxSurfaceMaterial::sDiffuse);
-				if (Diffuse.IsValid())
-				{
-					const FbxDouble3 Color = Diffuse.Get<FbxDouble3>();
-					Slot.BaseColor = FVector4(static_cast<float>(Color[0]), static_cast<float>(Color[1]), static_cast<float>(Color[2]), 1.0f);
-				}
-				Slot.DiffuseTexturePath = ReadTexture(Material, FbxSurfaceMaterial::sDiffuse, Folder, UVName, Warnings);
-				Slot.NormalTexturePath = ReadTexture(Material, FbxSurfaceMaterial::sNormalMap, Folder, UVName, Warnings);
-				if (Slot.NormalTexturePath.empty()) Slot.NormalTexturePath = ReadTexture(Material, FbxSurfaceMaterial::sBump, Folder, UVName, Warnings);
-			}
-			Slots.Add(std::move(Slot));
-		}
-	}
-
-	// 삼각형화가 끝난 Mesh 하나에서 엔진 기준 Geometry/Material과 정점별 Control Point 번호를 추출한다.
-	// Node와 Skin 유무도 보관하여 후속 Skeleton 분류와 Weight 연결에 사용한다. 여기서는 Bone/Weight를 읽지 않는다.
-	bool ReadMeshNode(FbxNode* Node, FbxMesh* Mesh, const FbxAMatrix& Global, const std::filesystem::path& Folder, FFbxMeshNodeData& Result, TArray<FString>& Warnings, FString& Error)
-	{
-		Result.Node = Node;
-		Result.bHasSkin = Mesh->GetDeformerCount(FbxDeformer::eSkin) > 0;
-		FStaticMeshData& Geometry = Result.Geometry;
-		if (!Mesh->GetPolygonCount()) { Warn(Warnings, "Empty mesh: " + FString(Node->GetName())); return true; }
-
-		// multiple layer에 대한 처리는 하지 않는다.
-		FbxLayer* Layer = Mesh->GetLayer(0);
-		if (!Layer || !Layer->GetNormals())
-		{
-			if (!Mesh->GenerateNormals(true, false)) { Error = "normal generation failed"; return false; }
-			Layer = Mesh->GetLayer(0);
-			Warn(Warnings, "Missing normals generated: " + FString(Node->GetName()));
-		}
-		if (!Layer || !Layer->GetNormals()) { Error = "no normal layer"; return false; }
-
-		const auto* Normals = Layer->GetNormals();
-		const auto* UVs = Layer->GetUVs();
-		const auto* Colors = Layer->GetVertexColors();
-		const auto* Materials = Layer->GetMaterials();
-		if (!UVs) Warn(Warnings, "Missing UVs use (0,0): " + FString(Node->GetName()));
-		if (Mesh->GetElementUVCount() > 1) Warn(Warnings, "Only the first layer-0 UV set is used: " + FString(Node->GetName()));
-		if (Mesh->GetDeformerCount(FbxDeformer::eBlendShape)) Warn(Warnings, "Blend shapes are not imported: " + FString(Node->GetName()));
-		if (Mesh->GetDeformerCount(FbxDeformer::eVertexCache)) Warn(Warnings, "Vertex cache deformation is not imported: " + FString(Node->GetName()));
-
-		// Mesh 자체에 적용되는 Geometric Translation/Rotation/Scale을 G 행렬로 만든다.
-		// 전달받은 현재 또는 Bind Global과 결합해 정점을 굽고, Normal에는 결합 행렬의 역전치를 적용한다.
-		FbxAMatrix Geometric;
-		Geometric.SetT(Node->GetGeometricTranslation(FbxNode::eSourcePivot));
-		Geometric.SetR(Node->GetGeometricRotation(FbxNode::eSourcePivot));
-		Geometric.SetS(Node->GetGeometricScaling(FbxNode::eSourcePivot));
-		
-		// SDK는 열벡터이므로 엔진의 p*G*M에 해당하는 행렬은 M*G다.
-		const FbxAMatrix Total = Global * Geometric;
-		// 좌표계 반사와 Polygon 순서는 DeepConvertScene에서 변환됐다.
-		// 여기서는 정점에 굽는 Geometric/Global의 음수 Scale에 의한 뒤집기만 검사한다.
-		const double FinalDeterminant = Total.Determinant();
-		if (!std::isfinite(FinalDeterminant) || FinalDeterminant == 0) { Error = "singular/non-finite mesh transform"; return false; }
-		
-		const FbxAMatrix NormalMatrix = Total.Inverse().Transpose();
-		
-		ReadMaterials(Node, Folder, UVs ? UVs->GetName() : "", Geometry.MaterialSlots, Warnings);
-		
-		std::vector<TArray<uint32>> SlotIndices(Geometry.MaterialSlots.Num());
-		TMap<FVertexKey, uint32, FVertexKeyHash> VerticesByValue;
-		// 삼각형마다 Material Slot을 정하고, 세 Polygon Vertex를 엔진 정점 번호로 변환한다.
-		// 정점 조합은 Node 전체에서 공유하고, 삼각형 Index는 Slot별로 모아 나중에 Section으로 묶는다.
-		for (int Polygon = 0; Polygon < Mesh->GetPolygonCount(); ++Polygon)
-		{
-			if (Mesh->GetPolygonSize(Polygon) != 3) { Error = "triangulation left a non-triangle"; return false; }
-			int Slot = 0;
-			// ByPolygon이면 현재 Polygon 칸, AllSame이면 0번 칸을 읽는다.
-			// Material IndexArray의 값은 Node의 Material Slot 번호다. 누락되거나 범위를 벗어나면 Slot 0을 사용한다.
-			if (Materials)
-			{
-				const auto Mapping = Materials->GetMappingMode();
-				if (Mapping != FbxLayerElement::eByPolygon && Mapping != FbxLayerElement::eAllSame) { Error = "unsupported material mapping"; return false; }
-				if (Materials->GetReferenceMode() != FbxLayerElement::eIndexToDirect) { Error = "unsupported material reference mode"; return false; }
-				const int Index = Mapping == FbxLayerElement::eAllSame ? 0 : Polygon;
-				Slot = Index < Materials->GetIndexArray().GetCount() ? Materials->GetIndexArray().GetAt(Index) : -1;
-				if (Slot < 0 || Slot >= Geometry.MaterialSlots.Num()) { Slot = 0; Warn(Warnings, "Invalid material assignment uses slot 0: " + FString(Node->GetName())); }
-			}
-			else Warn(Warnings, "Missing material layer uses slot 0: " + FString(Node->GetName()));
-			uint32 Triangle[3];
-			// 각 꼭짓점의 CP(위치 번호)와 PV(Polygon Vertex 칸 번호)로 Normal/UV/Color를 조회한다.
-			// 엔진 좌표계의 Position/Normal을 옮기고 Normal 정규화와 UV의 V 반전을 적용한다.
-			// 같은 (CP, Normal, UV, Color) 조합은 기존 정점을 재사용하고, 새 정점이면 CP 대응표와 AABB도 갱신한다.
-			// Triangle에 넣는 값은 CP 번호가 아니라 최종 Geometry.Vertices의 정점 번호다.
-			for (int Corner = 0; Corner < 3; ++Corner)
-			{
-				const int CP = Mesh->GetPolygonVertex(Polygon, Corner);
-				if (CP < 0 || CP >= Mesh->GetControlPointsCount()) { Error = "control point index out of range"; return false; }
-				const int PV = Mesh->GetPolygonVertexIndex(Polygon) + Corner;
-				FbxVector4 Normal;
-				FbxVector2 UV(0, 0);
-				FbxColor Color(1, 1, 1, 1);
-				if (!ReadElement(Normals, CP, PV, Polygon, Normal, Error)) return false;
-				if (UVs && !ReadElement(UVs, CP, PV, Polygon, UV, Error)) return false;
-				if (Colors && !ReadElement(Colors, CP, PV, Polygon, Color, Error)) return false;
-				// 방향에는 3x3 성분만 곱하여 평행이동을 제외한다.
-				FbxVector4 TransformedNormal(0, 0, 0, 0);
-				for (int Row = 0; Row < 3; ++Row)
-					for (int Column = 0; Column < 3; ++Column) TransformedNormal[Row] += NormalMatrix.Get(Column, Row) * Normal[Column];
-				const double Length = std::sqrt(TransformedNormal[0] * TransformedNormal[0] + TransformedNormal[1] * TransformedNormal[1] + TransformedNormal[2] * TransformedNormal[2]);
-				if (!std::isfinite(Length) || Length == 0) { Error = "zero/non-finite normal"; return false; }
-				FVertex Vertex;
-				Vertex.Position = ToVector(Total.MultT(Mesh->GetControlPointAt(CP)));
-				Vertex.Normal = ToVector(TransformedNormal / Length);
-				Vertex.UV = FVector2(static_cast<float>(UV[0]), UVs ? static_cast<float>(1.0 - UV[1]) : 0.0f);
-				Vertex.Color = FVector4(static_cast<float>(Color.mRed), static_cast<float>(Color.mGreen), static_cast<float>(Color.mBlue), static_cast<float>(Color.mAlpha));
-				const FVertexKey Key{ CP, { Vertex.Normal.X, Vertex.Normal.Y, Vertex.Normal.Z, Vertex.UV.X, Vertex.UV.Y, Vertex.Color.X, Vertex.Color.Y, Vertex.Color.Z, Vertex.Color.W } };
-				if (!std::isfinite(Vertex.Position.X) || !std::isfinite(Vertex.Position.Y) || !std::isfinite(Vertex.Position.Z) || !std::all_of(Key.second.begin(), Key.second.end(), [](float V) { return std::isfinite(V); })) { Error = "non-finite vertex attribute"; return false; }
-				if (const uint32* ExistingIndex = VerticesByValue.Find(Key))
-				{
-					Triangle[Corner] = *ExistingIndex;
-				}
-				else
-				{
-					const uint32 NewIndex = static_cast<uint32>(Geometry.Vertices.Num());
-					VerticesByValue.Add(Key, NewIndex);
-					if (Geometry.Vertices.IsEmpty()) Geometry.AABB = { Vertex.Position, Vertex.Position };
-					else Geometry.AABB.Expand({ Vertex.Position, Vertex.Position });
-					Geometry.Vertices.Add(Vertex);
-					Result.ControlPointIndices.Add(CP);
-					Triangle[Corner] = NewIndex;
-				}
-			}
-			if (FinalDeterminant < 0) std::swap(Triangle[1], Triangle[2]);
-			for (uint32 Index : Triangle) SlotIndices[Slot].Add(Index);
-		}
-		// Slot별로 모아 둔 Index를 최종 배열에 이어 붙여 같은 Material을 쓰는 삼각형이 연속하도록 한다.
-		// 각 Section에는 이어 붙이기 전 시작 위치, Index 개수, Material Slot 번호를 기록한다. 사용하지 않은 Slot은 Section을 만들지 않는다.
-		for (int Slot = 0; Slot < Geometry.MaterialSlots.Num(); ++Slot)
-		{
-			if (SlotIndices[Slot].IsEmpty()) continue;
-			Geometry.Sections.Add({ static_cast<uint32>(Geometry.Indices.Num()), static_cast<uint32>(SlotIndices[Slot].Num()), static_cast<uint32>(Slot) });
-			Geometry.Indices.Append(SlotIndices[Slot]);
-		}
-		return true;
-	}
-}
-
-FFbxImporter::~FFbxImporter()
-{
-	Close();
-}
-
-bool FFbxImporter::Open(const FString& Path, FString& OutError, const FString& ExtractionFolder)
-{
-	Close();
-	OutError.clear();
-
-	Manager = FbxManager::Create();
-	if (!Manager)
-	{
-		OutError = "FBX: failed to create SDK manager";
-		return false;
-	}
-
-	FbxIOSettings* Settings = FbxIOSettings::Create(Manager, IOSROOT);	// IOSRoot라는 이름으로 FbxIOSettings 객체를 생성
-	if (!Settings)
-	{
-		OutError = "FBX: failed to create IO settings";
-		Close();
-		return false;
-	}
-	Manager->SetIOSettings(Settings);
-
-
-	// Asset Import는 호출자가 관리하는 임시 폴더로 추출한다. 폴더 없는 Scene 조회는 디스크에 쓰지 않는다.
-	Settings->SetBoolProp(IMP_FBX_EXTRACT_EMBEDDED_DATA, !ExtractionFolder.empty());
-
-	Scene = FbxScene::Create(Manager, "ImportScene");
-	// importer에 이름을 지정하면, 이름을 기반으로 로그를 남길 때 유용하게 사용할 수 있지만
-	// 현재는 multiple importer가 필요하지 않아서 이름은 지정하지 않았다.
-	FbxImporter* Reader = FbxImporter::Create(Manager, "");
-	if (!Scene || !Reader)
-	{
-		OutError = "FBX: failed to create scene or reader";
-		Close();
-		return false;
-	}
-
-	if (!Reader->Initialize(Path.c_str(), -1, Settings))
-	{
-		OutError = "FBX: cannot open '" + Path + "': " + Reader->GetStatus().GetErrorString();
-		Close();
-		return false;
-	}
-	if (!Reader->IsFBX())
-	{
-		OutError = "FBX: not an FBX file: '" + Path + "'";
-		Close();
-		return false;
-	}
-	FEmbeddedExtraction Extraction;
-	FbxEmbeddedFileCallback* Callback = nullptr;
-	if (!ExtractionFolder.empty())
-	{
-		Extraction.Folder = PathOf(ExtractionFolder);
-		Reader->SetEmbeddingExtractionFolder(ExtractionFolder.c_str());
-		Callback = FbxEmbeddedFileCallback::Create(Manager, "EmbeddedTextures");
-		if (!Callback || Callback->RegisterReadFunction(FEmbeddedExtraction::Read, &Extraction) < 0)
-		{
-			OutError = "FBX: cannot create embedded texture callback";
-			Close();
-			return false;
-		}
-		// Initialize가 callback을 초기화하므로 Initialize 이후, Import 이전에 등록한다.
-		Reader->SetEmbeddedFileReadCallback(Callback);
-	}
-	const bool Imported = Reader->Import(Scene);
-	// callback의 지역 상태를 가리키는 포인터가 Open 반환 뒤에 남지 않도록 해제한다.
-	if (Callback)
-	{
-		Reader->SetEmbeddedFileReadCallback(nullptr);
-		Callback->Destroy();
-	}
-	if (!Imported || !Extraction.Error.empty())
-	{
-		OutError = Extraction.Error.empty() ? "FBX: cannot import '" + Path + "': " + Reader->GetStatus().GetErrorString() : Extraction.Error;
-		Close();
-		return false;
-	}
-	Extraction.ResolveTextures(Scene);
-
-	// Creator는 Reader가 살아 있을 때 읽어 두고 Blender Armature 예외 판별에 사용한다.
-	const FbxIOFileHeaderInfo* Header = Reader->GetFileHeaderInfo();
-	bIsBlender = Header && FString(Header->mCreator.Buffer()).starts_with("Blender");
-	// 파일 읽기는 끝났으므로 Reader를 닫고 메모리에 있는 Scene만 유지한다.
-	Reader->Destroy();
-	SourcePath = Path;
-	return true;
-}
-
-void FFbxImporter::Close()
-{
-	ClearSkeletonData();
-	MeshNodes.Empty();
-	SourcePath.clear();
-	bIsBlender = false;
-	// Manager가 아직 남아 있는 Reader, Scene, IOSettings를 함께 해제한다.
-	if (Manager)
-		Manager->Destroy();
-	Manager = nullptr;
-	Scene = nullptr;
-}
-
-// 열린 Scene의 축/단위를 변환한 뒤, Mesh Node별 Geometry/Material과 Control Point 대응표를 만든다.
-// 모든 Node 추출이 성공했을 때만 Results를 MeshNodes에 보관한다.
-bool FFbxImporter::ReadMeshData(TArray<FString>& OutWarnings, FString& OutError)
-{
-	ClearSkeletonData();
-	MeshNodes.Empty();
-	OutWarnings.Empty();
-	OutError.clear();
-	if (!Scene) 
-	{ 
-		OutError = "FBX: no scene is open"; 
-		return false; 
-	}
-
-	FbxRootNodeUtility::RemoveAllFbxRoots(Scene);
-	// Mesh/Bone을 읽기 전에 장면 전체를 엔진 좌표계(+Z 위, +X 앞, 왼손)로 맞춘다.
-	// DeepConvertScene은 Transform뿐 아니라 정점/Normal, Polygon 순서, Pose/Cluster도 변환한다.
-	// 이후 값을 옮길 때 Y나 Quaternion을 다시 반전하지 않는다.
-	const FbxAxisSystem Target(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
-	if (Scene->GetGlobalSettings().GetAxisSystem() != Target) Target.DeepConvertScene(Scene);
-	// 단위도 설정값만 바꾸는 것이 아니라 Scene 데이터를 cm 기준으로 실제 변환한다.
-	if (Scene->GetGlobalSettings().GetSystemUnit() != FbxSystemUnit::cm) FbxSystemUnit::cm.ConvertScene(Scene);
-	// 축/단위 변환 전 자식 Node의 Global 캐시가 남지 않도록 비운다. UE ConvertScene 경로와 같은 처리다.
-	Scene->GetAnimationEvaluator()->Reset();
-	
-	FbxGeometryConverter Converter(Manager);
-	TArray<FFbxMeshNodeData> Results;
-	// Scene의 Node 목록에서 Mesh를 찾는다. Mesh가 없는 Node는 건너뛴다.
-	// 지원하지 않는 Geometry/복수 Mesh Attribute는 오류로 처리하고,
-	// 각 Mesh를 삼각형화한 뒤 새 Mesh에서 Node별 데이터를 추출한다.
-	for (int I = 0; I < Scene->GetNodeCount(); ++I)
-	{
-		FbxNode* Node = Scene->GetNode(I);
-		int MeshCount = 0;
-		for (int A = 0; A < Node->GetNodeAttributeCount(); ++A)
-		{
-			const auto Type = Node->GetNodeAttributeByIndex(A)->GetAttributeType();
-			if (Type == FbxNodeAttribute::eMesh) 
-				++MeshCount;
-			if (Type == FbxNodeAttribute::eNurbs || Type == FbxNodeAttribute::eNurbsSurface || Type == FbxNodeAttribute::ePatch) 
-			{ 
-				OutError = "FBX: unsupported Patch/NURBS: " + FString(Node->GetName()); 
-				return false; 
+				FStaticMaterialSlot Slot; Slot.Name = SourceMaterial ? SourceMaterial->GetName() : "Default";
+				Existing.MeshData.MaterialSlots.Add(std::move(Slot));
 			}
 		}
-		if (!MeshCount) continue;
-		if (MeshCount != 1 || !Node->GetMesh()) 
-		{ 
-			OutError = "FBX: unsupported multiple/non-default mesh attributes: " + FString(Node->GetName()); 
-			return false; 
-		}
-
-		// replace를 true로 하였기때문에, 기존 데이터는 사라지고, 삼각형으로 변환된 데이터만 남게 된다.
-		if (!Converter.Triangulate(Node->GetMesh(), true)) 
-		{ 
-			OutError = "FBX: triangulation failed: " + FString(Node->GetName()); 
-			return false; 
-		}
-		// Triangulate가 기존 Mesh를 교체할 수 있으므로 Node에서 다시 얻는다.
-		FFbxMeshNodeData Result;
-		if (!ReadMeshNode(Node, Node->GetMesh(), Node->EvaluateGlobalTransform(), PathOf(SourcePath).parent_path(), Result, OutWarnings, OutError))
-		{
-			OutError = "FBX: " + FString(Node->GetName()) + ": " + OutError;
-			return false;
-		}
-		Results.Add(std::move(Result));
+		MaterialMap.push_back(static_cast<uint32>(Index));
 	}
-	if (Results.IsEmpty()) { OutError = "FBX: no mesh nodes"; return false; }
-	MeshNodes = std::move(Results);
-	return true;
-}
-
-// Node별로 추출한 Geometry를 하나의 Static 출력 데이터로 합친다.
-// Skin이 있는 Node도 포함하며, 이미 구워진 Position/Normal에 Transform을 다시 적용하지 않는다.
-void FFbxImporter::BuildStaticMesh(FStaticMeshData& OutData) const
-{
-	OutData = {};
-	for (const FFbxMeshNodeData& Node : MeshNodes)
-		AppendGeometry(Node.Geometry, OutData);
-}
-
-
-void FFbxImporter::ClearSkeletonData()
-{
-	Bones.Empty();
-	BoneIndices.Empty();
-	RigidBindMeshes.Empty();
-	for (FFbxMeshNodeData& Mesh : MeshNodes) Mesh.RigidBoneIndex = -1;
-}
-
-// ReadMeshData로 축과 단위를 변환한 Scene에서 Bone 계층과 Bind를 읽는다. 실패 시 Skeleton 결과는 비워 둔다.
-bool FFbxImporter::ReadSkeletonData(TArray<FString>& OutWarnings, FString& OutError)
-{
-	ClearSkeletonData();
-	OutWarnings.Empty();
-	OutError.clear();
-	if (!Scene || MeshNodes.IsEmpty()) { OutError = "FBX: read mesh data before skeleton data"; return false; }
-
-	// 여러 Mesh의 Cluster를 모아 Bone 계층과 Bind를 조회한다. Weight 값은 읽지 않는다.
-	TArray<FbxCluster*> Clusters;
-	FbxNode* Root = nullptr;
-	for (const FFbxMeshNodeData& Mesh : MeshNodes)
+	const int CPCount = Item.Mesh->GetControlPointsCount();
+	std::vector<std::map<uint16, float>> Influences(Rig ? CPCount : 0);
+	if (Rig)
 	{
-		if (!Mesh.bHasSkin) continue;
-		FbxMesh* Geometry = Mesh.Node->GetMesh();
-		for (int S = 0; S < Geometry->GetDeformerCount(FbxDeformer::eSkin); ++S)
+		if (Item.Mesh->GetDeformerCount(FbxDeformer::eSkin))
 		{
-			auto* Skin = static_cast<FbxSkin*>(Geometry->GetDeformer(S, FbxDeformer::eSkin));
-			if (!Skin->GetClusterCount()) { OutError = "FBX: Skin has no clusters: " + FString(Mesh.Node->GetName()); return false; }
+			auto* Skin = static_cast<FbxSkin*>(Item.Mesh->GetDeformer(0, FbxDeformer::eSkin));
 			for (int C = 0; C < Skin->GetClusterCount(); ++C)
 			{
 				FbxCluster* Cluster = Skin->GetCluster(C);
-				FbxNode* Link = Cluster->GetLink();
-				if (!Link) { OutError = "FBX: Cluster has no Link: " + FString(Mesh.Node->GetName()); return false; }
-				FbxNode* Candidate = FindSkeletonRoot(Link, Scene, bIsBlender);
-				if (Root && Root != Candidate) { OutError = "FBX: multiple skeleton roots"; return false; }
-				Root = Candidate;
-				Clusters.Add(Cluster);
+				if (!Cluster || !Cluster->GetLink() || IsCompensation(Cluster)) continue;
+				if (!Rig->Indices.contains(Cluster->GetLink())) { Error = "Bone is not in the mesh reference skeleton"; return false; }
+				if (Cluster->GetLinkMode() == FbxCluster::eAdditive) Warn("Additive Link Mode is approximated using normalized Linear weights: " + NodePath(Item.Node));
+				const uint16 Bone = Rig->Indices.at(Cluster->GetLink());
+				for (int I = 0; I < Cluster->GetControlPointIndicesCount(); ++I)
+				{
+					const int CP = Cluster->GetControlPointIndices()[I]; const double W = Cluster->GetControlPointWeights()[I];
+					if (CP < 0 || CP >= CPCount || !std::isfinite(W)) { Error = "Invalid control point influence"; return false; }
+					if (W > 0) Influences[CP][Bone] = std::max(Influences[CP][Bone], static_cast<float>(W));
+				}
 			}
-		}
-	}
-	if (!Root) { OutError = "FBX: no skeleton bones"; return false; }
-	TArray<FbxNode*> Nodes;
-	CollectBoneNodes(Root, Nodes);
-	if (Nodes.IsEmpty()) { OutError = "FBX: no skeleton bones"; return false; }
-	// 기존 FSkinWeight::BoneIndex가 uint8이므로 최종 출력으로 표현할 수 있는 Bone 수에 맞춘다.
-	if (Nodes.Num() > 256) { OutError = "FBX: bone count exceeds 256"; return false; }
-
-	TMap<FbxNode*, int32> ResultIndices;
-	TSet<FString> Names;
-	TArray<FBoneInfo> ResultBones;
-	TArray<FbxAMatrix> BindGlobals;
-	TArray<FMatrix> BindWorlds;
-	for (int32 I = 0; I < Nodes.Num(); ++I)
-	{
-		FbxNode* Node = Nodes[I];
-		FBoneInfo Bone;
-		Bone.Name = Node->GetName();
-		if (Names.Contains(Bone.Name)) { OutError = "FBX: duplicate bone name: " + Bone.Name; return false; }
-		Names.Add(Bone.Name);
-		if (I > 0)
-		{
-			const int32* Parent = ResultIndices.Find(Node->GetParent());
-			if (!Parent) { OutError = "FBX: bone parent is not in skeleton: " + Bone.Name; return false; }
-			Bone.ParentIndex = *Parent;
-		}
-
-		const FbxAMatrix Global = ReadBindGlobal(Scene, Node, Clusters, OutWarnings);
-		const double GlobalDeterminant = Global.Determinant();
-		if (!IsFiniteMatrix(Global) || !std::isfinite(GlobalDeterminant) || GlobalDeterminant == 0) { OutError = "FBX: invalid Bind Global: " + Bone.Name; return false; }
-		const FbxAMatrix Local = Bone.ParentIndex < 0 ? Global : BindGlobals[Bone.ParentIndex].Inverse() * Global;
-		if (!IsFiniteMatrix(Local)) { OutError = "FBX: non-finite Bind Local: " + Bone.Name; return false; }
-		const FbxVector4 Translation = Local.GetT();
-		const FbxQuaternion Rotation = Local.GetQ();
-		const FbxVector4 Scale = Local.GetS();
-		// Scene의 Bind 행렬도 이미 엔진 좌표계이므로 분해한 TRS에 추가 반사를 하지 않는다.
-		Bone.LocalBindPose.Location = ToVector(Translation);
-		Bone.LocalBindPose.Scale = FVector(static_cast<float>(Scale[0]), static_cast<float>(Scale[1]), static_cast<float>(Scale[2]));
-		// SDK에서 Euler로 변환하여 정확히 +/-90도인 회전도 보존한다. FRotator 저장 순서는 Pitch(Y), Yaw(Z), Roll(X)다.
-		FbxAMatrix EngineRotation;
-		EngineRotation.SetQ(Rotation);
-		const FbxVector4 Euler = EngineRotation.GetR();
-		Bone.LocalBindPose.Rotation = FRotator(static_cast<float>(Euler[1]), static_cast<float>(Euler[2]), static_cast<float>(Euler[0]));
-		const FMatrix LocalMatrix = Bone.LocalBindPose.GetLocalMatrix();
-		const double LocalDeterminant = LocalMatrix.Determinant();
-		if (!std::isfinite(LocalDeterminant) || LocalDeterminant == 0) { OutError = "FBX: non-finite/zero-scale Bind Local: " + Bone.Name; return false; }
-		// 런타임과 같은 저장 Local 누적에서 역행렬을 만들어 TRS 분해 후의 자세와 일치시킨다.
-		const FMatrix World = Bone.ParentIndex < 0 ? LocalMatrix : LocalMatrix * BindWorlds[Bone.ParentIndex];
-		Bone.InverseBindPose = World.Inverse();
-		for (int R = 0; R < 4; ++R)
-		{
-			for (int C = 0; C < 4; ++C)
-			{
-				if (!std::isfinite(World.M[R][C]) || !std::isfinite(Bone.InverseBindPose.M[R][C])) { OutError = "FBX: non-finite accumulated Bind: " + Bone.Name; return false; }
-			}
-		}
-		ResultIndices.Add(Node, I);
-		ResultBones.Add(std::move(Bone));
-		BindGlobals.Add(Global);
-		BindWorlds.Add(World);
-	}
-	for (FbxCluster* Cluster : Clusters)
-	{
-		if (!ResultIndices.Contains(Cluster->GetLink())) { OutError = "FBX: Cluster Link is outside the selected bone hierarchy"; return false; }
-	}
-
-	// 현재 Global 기준 자료는 Static 출력에 남기고, rigid만 선택된 Bind Global로 다시 읽는다.
-	// 모든 추출이 성공하기 전에는 멤버를 갱신하지 않아 실패 후 부분 결과가 남지 않는다.
-	TMap<FbxNode*, FFbxMeshNodeData> ResultRigidMeshes;
-	constexpr double RigidPoseTolerance = 1e-6;
-	for (const FFbxMeshNodeData& Mesh : MeshNodes)
-	{
-		if (Mesh.bHasSkin) continue;
-		const int32* BoneIndex = ResultIndices.Find(Mesh.Node);
-		if (!BoneIndex) continue;
-		const FbxAMatrix& Bind = BindGlobals[*BoneIndex];
-		const FbxAMatrix Current = Mesh.Node->EvaluateGlobalTransform();
-		double MaxDifference = 0;
-		for (int Row = 0; Row < 4; ++Row)
-			for (int Column = 0; Column < 4; ++Column) MaxDifference = std::max(MaxDifference, std::abs(Current.Get(Row, Column) - Bind.Get(Row, Column)));
-		if (MaxDifference > RigidPoseTolerance) Warn(OutWarnings, "FBX: rigid mesh baked at bind pose (differs from current pose): " + FString(Mesh.Node->GetName()));
-		FFbxMeshNodeData Result;
-		if (!ReadMeshNode(Mesh.Node, Mesh.Node->GetMesh(), Bind, PathOf(SourcePath).parent_path(), Result, OutWarnings, OutError))
-		{
-			OutError = "FBX: " + FString(Mesh.Node->GetName()) + ": " + OutError;
-			return false;
-		}
-		Result.RigidBoneIndex = *BoneIndex;
-		ResultRigidMeshes.Add(Mesh.Node, std::move(Result));
-	}
-	Bones = std::move(ResultBones);
-	BoneIndices = std::move(ResultIndices);
-	RigidBindMeshes = std::move(ResultRigidMeshes);
-	for (FFbxMeshNodeData& Mesh : MeshNodes)
-		if (const FFbxMeshNodeData* Rigid = RigidBindMeshes.Find(Mesh.Node)) Mesh.RigidBoneIndex = Rigid->RigidBoneIndex;
-	return true;
-}
-
-// Node별 Geometry와 Weight를 같은 정점 순서로 합친 뒤, SDK 포인터 없는 엔진 자료를 반환한다.
-bool FFbxImporter::BuildSkeletalMesh(FSkeletalMeshData& OutData, TArray<FString>& OutWarnings, FString& OutError) const
-{
-	OutData = {};
-	OutWarnings.Empty();
-	OutError.clear();
-	if (!Scene || Bones.IsEmpty()) { OutError = "FBX: read skeleton data before building skeletal mesh"; return false; }
-
-	FStaticMeshData Geometry;
-	FSkeletalMeshData Result;
-	for (const FFbxMeshNodeData& SourceMesh : MeshNodes)
-	{
-		const FFbxMeshNodeData* Rigid = RigidBindMeshes.Find(SourceMesh.Node);
-		const FFbxMeshNodeData& Mesh = Rigid ? *Rigid : SourceMesh;
-		if (!Mesh.bHasSkin && Mesh.RigidBoneIndex < 0) continue;
-		if (Mesh.bHasSkin)
-		{
-			TArray<FSkinWeight> ControlPointWeights;
-			if (!ReadControlPointWeights(Mesh.Node, BoneIndices, ControlPointWeights, OutWarnings, OutError)) return false;
-			// UV/Normal 등으로 분리된 Render Vertex에도 원본 Control Point와 같은 Weight를 전달한다.
-			for (int32 CP : Mesh.ControlPointIndices) Result.SkinWeight.Add(ControlPointWeights[CP]);
 		}
 		else
 		{
-			FSkinWeight Weight;
-			Weight.BoneIndex[0] = static_cast<uint8>(Mesh.RigidBoneIndex);
-			Weight.Weight[0] = 1.0f;
-			for (int32 I = 0; I < Mesh.Geometry.Vertices.Num(); ++I) Result.SkinWeight.Add(Weight);
+			const uint16 Bone = Rig->Indices.at(Item.Node);
+			for (auto& Vertex : Influences) Vertex[Bone] = 1;
 		}
-		AppendGeometry(Mesh.Geometry, Geometry);
 	}
-	// Position/Normal/UV는 이미 변환된 상태이므로 기존 Tangent 계산만 적용한다.
-	Geometry.BuildTangentSpace();
-	Result.BindVertices = std::move(Geometry.Vertices);
-	Result.Indices = std::move(Geometry.Indices);
-	Result.Sections.Reserve(Geometry.Sections.Num());
-	for (const FStaticMeshSection& Section : Geometry.Sections)
-		Result.Sections.Add({ Section.StartIndex, Section.IndexCount, Section.MaterialSlotIndex });
-	Result.MaterialSlots.Reserve(Geometry.MaterialSlots.Num());
-	for (FStaticMaterialSlot& Slot : Geometry.MaterialSlots)
-		Result.MaterialSlots.Add({ std::move(Slot.Name), Slot.BaseColor, std::move(Slot.DiffuseTexturePath), std::move(Slot.NormalTexturePath) });
-	Result.BindAABB = Geometry.AABB;
-	Result.Bones = Bones;
-	Result.SourcePath = SourcePath;
-	if (!Result.Validate(OutError)) return false;
-	OutData = std::move(Result);
+	std::unordered_map<FCornerKey, uint32, FCornerHash> Cache;
+	int32 PositionBase = 0;
+	for (const auto& SourceVertex : Mesh.LODSourceVertices) PositionBase = std::max(PositionBase, SourceVertex.PositionIndex + 1);
+	const int32 AttributeBase = Mesh.Vertices.Num();
+	std::map<std::array<float, 2>, int32> UVIndices;
+	std::map<std::array<float, 3>, int32> NormalIndices;
+	FbxGeometryElementMaterial* MaterialsElement = Item.Mesh->GetElementMaterial();
+	for (int P = 0; P < Item.Mesh->GetPolygonCount(); ++P)
+	{
+		if (Item.Mesh->GetPolygonSize(P) != 3) { Error = "FBX triangulation did not produce triangles"; return false; }
+		int Slot = 0;
+		if (MaterialsElement && MaterialsElement->GetIndexArray().GetCount())
+		{
+			const int Index = MaterialsElement->GetMappingMode() == FbxLayerElement::eByPolygon ? P : 0;
+			if (Index < MaterialsElement->GetIndexArray().GetCount()) Slot = MaterialsElement->GetIndexArray().GetAt(Index);
+		}
+		if (Slot < 0 || Slot >= static_cast<int>(MaterialMap.size())) { Warn("Invalid material slot replaced with the first slot: " + NodePath(Item.Node)); Slot = 0; }
+		const auto& Surface = Surfaces[Slot];
+		FVertex Vertices[3]; int CPs[3]; bool MappedUVs[3]{};
+		for (int C = 0; C < 3; ++C)
+		{
+			const int CP = Item.Mesh->GetPolygonVertex(P, C); CPs[C] = CP;
+			if (CP < 0 || CP >= CPCount) { Error = "Invalid polygon control point index"; return false; }
+			auto& V = Vertices[C];
+			V.Tangent = FVector4(0, 0, 0, 0);
+			V.Position = Reflect(Full.MultT(Item.Mesh->GetControlPointAt(CP))) * static_cast<float>(UnitScale);
+			FbxVector4 N;
+			if (Item.Mesh->GetPolygonVertexNormal(P, C, N)) V.Normal = NormalMatrix.TransformVector(FVector(static_cast<float>(N[0]), static_cast<float>(N[1]), static_cast<float>(N[2]))).GetSafeNormal();
+			if (!Surface.Set.empty())
+			{
+				FbxVector2 UV; bool Unmapped = false;
+				if (Item.Mesh->GetPolygonVertexUV(P, C, Surface.Set.c_str(), UV, Unmapped) && !Unmapped)
+				{
+					UV = Surface.Transform.Apply(UV); MappedUVs[C] = true;
+					V.UV = FVector2(static_cast<float>(UV[0]), 1.f - static_cast<float>(UV[1]));
+				}
+				else Warn("Unmapped UV corner: " + NodePath(Item.Node) + ", selected=" + Surface.Set + "; zero UV used");
+			}
+			if (auto* Colors = Item.Mesh->GetElementVertexColor())
+			{
+				int Index = -1;
+				switch (Colors->GetMappingMode())
+				{
+				case FbxLayerElement::eByControlPoint: Index = CP; break;
+				case FbxLayerElement::eByPolygonVertex: Index = Item.Mesh->GetPolygonVertexIndex(P) + C; break;
+				case FbxLayerElement::eByPolygon: Index = P; break;
+				case FbxLayerElement::eAllSame: Index = 0; break;
+				default: break;
+				}
+				if (Colors->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
+					Index = Index >= 0 && Index < Colors->GetIndexArray().GetCount() ? Colors->GetIndexArray().GetAt(Index) : -1;
+				if (Index >= 0 && Index < Colors->GetDirectArray().GetCount())
+				{
+					const FbxColor Color = Colors->GetDirectArray().GetAt(Index);
+					V.Color = FVector4(static_cast<float>(Color.mRed), static_cast<float>(Color.mGreen), static_cast<float>(Color.mBlue), static_cast<float>(Color.mAlpha));
+				}
+			}
+		}
+		FVector FaceNormal = (Vertices[1].Position - Vertices[0].Position).Cross(Vertices[2].Position - Vertices[0].Position).GetSafeNormal();
+		if (Reverse) FaceNormal = FaceNormal * -1.f;
+		uint32 Corners[3];
+		for (int C = 0; C < 3; ++C)
+		{
+			if (Vertices[C].Normal.SizeSquared() < 1.e-12f) Vertices[C].Normal = FaceNormal;
+			if (MappedUVs[C] && !ImportTangent(Surface, Item.Mesh, P, C, Transform, Vertices[C]) && Surface.Tangents)
+				Warn("Invalid source tangent basis: " + NodePath(Item.Node) + ", UV set=" + Surface.Set + "; affected tangents recalculated");
+			const auto& V = Vertices[C];
+			if (!std::isfinite(V.Position.X) || !std::isfinite(V.Position.Y) || !std::isfinite(V.Position.Z) ||
+				!std::isfinite(V.Normal.X) || !std::isfinite(V.Normal.Y) || !std::isfinite(V.Normal.Z) ||
+				!std::isfinite(V.UV.X) || !std::isfinite(V.UV.Y)) { Error = "Invalid FBX vertex attribute"; return false; }
+			const FCornerKey Key{ CPs[C], SurfaceGroups[Slot], Vertices[C] };
+			if (auto It = Cache.find(Key); It != Cache.end()) { Corners[C] = It->second; continue; }
+			Corners[C] = Mesh.Vertices.Num(); Mesh.Vertices.Add(Vertices[C]); Cache.emplace(Key, Corners[C]);
+			// 기존 스태틱 LOD 생성기에 필요한 원본 위치/이음매 식별자다.
+			const auto UV = UVIndices.try_emplace({ V.UV.X, V.UV.Y }, AttributeBase + static_cast<int32>(UVIndices.size())).first->second;
+			const auto Normal = NormalIndices.try_emplace({ V.Normal.X, V.Normal.Y, V.Normal.Z }, AttributeBase + static_cast<int32>(NormalIndices.size())).first->second;
+			Mesh.LODSourceVertices.Add({ PositionBase + CPs[C], UV, Normal });
+			if (Rig)
+			{
+				std::vector<std::pair<uint16, float>> Weights(Influences[CPs[C]].begin(), Influences[CPs[C]].end());
+				std::sort(Weights.begin(), Weights.end(), [](auto A, auto B) { return A.second != B.second ? A.second > B.second : A.first < B.first; });
+				if (Weights.size() > 4) Warn("Weights reduced to four influences: " + NodePath(Item.Node));
+				Weights.resize(std::min<size_t>(Weights.size(), 4));
+				std::array<uint16, 4> Bones{}; std::array<float, 4> Values{};
+				float Total = 0; for (auto W : Weights) Total += W.second;
+				if (Total <= 0) { Values[0] = 1; Warn("Unweighted vertices attached to root: " + NodePath(Item.Node)); }
+				else for (size_t I = 0; I < Weights.size(); ++I) { Bones[I] = Weights[I].first; Values[I] = Weights[I].second / Total; }
+				LOD.SkinWeights.InfluenceBones.Add(Bones); LOD.SkinWeights.InfluenceWeights.Add(Values);
+			}
+		}
+		auto& Indices = Sections[MaterialMap[Slot]];
+		Indices.push_back(Corners[0]); Indices.push_back(Corners[Reverse ? 2 : 1]); Indices.push_back(Corners[Reverse ? 1 : 2]);
+	}
 	return true;
 }
 
-namespace
+void FImport::LODThresholds(const FOutputGroup& Group, FFbxAssetData& Asset)
 {
-	FString Utf8Path(const std::filesystem::path& Path)
+	const auto& Box = Asset.LODs[0].MeshData.AABB;
+	const float Radius = (Box.Max - Box.Min).Size() * .5f;
+	std::set<FbxNode*> Seen;
+	bool Set[3]{};
+	for (auto* Item : Group.Items)
 	{
-		const auto Text = Path.generic_u8string();
-		return FString(Text.begin(), Text.end());
-	}
-
-	FString AssetFileName(const std::filesystem::path& Path)
-	{
-		FString Name;
-		for (char C : Utf8Path(Path.stem()))
+		if (!Item->LODGroupNode || !Seen.insert(Item->LODGroupNode).second) continue;
+		FbxLODGroup* LOD = nullptr;
+		for (int A = 0; A < Item->LODGroupNode->GetNodeAttributeCount(); ++A)
+			if (Item->LODGroupNode->GetNodeAttributeByIndex(A)->GetAttributeType() == FbxNodeAttribute::eLODGroup)
+				LOD = static_cast<FbxLODGroup*>(Item->LODGroupNode->GetNodeAttributeByIndex(A));
+		if (!LOD) continue;
+		if (LOD->MinMaxDistance.Get()) Warn("LOD Min/MaxDistance visibility is not imported: " + NodePath(Item->LODGroupNode));
+		for (int I = 0; I < std::min(3, LOD->GetNumThresholds()); ++I)
 		{
-			if ((C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z') || (C >= '0' && C <= '9') || C == '-' || C == '_') Name += C;
-			else if (Name.empty() || Name.back() != '_') Name += '_';
-		}
-		if (Name.empty() || Name == "_") Name = "FBX";
-		FString Upper = Name;
-		for (char& C : Upper) if (C >= 'a' && C <= 'z') C -= 'a' - 'A';
-		if (Upper == "CON" || Upper == "PRN" || Upper == "AUX" || Upper == "NUL" || (Upper.size() == 4 && (Upper.starts_with("COM") || Upper.starts_with("LPT")) && Upper[3] >= '1' && Upper[3] <= '9')) Name = "_" + Name;
-		return Name;
-	}
-
-	bool SameSource(const FFbxSourceInfo& A, const FFbxSourceInfo& B)
-	{
-		return A.Path == B.Path && A.Size == B.Size && A.ModifiedTime == B.ModifiedTime && A.Mode == B.Mode;
-	}
-
-	// 새로 만든 작업 폴더만 정리한다. 복구에 실패하면 백업을 보존한다.
-	struct FImportFiles
-	{
-		std::filesystem::path Folder;
-		TArray<std::pair<std::filesystem::path, std::filesystem::path>> Files;
-		bool bKeepBackup = false;
-		~FImportFiles()
-		{
-			if (!Folder.empty() && !bKeepBackup) { std::error_code EC; std::filesystem::remove_all(Folder, EC); }
-		}
-		bool Commit(FString& Error)
-		{
-			// 모든 기존 파일을 먼저 보관한 뒤 개별 교체한다. 여러 파일 전체의 원자성은 보장하지 않는다.
-			TArray<uint8> Existing;
-			for (int32 I = 0; I < Files.Num(); ++I)
+			float Threshold = 0;
+			if (LOD->ThresholdsUsedAsPercentage.Get())
 			{
-				const auto& Target = Files[I].second;
-				const bool Exists = std::filesystem::exists(Target);
-				Existing.Add(Exists);
-				if (Exists) std::filesystem::copy_file(Target, Folder / ("backup_" + std::to_string(I)));
+				FbxDouble Percentage = 0;
+				if (LOD->GetThreshold(I, Percentage)) Threshold = static_cast<float>(Percentage / 100.);
 			}
-			for (int32 I = 0; I < Files.Num(); ++I)
+			else
 			{
-				if (MoveFileExW(Files[I].first.c_str(), Files[I].second.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) continue;
-				Error = "FBX: cannot replace file: " + Utf8Path(Files[I].second) + " (Windows " + std::to_string(GetLastError()) + ")";
-				for (int32 J = I - 1; J >= 0; --J)
+				FbxDistance Distance;
+				if (LOD->GetThreshold(I, Distance))
 				{
-					if (Existing[J])
-					{
-						const auto Backup = Folder / ("backup_" + std::to_string(J));
-						if (!MoveFileExW(Backup.c_str(), Files[J].second.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) bKeepBackup = true;
-					}
-					else { std::error_code EC; std::filesystem::remove(Files[J].second, EC); if (EC) bKeepBackup = true; }
+					// FbxDistance는 자체 단위를 갖는다. 장면 단위를 중복 곱하지 않는다.
+					const double D = Distance.valueAs(FbxSystemUnit::m);
+					if (D > 0) Threshold = static_cast<float>(Radius * 1.7320508075688772 / D);
 				}
-				if (bKeepBackup) Error += "; rollback incomplete; backups kept at " + Utf8Path(Folder);
-				return false;
 			}
-			return true;
-		}
-	};
-
-	bool RegisterImported(const TArray<FString>& Paths, bool bChanged, TArray<FString>& Warnings, FString& Error)
-	{
-		for (const auto& Path : Paths)
-		{
-			const FString Key = std::filesystem::relative(PathOf(Path), "Assets").generic_string();
-			if (bChanged && UAssetManager::FindLoadedAsset(Key))
+			if (Threshold > 0 && std::isfinite(Threshold))
 			{
-				// TODO: 현재는 재Import로 파일을 갱신해도 이미 로드된 Asset은 유지되어 변경 내용을 사용하려면 엔진을 재시작해야 한다.
-				// Asset을 참조하는 Component와 렌더 자원의 수명을 고려해 Mesh/Material/Texture를 안전하게 갱신해야 한다.
-				Warnings.Add("FBX: asset already loaded; restart the engine to use updated files: " + Key);
-			}
-			if (!UAssetManager::LoadFbxMesh(Path, Error))
-			{
-				Error = "FBX files are available, but asset registration failed: " + Error;
-				return false;
+				Asset.ScreenThresholds[I] = Set[I] ? std::min(Asset.ScreenThresholds[I], Threshold) : Threshold; Set[I] = true;
 			}
 		}
-		return true;
 	}
+	for (int I = 1; I < 3; ++I)
+		if (Asset.ScreenThresholds[I] >= Asset.ScreenThresholds[I - 1]) Asset.ScreenThresholds[I] = Asset.ScreenThresholds[I - 1] * .5f;
 }
 
-bool FFbxImporter::ImportToAssets(const FString& Path, EFbxImportMode Mode, FFbxImportResult& OutResult, FString& OutError)
+bool FImport::CookMesh(const FOutputGroup& Group)
 {
-	OutResult = {};
-	OutError.clear();
-	struct FWarningLog
+	const bool Skinned = Group.Root != nullptr;
+	const auto Type = Skinned ? EFbxAssetType::SkeletalMesh : EFbxAssetType::StaticMesh;
+	const FString Key = MakeKey(Skinned ? "SK" : "SM", Group.Label, Group.Identity);
+	if (Key.empty()) return false;
+	auto Asset = Data(Type, Key, Group.Identity);
+	int MaxLOD = 0; for (auto* Item : Group.Items) MaxLOD = std::max(MaxLOD, Item->LOD);
+	Asset.LODs.SetNum(std::min(4, MaxLOD + 1));
+	if (Skinned) { const auto& Rig = Rigs.at(NodePath(Group.Root)); Asset.RefSkeleton = Rig.Reference; Asset.SkeletonKey = Rig.MeshSkeletonKey; }
+	for (int L = 0; L < Asset.LODs.Num(); ++L)
 	{
-		const TArray<FString>& Warnings;
-		~FWarningLog() { for (const auto& Warning : Warnings) HTR_LOG(Warning, "{}", Warning); }
-	} WarningLog{ OutResult.Warnings };
-	if (Mode != EFbxImportMode::Static && Mode != EFbxImportMode::Skeletal) { OutError = "FBX: invalid Import mode"; return false; }
-	try
-	{
-		const auto SourcePath = std::filesystem::canonical(PathOf(Path));
-		FFbxSourceInfo Source;
-		Source.Path = Utf8Path(SourcePath);
-		Source.Size = std::filesystem::file_size(SourcePath);
-		Source.ModifiedTime = std::filesystem::last_write_time(SourcePath).time_since_epoch().count();
-		Source.Mode = Mode;
-		FString Name = AssetFileName(SourcePath);
-		const FString Stem = Utf8Path(SourcePath.stem());
-		if (std::none_of(Stem.begin(), Stem.end(), [](char C)
+		std::map<uint32, std::vector<uint32>> Sections;
+		// 그룹 밖 조각은 모든 단계에 포함한다. 그룹의 누락 LOD는 마지막 기하를 반복하지 않는다.
+		for (auto* Item : Group.Items) if (Item->LOD < 0 || Item->LOD == L)
+			if (!AppendMesh(*Item, Asset, L, Sections)) return false;
+		auto& Mesh = Asset.LODs[L].MeshData;
+		for (const auto& [MaterialIndex, Indices] : Sections)
 		{
-			return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z') || (C >= '0' && C <= '9');
-		}))
-		{
-			// 영숫자가 남지 않는 출력 이름은 확장자를 제외한 원본 이름의 FNV-1a 32bit로 구분한다.
-			// stem의 UTF-8 바이트를 사용하여 원본 폴더나 PC가 달라도 같은 이름은 같은 출력에 덮어쓴다.
-			constexpr uint32 OffsetBasis = 2166136261u;
-			constexpr uint32 Prime = 16777619u;
-			uint32 Hash = OffsetBasis;
-			for (unsigned char Byte : Stem) Hash = (Hash ^ Byte) * Prime;
-			Name = "FBX_";
-			for (int Shift = 28; Shift >= 0; Shift -= 4) Name += "0123456789abcdef"[(Hash >> Shift) & 0xf];
+			Mesh.Sections.Add({ static_cast<uint32>(Mesh.Indices.Num()), static_cast<uint32>(Indices.size()), MaterialIndex });
+			for (auto Index : Indices) Mesh.Indices.Add(Index);
 		}
-		const auto Folder = std::filesystem::path("Assets/FBX") / Name;
-		const auto StaticPath = Folder / (Name + "_Static.fbx.bin");
-		const auto SkeletalPath = Folder / (Name + ".fbx.bin");
-		const auto Primary = Mode == EFbxImportMode::Static ? StaticPath : SkeletalPath;
-		FFbxBakedMesh Previous;
-		FString ReadError;
-		if (FFbxMeshBake::Read(Utf8Path(Primary), Previous, ReadError) && SameSource(Source, Previous.Source)
-			&& Previous.Kind == (Mode == EFbxImportMode::Static ? EFbxMeshKind::Static : EFbxMeshKind::Skeletal))
+		if (!Mesh.Vertices.IsEmpty())
 		{
-			bool Complete = Mode != EFbxImportMode::Static || Previous.Source.Outputs == static_cast<uint32>(EFbxMeshKind::Static);
-			TArray<FString> Paths;
-			for (EFbxMeshKind Kind : { EFbxMeshKind::Static, EFbxMeshKind::Skeletal })
+			std::vector<std::pair<int32, FVector4>> SourceTangents;
+			for (int32 I = 0; I < Mesh.Vertices.Num(); ++I)
+				if (Mesh.Vertices[I].Tangent.W != 0) SourceTangents.emplace_back(I, Mesh.Vertices[I].Tangent);
+			if (SourceTangents.size() != static_cast<size_t>(Mesh.Vertices.Num()))
 			{
-				if (!(Previous.Source.Outputs & static_cast<uint32>(Kind))) continue;
-				const FString OutputPath = Utf8Path(Kind == EFbxMeshKind::Static ? StaticPath : SkeletalPath);
-				FFbxBakedMesh Other;
-				if (!FFbxMeshBake::Read(OutputPath, Other, ReadError) || !SameSource(Source, Other.Source) || Other.Source.Outputs != Previous.Source.Outputs || Other.Kind != Kind) Complete = false;
-				Paths.Add(OutputPath);
+				Mesh.BuildTangentSpace();
+				for (const auto& [Index, Tangent] : SourceTangents) Mesh.Vertices[Index].Tangent = Tangent;
 			}
-			if (Complete)
+			FVector Min = Mesh.Vertices[0].Position, Max = Min;
+			for (const auto& V : Mesh.Vertices)
 			{
-				// TODO: 현재는 FBX 원본만 비교하므로 외부 Texture만 변경되면 Import를 건너뛰어 변경 내용이 반영되지 않는다.
-				// 참조하는 외부 Texture의 변경 정보도 저장·비교하여 이미지가 바뀐 경우 재Import하도록 해야 한다.
-				OutResult.bSkipped = true;
-				OutResult.Paths = std::move(Paths);
-				HTR_LOG(Info, "FBX Import skipped (source unchanged): {}", Source.Path);
-				return RegisterImported(OutResult.Paths, false, OutResult.Warnings, OutError);
+				Min.X = std::min(Min.X, V.Position.X); Min.Y = std::min(Min.Y, V.Position.Y); Min.Z = std::min(Min.Z, V.Position.Z);
+				Max.X = std::max(Max.X, V.Position.X); Max.Y = std::max(Max.Y, V.Position.Y); Max.Z = std::max(Max.Z, V.Position.Z);
 			}
+			Mesh.AABB = FBox{ Min, Max };
 		}
-
-		// SDK 추출부터 최종 파일 교체까지 같은 작업 폴더를 유지한다. 실패 시에도 소멸자가 정리한다.
-		std::filesystem::create_directories(Folder / "Textures");
-		FImportFiles Staged;
-		const auto Temporary = Folder / (".import-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
-		if (!std::filesystem::create_directory(Temporary)) { OutError = "FBX: temporary directory already exists"; return false; }
-		Staged.Folder = Temporary;
-		const auto Extraction = std::filesystem::absolute(Temporary / "embedded");
-		std::filesystem::create_directory(Extraction);
-		FFbxImporter Importer;
-		if (!Importer.Open(Source.Path, OutError, Utf8Path(Extraction))) return false;
-		TArray<FString> Warnings;
-		if (!Importer.ReadMeshData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
-		OutResult.Warnings.Append(Warnings);
-		TArray<FFbxBakedMesh> Outputs;
-		if (Mode == EFbxImportMode::Skeletal)
-		{
-			if (!Importer.ReadSkeletonData(Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
-			OutResult.Warnings.Append(Warnings);
-			FFbxBakedMesh Skeletal;
-			Skeletal.Kind = EFbxMeshKind::Skeletal;
-			if (!Importer.BuildSkeletalMesh(Skeletal.SkeletalMesh, Warnings, OutError)) { OutResult.Warnings.Append(Warnings); return false; }
-			OutResult.Warnings.Append(Warnings);
-			Outputs.Add(std::move(Skeletal));
-		}
-		FFbxBakedMesh Static;
-		if (Mode == EFbxImportMode::Static) Importer.BuildStaticMesh(Static.StaticMesh);
-		else for (const auto& Mesh : Importer.GetMeshNodes()) if (!Mesh.bHasSkin && Mesh.RigidBoneIndex < 0) AppendGeometry(Mesh.Geometry, Static.StaticMesh);
-		if (!Static.StaticMesh.Vertices.IsEmpty())
-		{
-			if (!Static.StaticMesh.Validate(OutError)) return false;
-			Outputs.Add(std::move(Static));
-		}
-		// Scene을 닫아도 추출 파일은 Staged가 소유하므로 아래 Texture 복사까지 살아 있다.
-		Importer.Close();
-		if (Outputs.IsEmpty()) { OutError = "FBX: no mesh output"; return false; }
-		for (const auto& Output : Outputs) Source.Outputs |= static_cast<uint32>(Output.Kind);
-		TMap<FString, FString> Copied;
-		TSet<FString> Names;
-		for (auto& Output : Outputs)
-		{
-			Output.Source = Source;
-			auto CopyTextures = [&](auto& Slots)
-			{
-				for (auto& Slot : Slots) for (FString* Texture : { &Slot.DiffuseTexturePath, &Slot.NormalTexturePath })
-				{
-					if (Texture->empty()) continue;
-					const auto Original = std::filesystem::canonical(PathOf(*Texture));
-					const FString OriginalKey = Utf8Path(Original);
-					if (const auto* Existing = Copied.Find(OriginalKey)) { *Texture = *Existing; continue; }
-					FString Extension = Original.extension().string();
-					for (char& C : Extension) if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
-					if (!std::all_of(Extension.begin(), Extension.end(), [](unsigned char C)
-					{
-						return C == '.' || (C >= 'a' && C <= 'z') || (C >= '0' && C <= '9');
-					})) Extension = ".texture";
-					const FString Base = AssetFileName(Original);
-					FString File = Base + Extension;
-					int Suffix = 1;
-					auto Lower = [](FString Text)
-					{
-						for (char& C : Text) if (C >= 'A' && C <= 'Z') C += 'a' - 'A';
-						return Text;
-					};
-					while (Names.Contains(Lower(File))) File = Base + "_" + std::to_string(Suffix++) + Extension;
-					Names.Add(Lower(File));
-					const auto Target = Folder / "Textures" / File;
-					const auto Temp = Staged.Folder / ("texture_" + std::to_string(Copied.Num()));
-					std::filesystem::copy_file(Original, Temp);
-					Staged.Files.Add({ Temp, Target });
-					*Texture = Utf8Path(Target);
-					Copied.Add(OriginalKey, *Texture);
-				}
-			};
-			if (Output.Kind == EFbxMeshKind::Static) CopyTextures(Output.StaticMesh.MaterialSlots);
-			else CopyTextures(Output.SkeletalMesh.MaterialSlots);
-		}
-		TArray<FString> Paths;
-		for (const auto& Output : Outputs)
-		{
-			const auto Target = Output.Kind == EFbxMeshKind::Static ? StaticPath : SkeletalPath;
-			// 작업 폴더가 남아도 Asset 검색에서 완성된 FBX Binary로 인식하지 않게 한다.
-			const auto Temp = Staged.Folder / (Output.Kind == EFbxMeshKind::Static ? "static.tmp" : "skeletal.tmp");
-			if (!FFbxMeshBake::Write(Utf8Path(Temp), Output, OutError)) return false;
-			Staged.Files.Add({ Temp, Target });
-			Paths.Add(Utf8Path(Target));
-		}
-		if (Source.Size != std::filesystem::file_size(SourcePath) || Source.ModifiedTime != std::filesystem::last_write_time(SourcePath).time_since_epoch().count()) { OutError = "FBX: source changed during Import; retry"; return false; }
-		if (!Staged.Commit(OutError)) return false;
-		OutResult.Paths = std::move(Paths);
-		HTR_LOG(Info, "FBX Import saved: {} ({} files)", Source.Path, OutResult.Paths.Num());
-		return RegisterImported(OutResult.Paths, true, OutResult.Warnings, OutError);
 	}
-	catch (const std::filesystem::filesystem_error& E)
+	if (Asset.LODs[0].MeshData.Vertices.IsEmpty()) { Error = "No visible LOD0 geometry: " + Group.Label; return false; }
+	LODThresholds(Group, Asset);
+	if (!Asset.Validate(Error)) return false;
+	Output.Add(std::move(Asset));
+	return true;
+}
+
+bool FImport::Run()
+{
+	const bool bImportAnimations = Options.bImportAnimations || Options.bImportOnlyAnimations;
+	if (Options.bImportOnlyAnimations && Options.AnimationSkeletonKey.empty())
+	{ Error = "Import Only Animations requires an existing Animation Skeleton"; return false; }
+	if (bImportAnimations && (Options.CustomBoneAnimationSampleRate < 0 ||
+		(Options.AnimationRange == EFbxAnimationRange::SetRange && Options.FirstAnimationFrame > Options.LastAnimationFrame)))
+	{ Error = "Invalid animation sample rate or frame range"; return false; }
+	if (!Options.bImportOnlyAnimations && !LoadSelectedSkeleton(Options.SkeletalMeshSkeletonKey)) return false;
+	if (bImportAnimations && !LoadSelectedSkeleton(Options.AnimationSkeletonKey)) return false;
+	auto* MeshSkeleton = !Options.bImportOnlyAnimations && !Options.SkeletalMeshSkeletonKey.empty()
+		? &SelectedSkeletons.at(Options.SkeletalMeshSkeletonKey) : nullptr;
+	const int32 OriginalMeshBoneCount = MeshSkeleton ? MeshSkeleton->RefSkeleton.GetNum() : 0;
+
+	Gather(Scene->GetRootNode(), true);
+	FindRigs(); if (!Error.empty()) return false;
+	PreparePoses();
+	for (auto& [Path, Rig] : Rigs)
 	{
-		OutError = "FBX: file operation failed: " + FString(E.what());
+		const bool bImportMesh = !Options.bImportOnlyAnimations && Rig.bHasMesh;
+		if ((bImportMesh || (bImportAnimations && Rig.bHasTransformAnimation)) && !BuildRig(Rig)) return false;
+		if (bImportMesh && !ChooseMeshSkeleton(Rig)) return false;
+	}
+	std::map<FString, FOutputGroup> Groups;
+	if (!Options.bImportOnlyAnimations)
+	{
+		for (auto& Item : Meshes)
+		{
+			if (Item.Rig && Rigs.at(NodePath(Item.Rig)).MeshSkeletonKey.empty()) continue;
+			const bool Combine = Item.Rig ? Options.bCombineSkeletalMeshes : Options.bCombineStaticMeshes;
+			const FString Identity = Item.Rig ? "Skeletal:" + NodePath(Item.Rig) + (Combine ? "Combined" : Item.UnitKey)
+				: "Static:" + (Combine ? FString("Combined") : Item.UnitKey);
+			auto& Group = Groups[Identity]; Group.Identity = Identity; Group.Root = Item.Rig;
+			Group.Label = Combine ? (Item.Rig ? FString(Item.Rig->GetName()) : FString("Combined")) : Item.Label;
+			Group.Items.push_back(&Item);
+		}
+	}
+	for (const auto& [Key, Group] : Groups) if (!CookMesh(Group)) return false;
+	if (bImportAnimations)
+	{
+		for (auto& [Path, Rig] : Rigs)
+			if (Rig.bHasTransformAnimation && !CookAnimations(Rig)) return false;
+	}
+	if (MeshSkeleton && MeshSkeleton->RefSkeleton.GetNum() != OriginalMeshBoneCount)
+	{
+		Warn("Added " + std::to_string(MeshSkeleton->RefSkeleton.GetNum() - OriginalMeshBoneCount) +
+			" bone(s) to selected mesh Skeleton: " + MeshSkeleton->Key);
+		Output.Add(std::move(*MeshSkeleton));
+	}
+	std::set<FString> ReferencedTextures;
+	for (const auto& Asset : Output) if (Asset.Type == EFbxAssetType::Material)
+	{
+		ReferencedTextures.insert(Asset.Material.DiffuseTexture); ReferencedTextures.insert(Asset.Material.NormalTexture);
+	}
+	for (int32 I = Output.Num() - 1; I >= 0; --I)
+		if (Output[I].Type == EFbxAssetType::Texture2D && !ReferencedTextures.contains(Output[I].Key)) Output.RemoveAt(I);
+	if (Output.IsEmpty())
+	{
+		Error = Options.bImportOnlyAnimations ? "No compatible bone animation was found for the selected Skeleton"
+			: SelectedSkeletons.empty() ? "No supported FBX assets found; animation-only files require an Animation Skeleton"
+			: "No supported FBX assets were compatible with the selected Skeletons";
 		return false;
 	}
+	for (const auto& Asset : Output) if (!Asset.Validate(Error)) return false;
+	return true;
+}
+}
+#endif
+
+bool FFbxImporter::IsAvailable() { return WITH_FBX_SDK != 0; }
+
+bool FFbxImporter::Cook(const FString& SourcePath, const FFbxImportOptions& Options, const FString& ExtractionDirectory,
+	TArray<FFbxAssetData>& Out, TArray<FString>& Warnings, FString& Error, const FString& OutputDirectory)
+{
+	Out.Empty(); Warnings.Empty(); Error.clear();
+#if WITH_FBX_SDK
+	try
+	{
+		FString SourceKey;
+		fs::path Source, Destination, Extraction;
+		if (!FbxPath::GetSourcePath(SourcePath, Source, SourceKey, Error) ||
+			!FbxPath::GetOutputDirectory(OutputDirectory.empty() ? FbxPath::DefaultOutputDirectory(SourcePath) : OutputDirectory, Destination, Error) ||
+			!FbxPath::GetOutputDirectory(ExtractionDirectory, Extraction, Error)) return false;
+		struct FManagerDelete { void operator()(FbxManager* P) const { if (P) P->Destroy(); } };
+		std::unique_ptr<FbxManager, FManagerDelete> Manager(FbxManager::Create());
+		if (!Manager) { Error = "Cannot create FBX SDK manager"; return false; }
+		Manager->SetIOSettings(FbxIOSettings::Create(Manager.get(), IOSROOT));
+		FbxImporter* Parser = FbxImporter::Create(Manager.get(), "");
+		const FString CanonicalSource = FbxPath::ToString(Source);
+		const FString CanonicalExtraction = FbxPath::ToString(Extraction);
+		if (!Parser->Initialize(CanonicalSource.c_str(), -1, Manager->GetIOSettings())) { Error = Parser->GetStatus().GetErrorString(); return false; }
+		Parser->SetEmbeddingExtractionFolder(CanonicalExtraction.c_str());
+		FbxScene* Scene = FbxScene::Create(Manager.get(), "Import");
+		if (!Parser->Import(Scene)) { Error = Parser->GetStatus().GetErrorString(); return false; }
+		bool Blender = false;
+		if (auto* Info = Scene->GetSceneInfo()) Blender = Lower(Info->Original_ApplicationName.Get().Buffer()).find("blender") != FString::npos;
+		const double UnitScale = Scene->GetGlobalSettings().GetSystemUnit().GetScaleFactor() / 100.;
+		if (!std::isfinite(UnitScale) || UnitScale <= 0) { Error = "Invalid FBX scene unit"; return false; }
+		// UE의 Z-up/-ParityOdd 기준을 사용한다. Deep 변환으로 Bake off의 로컬 기하도 같은 축이 된다.
+		FbxAxisSystem Target(FbxAxisSystem::eZAxis, static_cast<FbxAxisSystem::EFrontVector>(-FbxAxisSystem::eParityOdd), FbxAxisSystem::eRightHanded);
+		Target.DeepConvertScene(Scene);
+		FbxGeometryConverter Converter(Manager.get());
+		if (!Options.bImportOnlyAnimations && !Converter.Triangulate(Scene, true)) { Error = "FBX SDK triangulation failed"; return false; }
+		FImport Import(Scene, Options, SourceKey, Source, Destination, Out, Warnings, Error);
+		Import.UnitScale = UnitScale; Import.bBlender = Blender;
+		const bool Result = Import.Run();
+		if (!Result) Out.Empty();
+		return Result;
+	}
+	catch (const std::exception& E) { Error = E.what(); Out.Empty(); return false; }
+#else
+	Error = "FBX SDK is not configured. Set FBX_SDK_ROOT and regenerate the solution; existing .fbxbin assets can still be loaded.";
+	return false;
+#endif
 }

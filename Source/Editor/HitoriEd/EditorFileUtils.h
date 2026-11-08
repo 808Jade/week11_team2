@@ -2,8 +2,6 @@
 
 #include "Engine/World.h"
 
-enum class EFbxImportMode : uint32;
-
 class FEditorFileUtils
 {
 public:
@@ -11,7 +9,7 @@ public:
 	static bool SaveScene(UWorld* World);
 	static bool SaveSceneAs(UWorld* World);
 	static bool LoadScene(UWorld* World);
-	static void ImportFbx(EFbxImportMode Mode);
+	static FString ChooseFbxFile();
 
 	static FString CurrentScenePath;
 private:

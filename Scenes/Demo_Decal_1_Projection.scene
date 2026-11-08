@@ -1034,7 +1034,7 @@
                             "OverrideMaterials": [],
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "SkeletalMesh": "Assets/FBX/Mixamo_Idle/Mixamo_Idle.fbx.bin",
+                                "SkeletalMesh": "Assets/FBX/Mixamo_Idle/SK_Mixamo_Idle.fbxbin",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -1047,9 +1047,9 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 100.0,
+                                        "Y": 100.0,
+                                        "Z": 100.0
                                     }
                                 },
                                 "bAutoActivate": true,

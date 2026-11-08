@@ -67,6 +67,7 @@ namespace
 
 			FForwardMaterialConstants Params{};
 			Params.BaseColor = Material->BaseColor;
+			Params.Emissive = FVector4(Material->EmissiveColor.X, Material->EmissiveColor.Y, Material->EmissiveColor.Z, 0.0f);
 			Params.SpecularColorShininess = FVector4(Material->SpecularColor.X,
 				Material->SpecularColor.Y, Material->SpecularColor.Z, std::max(1.0f, Material->Shininess));
 			UTexture2D* Color = Material->Textures.IsEmpty() ? nullptr : Material->Textures[0];

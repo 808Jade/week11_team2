@@ -2,6 +2,8 @@
 #include "SkeletalMeshInfoPanel.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Render/SkeletalMesh.h"
+#include "Animation/Skeleton.h"
+#include "Asset/FbxImporter/FbxPath.h"
 
 #include <filesystem>
 
@@ -18,7 +20,7 @@ void FSkeletalMeshInfoPanel::DrawContent()
 		return;
 	}
 
-	const FString Name = std::filesystem::path(Editor.GetAssetPath()).stem().string();
+	const FString Name = FbxPath::ToString(FbxPath::FromString(Editor.GetAssetPath()).stem());
 	ImGui::TextDisabled("Asset Name");
 	ImGui::TextWrapped("%s", Name.c_str());
 	ImGui::Spacing();
@@ -33,4 +35,7 @@ void FSkeletalMeshInfoPanel::DrawContent()
 	ImGui::Text("Materials: %d", static_cast<int>(Mesh->GetMaterialSlots().Num()));
 	ImGui::Text("Sections: %d", static_cast<int>(Data.Sections.Num()));
 	ImGui::Text("Bones: %d", Mesh->GetNumBones());
+	ImGui::Text("LODs: %d", Mesh->GetRenderData().LODRenderData.Num());
+	if (const USkeleton* Skeleton = Mesh->GetSkeleton())
+		ImGui::TextWrapped("Skeleton: %s", Skeleton->GetPath().c_str());
 }

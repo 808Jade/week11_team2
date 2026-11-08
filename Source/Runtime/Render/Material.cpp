@@ -39,6 +39,7 @@ UMaterial* UMaterial::CreateInstance(const UMaterial* Source)
 	Instance->SamplerState = Source->SamplerState;
 	Instance->BaseColor = Source->BaseColor;
 	Instance->SpecularColor = Source->SpecularColor;
+	Instance->EmissiveColor = Source->EmissiveColor;
 	Instance->Shininess = Source->Shininess;
 	Instance->UVScrollSpeed = Source->UVScrollSpeed;
 	Instance->bFlipNormalY = Source->bFlipNormalY;
@@ -132,6 +133,12 @@ void UMaterial::Serialize(FStructuredArchive::FRecord Record)
 			<< SA_VALUE("Shininess", Shininess)
 			<< SA_VALUE("UVScrollSpeed", UVScrollSpeed)
 			<< SA_VALUE("FlipNormalY", bFlipNormalY);
+
+	if (Record.HasDocumentTree())
+	{
+		if (auto Slot = Record.TryEnterField("EmissiveColor", Ar.IsSaving() && EmissiveColor != FVector::ZeroVector))
+			Slot.GetValue() << EmissiveColor;
+	}
 
 	// enum은 이름 문자열로 (UE 텍스트 포맷도 enum을 이름으로 쓴다)
 	FString Sampler = SamplerState == ESamplerState::LinearWrap ? "LinearWrap" : "LinearClamp";

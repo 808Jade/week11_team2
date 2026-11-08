@@ -1,7 +1,7 @@
 #include "EnginePCH.h"
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
 #include "Asset/AssetManager.h"
-#include "Asset/FbxImporter/FbxMeshBake.h"
+#include "Asset/FbxImporter/FbxAssetBake.h"
 #include "Text/Font.h"
 #include "Editor/HitoriEd/EditorDragDrop.h"
 
@@ -343,9 +343,12 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 		{
 			OnOpenWidget(PathString);
 		}
-		else if ((Path.extension() == ".obj" || FFbxMeshBake::IsBakedPath(PathString)) && OnOpenMesh)
+		else if (OnOpenMesh)
 		{
-			OnOpenMesh(PathString);
+			EFbxAssetType Type;
+			const bool bFbxMesh = FFbxAssetBake::IsBakedPath(PathString) && FFbxAssetBake::ReadAssetType(PathString, Type)
+				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh);
+			if (Path.extension() == ".obj" || bFbxMesh) OnOpenMesh(PathString);
 		}
 	}
 

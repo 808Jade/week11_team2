@@ -5,13 +5,8 @@
 
 namespace
 {
-	TArray<FBox> BuildBoneBounds(const FSkeletalMeshLODRenderData& LOD, int32 NumBones)
+	void AccumulateBoneBounds(const FSkeletalMeshLODRenderData& LOD, TArray<FBox>& Bounds)
 	{
-		TArray<FBox> Bounds;
-		Bounds.SetNum(NumBones);
-		for (FBox& Box : Bounds)
-			Box = FBox{ FVector(FLT_MAX, FLT_MAX, FLT_MAX), FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
-
 		for (int32 V = 0; V < LOD.BindVertices.Num(); ++V)
 		{
 			const FVector& Position = LOD.BindVertices[V].Position;
@@ -19,98 +14,103 @@ namespace
 			for (int32 K = 0; K < MaxBoneInfluences; ++K)
 			{
 				if (Weight.Weight[K] <= 0.0f) continue;
-				FBox& Box = Bounds[Weight.BoneIndex[K]];
-				for (int Axis = 0; Axis < 3; ++Axis)
-				{
-					Box.Min[Axis] = std::min(Box.Min[Axis], Position[Axis]);
-					Box.Max[Axis] = std::max(Box.Max[Axis], Position[Axis]);
-				}
+				Bounds[Weight.BoneIndex[K]].Expand(FBox{ Position, Position });
 			}
 		}
-		return Bounds;
 	}
 }
 
 bool USkeletalMesh::Build(FSkeletalMeshData&& ImportData, FString& OutError)
 {
-	// CreateStaticMesh와 같은 기본값: 슬롯/섹션이 없으면 하나씩 채운다
-	if (ImportData.MaterialSlots.IsEmpty())
-	{
-		FSkeletalMaterialSlot DefaultSlot;
-		DefaultSlot.Name = "Default";
-		ImportData.MaterialSlots.Add(DefaultSlot);
-	}
-	if (ImportData.Sections.IsEmpty())
-	{
-		FSkeletalMeshSection DefaultSection;
-		DefaultSection.StartIndex = 0;
-		DefaultSection.IndexCount = static_cast<uint32>(ImportData.Indices.Num());
-		DefaultSection.MaterialSlotIndex = 0;
-		ImportData.Sections.Add(DefaultSection);
-	}
+	TArray<FSkeletalMeshData> LODs;
+	LODs.Add(std::move(ImportData));
+	return Build(std::move(LODs), {}, { .30f, .10f, .03f }, OutError);
+}
 
-	if (!ImportData.Validate(OutError))
+bool USkeletalMesh::Build(TArray<FSkeletalMeshData>&& LODs, TArray<UMaterial*>&& InMaterials,
+	const std::array<float, 3>& InScreenThresholds, FString& OutError)
+{
+	if (LODs.IsEmpty() || LODs.Num() > 4)
 	{
+		OutError = "SkeletalMesh: expected 1..4 LODs";
 		return false;
 	}
 
-	// 공유 IB. VB는 인스턴스마다 FSkeletalMeshObjectCPUSkin이 동적으로 만든다
-	TUniquePtr<FIndexBuffer> IB = RenderCommand::CreateStaticIndexBuffer(ImportData.Indices.GetData(), static_cast<uint32>(ImportData.Indices.Num()));
-	if (!IB)
+	auto& Base = LODs[0];
+	if (Base.MaterialSlots.IsEmpty()) Base.MaterialSlots.Add({ "Default" });
+	for (auto& ImportData : LODs)
 	{
-		OutError = "SkeletalMesh: index buffer creation failed";
-		return false;
+		if (ImportData.MaterialSlots.IsEmpty()) ImportData.MaterialSlots = Base.MaterialSlots;
+		if (ImportData.Sections.IsEmpty())
+			ImportData.Sections.Add({ 0, static_cast<uint32>(ImportData.Indices.Num()), 0 });
+
+		if (ImportData.Bones.Num() != Base.Bones.Num() || ImportData.MaterialSlots.Num() != Base.MaterialSlots.Num())
+		{
+			OutError = "SkeletalMesh: LODs must share bones and material slots";
+			return false;
+		}
+		if (!ImportData.Validate(OutError)) return false;
 	}
 
-	TArray<UMaterial*> NewMaterials;
-	if (!UAssetManager::BuildMaterialsFromSlots(ImportData.MaterialSlots, NewMaterials))
+	if (InMaterials.IsEmpty() && !UAssetManager::BuildMaterialsFromSlots(Base.MaterialSlots, InMaterials))
 	{
 		OutError = "SkeletalMesh: material creation failed";
 		return false;
 	}
-
-	FSkeletalMeshLODRenderData LOD;
-	LOD.BindVertices = std::move(ImportData.BindVertices);
-	LOD.SkinWeights = std::move(ImportData.SkinWeight);
-	LOD.Indices = std::move(ImportData.Indices);
-	LOD.Sections = std::move(ImportData.Sections);
-	LOD.IndexBuffer = std::move(IB);
-
-	// 임포터가 채운 값에 의존하지 않고 바인드 정점에서 다시 계산
-	LOD.BindAABB.Min = LOD.BindAABB.Max = LOD.BindVertices[0].Position;
-	for (const FVertex& Vertex : LOD.BindVertices)
+	if (InMaterials.Num() != Base.MaterialSlots.Num())
 	{
-		for (int Axis = 0; Axis < 3; ++Axis)
-		{
-			LOD.BindAABB.Min[Axis] = std::min(LOD.BindAABB.Min[Axis], Vertex.Position[Axis]);
-			LOD.BindAABB.Max[Axis] = std::max(LOD.BindAABB.Max[Axis], Vertex.Position[Axis]);
-		}
+		OutError = "SkeletalMesh: material count does not match slots";
+		return false;
 	}
 
-	TArray<FGpuSkinVertex> GpuSkinVertices;
-	GpuSkinVertices.SetNum(LOD.BindVertices.Num());
-	for (int32 V = 0; V < GpuSkinVertices.Num(); ++V)
-	{
-		GpuSkinVertices[V].Vertex = LOD.BindVertices[V];
-		for (int32 K = 0; K < MaxBoneInfluences; ++K)
-		{
-			GpuSkinVertices[V].BoneIndex[K] = LOD.SkinWeights[V].BoneIndex[K];
-			GpuSkinVertices[V].Weight[K] = LOD.SkinWeights[V].Weight[K];
-		}
-	}
-	LOD.GpuSkinVertexBuffer = RenderCommand::CreateStaticVertexBuffer(GpuSkinVertices.GetData(),
-		sizeof(FGpuSkinVertex) * static_cast<uint32>(GpuSkinVertices.Num()), sizeof(FGpuSkinVertex));
-	LOD.BoneBounds = BuildBoneBounds(LOD, ImportData.Bones.Num());
+	FSkeletalMeshRenderData NewRenderData;
+	NewRenderData.BoneBounds.SetNum(Base.Bones.Num());
+	for (FBox& Box : NewRenderData.BoneBounds)
+		Box = FBox{ FVector(FLT_MAX, FLT_MAX, FLT_MAX), FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
 
-	RefSkeleton = std::move(ImportData.Bones);
-	MaterialSlots = std::move(ImportData.MaterialSlots);
-	Materials = std::move(NewMaterials);
-	RenderData.LODRenderData.Empty();
-	RenderData.LODRenderData.Add(std::move(LOD));
+	for (auto& ImportData : LODs)
+	{
+		auto& LOD = NewRenderData.LODRenderData.AddDefaulted_GetRef();
+		LOD.BindVertices = std::move(ImportData.BindVertices);
+		LOD.SkinWeights = std::move(ImportData.SkinWeight);
+		LOD.Indices = std::move(ImportData.Indices);
+		LOD.Sections = std::move(ImportData.Sections);
+		LOD.IndexBuffer = RenderCommand::CreateStaticIndexBuffer(LOD.Indices.GetData(), static_cast<uint32>(LOD.Indices.Num()));
+		if (!LOD.IndexBuffer)
+		{
+			OutError = "SkeletalMesh: index buffer creation failed";
+			return false;
+		}
+
+		LOD.BindAABB = FBox{ LOD.BindVertices[0].Position, LOD.BindVertices[0].Position };
+		TArray<FGpuSkinVertex> GpuSkinVertices;
+		GpuSkinVertices.SetNum(LOD.BindVertices.Num());
+		for (int32 V = 0; V < LOD.BindVertices.Num(); ++V)
+		{
+			const auto& Vertex = LOD.BindVertices[V];
+			LOD.BindAABB.Expand(FBox{ Vertex.Position, Vertex.Position });
+			GpuSkinVertices[V].Vertex = Vertex;
+			for (int32 K = 0; K < MaxBoneInfluences; ++K)
+			{
+				GpuSkinVertices[V].BoneIndex[K] = LOD.SkinWeights[V].BoneIndex[K];
+				GpuSkinVertices[V].Weight[K] = LOD.SkinWeights[V].Weight[K];
+			}
+		}
+		LOD.GpuSkinVertexBuffer = RenderCommand::CreateStaticVertexBuffer(GpuSkinVertices.GetData(),
+			sizeof(FGpuSkinVertex) * static_cast<uint32>(GpuSkinVertices.Num()), sizeof(FGpuSkinVertex));
+		AccumulateBoneBounds(LOD, NewRenderData.BoneBounds);
+		if (NewRenderData.LODRenderData.Num() == 1) NewRenderData.BindBounds = LOD.BindAABB;
+		else NewRenderData.BindBounds.Expand(LOD.BindAABB);
+	}
+
+	RefSkeleton = std::move(Base.Bones);
+	MaterialSlots = std::move(Base.MaterialSlots);
+	Materials = std::move(InMaterials);
+	ScreenThresholds = InScreenThresholds;
+	RenderData = std::move(NewRenderData);
 	RenderStates.Reset();
 	return true;
 }
-
 int32 USkeletalMesh::FindBoneIndex(const FString& Name) const
 {
 	for (int32 I = 0; I < RefSkeleton.Num(); ++I)
@@ -143,20 +143,21 @@ TSharedPtr<const FMeshRenderState> USkeletalMesh::GetRenderState(const TArray<UM
 	auto& WeakState = RenderStates[InMaterials];
 	if (auto State = WeakState.lock()) return State;
 
-	// LOD는 하나뿐이라 임계값 없이 LOD 0 범위만 채운다
 	auto State = MakeShared<FMeshRenderState>();
-	State->LODCount = 1;
-	if (!RenderData.LODRenderData.IsEmpty())
+	State->LODCount = static_cast<uint8>(RenderData.LODRenderData.Num());
+	for (int32 I = 0; I < 3; ++I)
+		State->LODThresholdSq[I] = ScreenThresholds[I] * ScreenThresholds[I];
+	for (int32 LOD = 0; LOD < State->LODCount; ++LOD)
 	{
-		auto& Range = State->LODs[0];
-		Range.FirstSection = 0;
-		for (const FSkeletalMeshSection& Section : RenderData.LODRenderData[0].Sections)
+		auto& Range = State->LODs[LOD];
+		Range.FirstSection = State->Sections.Num();
+		for (const FSkeletalMeshSection& Section : RenderData.LODRenderData[LOD].Sections)
 		{
 			UMaterial* Material = Section.MaterialSlotIndex < InMaterials.size()
 				? InMaterials[Section.MaterialSlotIndex] : GetMaterial(Section.MaterialSlotIndex);
 			if (Material) State->Sections.Add({ Material, Section.StartIndex, Section.IndexCount });
 		}
-		Range.NumSections = State->Sections.Num();
+		Range.NumSections = State->Sections.Num() - Range.FirstSection;
 	}
 	WeakState = State;
 	return State;

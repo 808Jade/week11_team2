@@ -31,13 +31,14 @@ FSkeletalMeshObject::FSkeletalMeshObject(USkeletalMesh* InMesh)
 	:SkeletalMesh(InMesh)
 {
 	RefToLocal.SetNum(InMesh->GetNumBones());
-	Bounds = SkinnedBounds = InMesh->GetRenderData().LODRenderData[0].BindAABB;
+	for (FMatrix& Matrix : RefToLocal) Matrix = FMatrix::Identity;
+	Bounds = SkinnedBounds = InMesh->GetRenderData().BindBounds;
 }
 
-void FSkeletalMeshObject::SkinVerticesCPU(TArray<FVertex>& OutVertices, FBox& OutBounds) const
+void FSkeletalMeshObject::SkinVerticesCPU(uint32 LODIndex, TArray<FVertex>& OutVertices, FBox& OutBounds) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_CpuSkinning);
-	const FSkeletalMeshLODRenderData& LOD = SkeletalMesh->GetRenderData().LODRenderData[0];
+	const FSkeletalMeshLODRenderData& LOD = SkeletalMesh->GetRenderData().LODRenderData[LODIndex];
 	const uint32 Count = static_cast<uint32>(LOD.BindVertices.Num());
 	const uint32 NumThreads = Tasks::FTaskScheduler::Get().GetNumWorkers() + 1;
 	const uint32 ChunkCount = std::clamp(Count / 2048u, 1u, NumThreads * 2);
@@ -112,30 +113,49 @@ void FSkeletalMeshObject::UpdateRefToLocalMatrices(const TArray<FMatrix>& Compon
 FSkeletalMeshObjectCPUSkin::FSkeletalMeshObjectCPUSkin(USkeletalMesh* InMesh)
 	:FSkeletalMeshObject(InMesh)
 {
-	const FSkeletalMeshLODRenderData& LOD = InMesh->GetRenderData().LODRenderData[0];
-	SkinnedVertices = LOD.BindVertices;
-
-	const uint32 Size = sizeof(FVertex) * static_cast<uint32>(SkinnedVertices.Num());
-	FinalVertexBuffer = RenderCommand::CreateDynamicVertexBuffer(Size, sizeof(FVertex));
-
-	UploadVertices();
+	LODs.SetNum(InMesh->GetRenderData().LODRenderData.Num());
+	GetVertexBuffer(0);
 }
 
 void FSkeletalMeshObjectCPUSkin::Update(const TArray<FMatrix>& ComponentSpaceTransforms)
 {
 	UpdateRefToLocalMatrices(ComponentSpaceTransforms);
-	SkinVerticesCPU(SkinnedVertices, SkinnedBounds);
-	UploadVertices();
+	SkinVerticesCPU(0, LODs[0].Vertices, SkinnedBounds);
+	UploadVertices(LODs[0]);
+	LODs[0].bDirty = !LODs[0].VertexBuffer;
+	for (int32 I = 1; I < LODs.Num(); ++I) LODs[I].bDirty = true;
+	if (LODs.Num() > 1) UpdateSkinnedBoundsFromBones();
 }
 
-void FSkeletalMeshObjectCPUSkin::UploadVertices()
+FVertexBuffer* FSkeletalMeshObjectCPUSkin::GetVertexBuffer(uint32 LODIndex) const
+{
+	auto& LOD = LODs[LODIndex];
+	if (!LOD.VertexBuffer)
+	{
+		const auto& Bind = SkeletalMesh->GetRenderData().LODRenderData[LODIndex].BindVertices;
+		LOD.Vertices = Bind;
+		const uint32 Size = sizeof(FVertex) * static_cast<uint32>(Bind.Num());
+		LOD.VertexBuffer = RenderCommand::CreateDynamicVertexBuffer(Size, sizeof(FVertex));
+		if (LOD.VertexBuffer && !LOD.bDirty) UploadVertices(LOD);
+	}
+	if (LOD.bDirty && LOD.VertexBuffer)
+	{
+		FBox Unused;
+		SkinVerticesCPU(LODIndex, LOD.Vertices, Unused);
+		UploadVertices(LOD);
+		LOD.bDirty = false;
+	}
+	return LOD.VertexBuffer.get();
+}
+
+void FSkeletalMeshObjectCPUSkin::UploadVertices(FLOD& LOD)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SkinUpload);
-	if (!FinalVertexBuffer) return;
-	void* Dst = RenderCommand::MapWriteDiscard(FinalVertexBuffer.get());
+	if (!LOD.VertexBuffer) return;
+	void* Dst = RenderCommand::MapWriteDiscard(LOD.VertexBuffer.get());
 	if (!Dst)return;
-	std::memcpy(Dst, SkinnedVertices.GetData(), sizeof(FVertex) * SkinnedVertices.Num());
-	RenderCommand::Unmap(FinalVertexBuffer.get());
+	std::memcpy(Dst, LOD.Vertices.GetData(), sizeof(FVertex) * LOD.Vertices.Num());
+	RenderCommand::Unmap(LOD.VertexBuffer.get());
 }
 
 FSkeletalMeshObjectGPUSkin::FSkeletalMeshObjectGPUSkin(USkeletalMesh* InMesh)
@@ -145,17 +165,16 @@ FSkeletalMeshObjectGPUSkin::FSkeletalMeshObjectGPUSkin(USkeletalMesh* InMesh)
 	BoneMatrixBuffer = RenderCommand::CreateDynamicStructuredBuffer(static_cast<uint32>(InMesh->GetNumBones()), sizeof(FMatrix));
 
 	// 첫 Update 전에도 바인드 포즈로 그려지도록 단위행렬을 올려 둔다
-	for (FMatrix& Matrix : RefToLocal)
-		Matrix = FMatrix::Identity;
 	if (BoneMatrixBuffer && BoneMatrixBuffer->GetSRV())
 		UploadBoneMatrices();
 }
 
 bool FSkeletalMeshObjectGPUSkin::IsValid() const
 {
-	const FSkeletalMeshLODRenderData& LOD = SkeletalMesh->GetRenderData().LODRenderData[0];
-	return BoneMatrixBuffer && BoneMatrixBuffer->GetSRV()
-		&& LOD.GpuSkinVertexBuffer && LOD.GpuSkinVertexBuffer->GetBuffer();
+	if (!BoneMatrixBuffer || !BoneMatrixBuffer->GetSRV()) return false;
+	for (const auto& LOD : SkeletalMesh->GetRenderData().LODRenderData)
+		if (!LOD.GpuSkinVertexBuffer || !LOD.GpuSkinVertexBuffer->GetBuffer()) return false;
+	return true;
 }
 
 void FSkeletalMeshObjectGPUSkin::Update(const TArray<FMatrix>& ComponentSpaceTransforms)
@@ -176,16 +195,16 @@ const TArray<FVertex>* FSkeletalMeshObjectGPUSkin::GetCPUSkinnedVertices() const
 	if (bCPUVerticesDirty)
 	{
 		FBox Unused;
-		SkinVerticesCPU(CPUVertices, Unused);
+		SkinVerticesCPU(0, CPUVertices, Unused);
 		bCPUVerticesDirty = false;
 	}
 	return &CPUVertices;
 }
 
-void FSkeletalMeshObjectGPUSkin::UpdateSkinnedBoundsFromBones()
+void FSkeletalMeshObject::UpdateSkinnedBoundsFromBones()
 {
 	// LBS 결과는 영향 본들이 옮긴 위치의 볼록 결합이라, 본별 바운드의 합집합 안에 항상 들어간다
-	const TArray<FBox>& BoneBounds = SkeletalMesh->GetRenderData().LODRenderData[0].BoneBounds;
+	const TArray<FBox>& BoneBounds = SkeletalMesh->GetRenderData().BoneBounds;
 	bool bFirst = true;
 	for (int32 i = 0; i < BoneBounds.Num(); ++i)
 	{

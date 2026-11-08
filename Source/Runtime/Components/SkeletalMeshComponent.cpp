@@ -1,6 +1,58 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshComponent.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Serialization/MathSerialization.h"
+#include <memory>
+#include <utility>
+
+USkeletalMeshComponent::~USkeletalMeshComponent()
+{
+    delete std::exchange(AnimScriptInstance, nullptr);
+}
+
+void USkeletalMeshComponent::TickComponent(float DeltaTime)
+{
+    if (AnimScriptInstance)
+    {
+        AnimScriptInstance->UpdateAnimation(DeltaTime);
+        if (AnimScriptInstance->EvaluateAnimation(BoneSpaceTransforms))
+            MarkBoneTransformsDirty();
+    }
+    Super::TickComponent(DeltaTime);
+}
+
+bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping,
+    float PlayRate, FString& OutError)
+{
+    OutError.clear();
+    if (!GetSkeletalMesh() || !NewAnimToPlay)
+    {
+        OutError = "Set a skeletal mesh and animation asset first";
+        return false;
+    }
+
+    auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimScriptInstance);
+    std::unique_ptr<UAnimSingleNodeInstance> NewInstance;
+    if (!SingleNode)
+    {
+        NewInstance.reset(NewObject<UAnimSingleNodeInstance>(this, NAME_None, EObjectFlags::RF_Transient));
+        if (!NewInstance)
+        {
+            OutError = "Could not create animation instance";
+            return false;
+        }
+        if (!NewInstance->InitializeAnimation(OutError)) return false;
+        SingleNode = NewInstance.get();
+    }
+    if (!SingleNode->SetAnimationAsset(NewAnimToPlay, bLooping, PlayRate, OutError)) return false;
+
+    if (NewInstance)
+        delete std::exchange(AnimScriptInstance, NewInstance.release());
+    SingleNode->PlayAnim();
+    SingleNode->EvaluateAnimation(BoneSpaceTransforms);
+    RefreshBoneTransformsNow();
+    return true;
+}
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
 {
@@ -93,6 +145,7 @@ void USkeletalMeshComponent::Serialize(FStructuredArchive::FRecord Record)
 
 void USkeletalMeshComponent::OnSkeletalMeshChanged()
 {
+    delete std::exchange(AnimScriptInstance, nullptr);
     BoneSpaceTransforms.Reset();
     for (const FBoneInfo& Bone : GetBones())
         BoneSpaceTransforms.Add(Bone.LocalBindPose);

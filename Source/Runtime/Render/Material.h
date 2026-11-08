@@ -43,6 +43,7 @@ public:
 
 	FVector4 BaseColor = FVector4(1, 1, 1, 1);
 	FVector SpecularColor = FVector(1.0f, 1.0f, 1.0f);
+	FVector EmissiveColor = FVector(0.0f, 0.0f, 0.0f);
 	float Shininess = 32.0f;
 	FVector2 UVScrollSpeed = FVector2(0.0f, 0.0f);
 	bool bFlipNormalY = false;

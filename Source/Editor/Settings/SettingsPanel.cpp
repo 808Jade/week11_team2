@@ -548,6 +548,8 @@ void FSettingsPanel::DrawDefaultPawnSettings()
             }
             for (TObjectIterator<UStaticMesh> Mesh; Mesh; ++Mesh)
             {
+                const FString& Path = Mesh->GetPath();
+                if (!Path.empty() && UAssetManager::FindLoadedAsset(Path) != *Mesh) continue;
                 const FString Name = GetMeshDisplayName(*Mesh);
                 const bool bSelected = *Mesh == SelectedMesh;
                 ImGui::PushID(*Mesh);

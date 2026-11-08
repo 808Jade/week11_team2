@@ -25,7 +25,8 @@ public:
 
 protected:
 	void UpdateRefToLocalMatrices(const TArray<FMatrix>& ComponentSpaceTransforms);
-	void SkinVerticesCPU(TArray<FVertex>& OutVertices, FBox& OutBounds) const;
+	void SkinVerticesCPU(uint32 LODIndex, TArray<FVertex>& OutVertices, FBox& OutBounds) const;
+	void UpdateSkinnedBoundsFromBones();
 
 	USkeletalMesh* SkeletalMesh;
 	TArray<FMatrix> RefToLocal;
@@ -39,14 +40,18 @@ public:
 	explicit FSkeletalMeshObjectCPUSkin(USkeletalMesh* InMesh);
 
 	void Update(const TArray<FMatrix>& ComponentSpaceTransforms) override;
-	FVertexBuffer* GetVertexBuffer(uint32 LOD) const override { return FinalVertexBuffer.get(); }
-	const TArray<FVertex>* GetCPUSkinnedVertices() const override { return &SkinnedVertices; }
+	FVertexBuffer* GetVertexBuffer(uint32 LOD) const override;
+	const TArray<FVertex>* GetCPUSkinnedVertices() const override { return &LODs[0].Vertices; }
 
 private:
-	void UploadVertices();
-
-	TUniquePtr<FVertexBuffer> FinalVertexBuffer;
-	TArray<FVertex> SkinnedVertices;
+	struct FLOD
+	{
+		TUniquePtr<FVertexBuffer> VertexBuffer;
+		TArray<FVertex> Vertices;
+		bool bDirty = false;
+	};
+	static void UploadVertices(FLOD& LOD);
+	mutable TArray<FLOD> LODs;
 };
 
 // 언리얼 기본 GPU 스킨 경로: 정점은 움직이지 않고, 패스의 버텍스 셰이더가 본 행렬을 섞어 스키닝한다.
@@ -63,7 +68,6 @@ public:
 	const TArray<FVertex>* GetCPUSkinnedVertices() const override;
 
 private:
-	void UpdateSkinnedBoundsFromBones();
 	void UploadBoneMatrices();
 
 	TUniquePtr<FStructuredBuffer> BoneMatrixBuffer;

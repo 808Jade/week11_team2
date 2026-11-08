@@ -26,10 +26,9 @@ bool FSkeletalMeshData::Validate(FString& OutError) const
 			+ ") != vertex count (" + std::to_string(NumVertices) + ")";
 		return false;
 	}
-	if (NumBones == 0 || NumBones > 256)
+	if (NumBones == 0 || NumBones > MaxSkeletalMeshBones)
 	{
-		// FSkinWeight::BoneIndex가 uint8이라 256개까지
-		OutError = "SkeletalMeshData: bone count must be 1..256, got " + std::to_string(NumBones);
+		OutError = "SkeletalMeshData: bone count must be 1..65536, got " + std::to_string(NumBones);
 		return false;
 	}
 
@@ -59,7 +58,7 @@ bool FSkeletalMeshData::Validate(FString& OutError) const
 		for (int32 K = 0; K < MaxBoneInfluences; ++K)
 		{
 			const FSkinWeight& W = SkinWeight[V];
-			if (W.Weight[K] > 0.0f && W.BoneIndex[K] >= NumBones)
+			if (!std::isfinite(W.Weight[K]) || W.Weight[K] < 0.0f || W.BoneIndex[K] >= NumBones)
 			{
 				OutError = "SkeletalMeshData: vertex " + std::to_string(V) + " references bone " + std::to_string(W.BoneIndex[K]);
 				return false;
@@ -101,14 +100,14 @@ namespace
 		if (Joint >= 1 && Joint < Segments && std::fabs(Z - JointZ) < BlendHalf) // 관절이 끝부분이 아니다 0의 끝이나 Seg의 끝부분
 		{
 			const float T = (Z - (JointZ - BlendHalf)) / (2.0f * BlendHalf);
-			Result.BoneIndex[0] = static_cast<uint8>(Joint - 1);
+			Result.BoneIndex[0] = static_cast<uint16>(Joint - 1);
 			Result.Weight[0] = 1.0f - T;
-			Result.BoneIndex[1] = static_cast<uint8>(Joint);
+			Result.BoneIndex[1] = static_cast<uint16>(Joint);
 			Result.Weight[1] = T;
 			return Result;
 		}
 		const int32 Segment = std::clamp(static_cast<int32>(Z / SegmentLength), 0, Segments - 1);
-		Result.BoneIndex[0] = static_cast<uint8>(Segment);
+		Result.BoneIndex[0] = static_cast<uint16>(Segment);
 		Result.Weight[0] = 1.0f;
 		return Result;
 	}

@@ -54,6 +54,7 @@ private:
 class FStructuredArchiveRecord final : public FSlotBase
 {
 public:
+	bool HasDocumentTree() const;
 	FStructuredArchiveSlot EnterField(FArchiveFieldName Name);
 	FStructuredArchiveRecord EnterRecord(FArchiveFieldName Name);
 	FStructuredArchiveArray EnterArray(FArchiveFieldName Name, int32& Num);

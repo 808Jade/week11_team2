@@ -151,7 +151,7 @@ project "HitoriEditor"
 	CommonSettings()
 
 	-- FBX 해석은 Editor에서 수행하고 Runtime/Game은 SDK에 의존하지 않는다.
-	defines { "FBXSDK_SHARED" }
+	defines { "FBXSDK_SHARED", "WITH_FBX_SDK=1" }
 
 	pchheader "EnginePCH.h"
 	pchsource "Source/Editor/EditorPCH.cpp"

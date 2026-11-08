@@ -5,6 +5,7 @@
 #include "Math/Transform.h"
 #include <Containers/Array.h>
 
+inline constexpr int32 MaxSkeletalMeshBones = 65536;
 
 struct FSkeletalMeshSection
 {
@@ -34,7 +35,7 @@ struct FBoneInfo
 struct FSkinWeight
 {
 	// 현재 BoneIndex는 전체 Bones 배열의 번호다. Section별 GPU palette 도입 시 해당 Section의 번호로 재매핑한다.
-	uint8 BoneIndex[MaxBoneInfluences] = {};
+	uint16 BoneIndex[MaxBoneInfluences] = {};
 	float Weight[MaxBoneInfluences] = {};
 };
 
