@@ -225,6 +225,11 @@ namespace
 	}
 }
 
+FString FHumanoidRetargeter::HumanoidBoneKey(const FString& Name)
+{
+	return HumanoidKey(Name);
+}
+
 bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const FReferenceSkeleton& InTarget, FString& Error)
 {
 	if (!InSource.Validate(Error) || !InTarget.Validate(Error)) return false;

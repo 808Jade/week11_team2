@@ -597,10 +597,18 @@ void FImport::FindRigs()
 		(Options.bImportAnimations || Options.bImportOnlyAnimations) && Selected != SelectedSkeletons.end())
 	{
 		const FString& RootName = Selected->second.RefSkeleton.RefBoneInfo[0].Name;
+		// Humanoid 리타깃이면 이름 규칙이 달라도 같은 역할의 본(예: Pelvis ↔ mixamorig_Hips_01)을 루트로 본다.
+		const FString RootHumanoidKey = Options.bRetargetHumanoid ? FHumanoidRetargeter::HumanoidBoneKey(RootName) : FString();
+		auto MatchesAnimationRoot = [&](FbxNode* Node)
+		{
+			if (MatchesSelectedRoot(Node, RootName)) return true;
+			if (RootHumanoidKey.empty() || (Node->GetNodeAttribute() && !HasAttribute(Node, FbxNodeAttribute::eNull))) return false;
+			return FHumanoidRetargeter::HumanoidBoneKey(Node->GetName()) == RootHumanoidKey;
+		};
 		for (int I = 0; I < Scene->GetNodeCount(); ++I)
 		{
 			FbxNode* Node = Scene->GetNode(I);
-			if (MatchesSelectedRoot(Node, RootName) && !FindContainingRig(Node))
+			if (MatchesAnimationRoot(Node) && !FindContainingRig(Node))
 				if (FRig* Rig = AddRig(Node)) RigsByRoot.emplace(Rig->Root, Rig);
 		}
 	}
@@ -1183,8 +1191,11 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 		if (!bValid) continue;
 
 		const FString Identity = "RetargetAnimation:" + SkeletonKey + NodePath(Root) + StackName + "[" + std::to_string(Occurrence) + "]";
+		// 리타깃 사본은 Skeleton마다 생기므로 이름에 대상 Skeleton(이 들어 있는 폴더 이름)을 붙인다. 예: AS_Hype_boy_Take 001__Ronaldo
+		const FString TargetName = FbxPath::ToString(FbxPath::FromString(SkeletonKey).parent_path().filename());
 		const FString Label = (StackName.empty() ? FString("Take") : StackName)
-			+ (Rigs.size() > 1 ? "_" + FString(Root->GetName()) : "");
+			+ (Rigs.size() > 1 ? "_" + FString(Root->GetName()) : "")
+			+ (TargetName.empty() ? FString() : "__" + TargetName);
 		const FString Key = MakeKey("AS", Label, Identity);
 		if (Key.empty()) return false;
 		auto Asset = Data(EFbxAssetType::AnimSequence, Key, Identity);

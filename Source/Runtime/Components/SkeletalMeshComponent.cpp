@@ -10,6 +10,16 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
     delete std::exchange(AnimScriptInstance, nullptr);
 }
 
+void USkeletalMeshComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    if (!AnimToPlay) return;
+
+    FString Error;
+    if (!PlayAnimation(AnimToPlay, bLoopAnimation, AnimPlayRate, Error))
+        HTR_LOG(Warning, "AnimToPlay '{}' could not play on {}: {}", AnimToPlay->GetPath(), GetName(), Error);
+}
+
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     if (AnimScriptInstance)

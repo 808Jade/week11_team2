@@ -9,6 +9,9 @@
 class FHumanoidRetargeter
 {
 public:
+	// 이름 규칙(Mixamo/Biped/UE 마네킹)을 통일한 비교용 키. 예: "ValveBiped_Bip01_Pelvis", "mixamorig_Hips_01" → "hips"
+	static FString HumanoidBoneKey(const FString& Name);
+
 	// Source/Target은 부모가 먼저 오는 기준 Skeleton이다. 실패하면 Error에 이유를 남긴다.
 	bool Initialize(const FReferenceSkeleton& Source, const FReferenceSkeleton& Target, FString& Error);
 
