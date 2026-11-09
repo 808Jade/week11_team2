@@ -37,6 +37,8 @@ struct FFbxImportOptions
 	int32 CustomBoneAnimationSampleRate = 0;
 	int32 FirstAnimationFrame = 0;
 	int32 LastAnimationFrame = 0;
+	// 다른 뼈대 구조의 애니메이션을 선택한 Skeleton으로 Humanoid 리타깃한다(임포트 시 베이크, 저장되지 않는 옵션).
+	bool bRetargetHumanoid = false;
 };
 
 struct FFbxAnimationData

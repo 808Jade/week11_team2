@@ -2,6 +2,7 @@
 #include "FbxImporter.h"
 #include "Asset/FbxImporter/FbxAssetBake.h"
 #include "Asset/FbxImporter/FbxPath.h"
+#include "HumanoidRetarget.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -417,6 +418,7 @@ public:
 	bool LoadSelectedSkeleton(const FString& Key);
 	bool ChooseMeshSkeleton(FRig& Rig);
 	bool CookAnimations(FRig& Rig);
+	bool CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, const FReferenceSkeleton& Target, double Rate);
 	FString Material(FbxSurfaceMaterial* SourceMaterial);
 	FString Texture(FbxProperty Property);
 	FString OpacityTexture(FbxSurfaceMaterial* Material, const FString& DiffuseKey, const FString& OpacityKey, const FString& Identity, ESamplerState Sampler);
@@ -930,15 +932,6 @@ bool FImport::CookAnimations(FRig& Rig)
 	}
 	const auto Selected = SelectedSkeletons.find(SkeletonKey);
 	const auto& Target = Selected != SelectedSkeletons.end() ? Selected->second.RefSkeleton : Rig.Reference;
-	std::vector<int32> SourceToTarget;
-	int32 SourceRoot = INDEX_NONE;
-	FString Reason;
-	if (!BuildAnimationBoneMap(Rig, Target, SourceToTarget, SourceRoot, Reason))
-	{
-		Warn("Animation rig skipped for " + SkeletonKey + " [" + NodePath(Rig.Root) + "]: " + Reason);
-		return true;
-	}
-
 	const auto& Settings = Scene->GetGlobalSettings();
 	double Rate = Options.CustomBoneAnimationSampleRate;
 	if (Rate == 0)
@@ -950,6 +943,20 @@ bool FImport::CookAnimations(FRig& Rig)
 			Rate = 30.0;
 			Warn("FBX source has no valid frame rate; sampling animation at 30 Hz");
 		}
+	}
+
+	// 다른 파일의 Skeleton에 붙일 때 Humanoid 리타깃을 켜면 이름·계층이 달라도 회전 변화량으로 옮긴다.
+	if (Options.bRetargetHumanoid && Selected != SelectedSkeletons.end() && SkeletonKey != Rig.MeshSkeletonKey)
+		return CookRetargetedAnimations(Rig, SkeletonKey, Target, Rate);
+
+	std::vector<int32> SourceToTarget;
+	int32 SourceRoot = INDEX_NONE;
+	FString Reason;
+	if (!BuildAnimationBoneMap(Rig, Target, SourceToTarget, SourceRoot, Reason))
+	{
+		Warn("Animation rig skipped for " + SkeletonKey + " [" + NodePath(Rig.Root) + "]: " + Reason +
+			(Selected != SelectedSkeletons.end() ? " (enable Retarget (Humanoid) for a different skeleton layout)" : ""));
+		return true;
 	}
 	const bool bBake = Selected != SelectedSkeletons.end() && SkeletonKey != Rig.MeshSkeletonKey
 		? Selected->second.Options.bBakeSkeletalMeshes : Options.bBakeSkeletalMeshes;
@@ -1054,6 +1061,130 @@ bool FImport::CookAnimations(FRig& Rig)
 		const FString Identity = "Animation:" + NodePath(Rig.Root) + StackName + "[" + std::to_string(Occurrence) + "]";
 		const FString Label = (StackName.empty() ? FString("Take") : StackName)
 			+ (Rigs.size() > 1 ? "_" + FString(Rig.Root->GetName()) : "");
+		const FString Key = MakeKey("AS", Label, Identity);
+		if (Key.empty()) return false;
+		auto Asset = Data(EFbxAssetType::AnimSequence, Key, Identity);
+		Asset.SkeletonKey = SkeletonKey;
+		Asset.Animation = std::move(Clip);
+		Output.Add(std::move(Asset));
+	}
+	return true;
+}
+
+bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, const FReferenceSkeleton& Target, double Rate)
+{
+	FbxNode* Root = Rig.Root;
+	// BuildRig이 만든 소스 기준 자세와 같은 규칙으로 루트를 샘플링해야 변화량이 맞는다.
+	// 속성 없는 루트(Sketchfab 컨테이너 아래 Hips 등)는 조상 컨테이너를 빼고 부모 기준으로 맞춘다.
+	const bool bRootRelativeToParent = !Root->GetNodeAttribute() && Root->GetParent();
+	const FbxAMatrix FrameInverse = Options.bBakeSkeletalMeshes ? FbxAMatrix() : Rig.ParentBind.Inverse();
+	auto ToTransform = [this](const FbxAMatrix& Local)
+	{
+		const FBoneTRS TRS = ConvertBoneTRS(Local, UnitScale);
+		return FTransform(TRS.Rotation.ToFRotator(), TRS.Translation, TRS.Scale);
+	};
+
+	FReferenceSkeleton SourceReference = Rig.Reference;
+	if (bRootRelativeToParent)
+		SourceReference.RefBonePose[0] = ToTransform(Bind(Root->GetParent()).Inverse() * Bind(Root));
+
+	FHumanoidRetargeter Retargeter;
+	FString Reason;
+	if (!Retargeter.Initialize(SourceReference, Target, Reason))
+	{
+		Warn("Humanoid retarget skipped for " + SkeletonKey + " [" + NodePath(Root) + "]: " + Reason);
+		return true;
+	}
+	const TArray<int32>& Driven = Retargeter.GetDrivenTargetBones();
+	Warn("Humanoid retarget drives " + std::to_string(Driven.Num()) + " of " + std::to_string(Target.GetNum()) +
+		" target bone(s) [" + NodePath(Root) + "]");
+
+	const int32 NumSourceBones = static_cast<int32>(Rig.Bones.size());
+	std::map<FString, int32> Occurrences;
+	for (int StackIndex = 0; StackIndex < Scene->GetSrcObjectCount<FbxAnimStack>(); ++StackIndex)
+	{
+		auto* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
+		const FString StackName = Stack->GetName();
+		const int32 Occurrence = Occurrences[StackName]++;
+		std::vector<FbxAnimLayer*> Layers;
+		for (int LayerIndex = 0; LayerIndex < Stack->GetMemberCount<FbxAnimLayer>(); ++LayerIndex)
+		{
+			auto* Layer = Stack->GetMember<FbxAnimLayer>(LayerIndex);
+			if (Layer && !Layer->Mute.Get()) Layers.push_back(Layer);
+		}
+		if (std::any_of(Layers.begin(), Layers.end(), [](auto* Layer) { return Layer->Solo.Get(); }))
+			std::erase_if(Layers, [](auto* Layer) { return !Layer->Solo.Get(); });
+
+		FAnimatedTime Animated;
+		for (FbxNode* Bone : Rig.Bones) Animated.Include(FindTransformKeyTimes(Bone, Layers));
+		if (!bRootRelativeToParent)
+			for (FbxNode* Node = Root->GetParent(); Node; Node = Node->GetParent())
+				Animated.Include(FindTransformKeyTimes(Node, Layers));
+		const FString Context = StackName + " [" + NodePath(Root) + "]";
+		if (!Animated.IsValid())
+		{
+			Warn("Animation skipped " + Context + ": no keyed transform track");
+			continue;
+		}
+
+		FFbxAnimationData Clip;
+		if (!GetAnimationSampleRange(*Stack, Options, Animated, Rate, Clip, Reason))
+		{
+			Warn("Animation skipped " + Context + ": " + Reason);
+			continue;
+		}
+		if (static_cast<uint64>(Clip.NumberOfKeys) * Driven.Num() * 3 > FFbxAnimationData::MaxChannelKeys)
+		{
+			Warn("Animation exceeds the channel key limit: " + Context);
+			continue;
+		}
+		for (const int32 TargetBone : Driven)
+			Clip.BoneAnimationTracks.AddDefaulted_GetRef().Name = Target.RefBoneInfo[TargetBone].Name;
+
+		Scene->SetCurrentAnimationStack(Stack);
+		Scene->GetAnimationEvaluator()->Reset();
+		std::vector<FbxAMatrix> Globals(NumSourceBones);
+		TArray<FTransform> SourceLocal, TargetLocal;
+		SourceLocal.SetNum(NumSourceBones);
+		bool bValid = true;
+		for (int32 Key = 0; Key < Clip.NumberOfKeys && bValid; ++Key)
+		{
+			FbxTime Time;
+			Time.SetSecondDouble(Clip.StartTime + Key / Rate);
+			for (int32 Index = 0; Index < NumSourceBones; ++Index)
+			{
+				FbxNode* Node = Rig.Bones[Index];
+				Globals[Index] = Node->EvaluateGlobalTransform(Time);
+				const int32 Parent = SourceReference.RefBoneInfo[Index].ParentIndex;
+				const FbxAMatrix Local = Parent >= 0 ? Globals[Parent].Inverse() * Globals[Index]
+					: bRootRelativeToParent ? Node->GetParent()->EvaluateGlobalTransform(Time).Inverse() * Globals[Index]
+					: FrameInverse * Globals[Index];
+				if (!FiniteMatrix(EngineMatrix(Local, UnitScale)))
+				{
+					Warn("Animation has an invalid or singular transform: " + Context + " " + NodePath(Node));
+					bValid = false;
+					break;
+				}
+				SourceLocal[Index] = ToTransform(Local);
+			}
+			if (!bValid) break;
+
+			if (Key == 0) Retargeter.SetSourceHipsAnchor(SourceLocal); // 첫 프레임에서 타깃 기준 자세 위치로 시작한다.
+			Retargeter.Retarget(SourceLocal, TargetLocal);
+			for (int32 Track = 0; Track < Driven.Num(); ++Track)
+			{
+				const FTransform& Local = TargetLocal[Driven[Track]];
+				auto& Raw = Clip.BoneAnimationTracks[Track].InternalTrackData;
+				Raw.PosKeys.Add(Local.Location);
+				Raw.RotKeys.Add(Local.Rotation.Quaternion());
+				Raw.ScaleKeys.Add(Local.Scale);
+			}
+		}
+		if (!bValid) continue;
+
+		const FString Identity = "RetargetAnimation:" + SkeletonKey + NodePath(Root) + StackName + "[" + std::to_string(Occurrence) + "]";
+		const FString Label = (StackName.empty() ? FString("Take") : StackName)
+			+ (Rigs.size() > 1 ? "_" + FString(Root->GetName()) : "");
 		const FString Key = MakeKey("AS", Label, Identity);
 		if (Key.empty()) return false;
 		auto Asset = Data(EFbxAssetType::AnimSequence, Key, Identity);
