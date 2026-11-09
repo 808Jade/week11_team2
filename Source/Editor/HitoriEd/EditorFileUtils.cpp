@@ -30,6 +30,41 @@ FString FEditorFileUtils::ChooseFbxFile()
 	return FString(Utf8.begin(), Utf8.end());
 }
 
+FString FEditorFileUtils::ChooseLuaScriptFile()
+{
+	std::error_code Ec;
+	const std::filesystem::path WorkingDir = std::filesystem::current_path(Ec);
+	const std::wstring InitialDir = (WorkingDir / L"Scripts").wstring();
+
+	wchar_t FilePath[32768] = {};
+	OPENFILENAMEW Dialog = {};
+	Dialog.lStructSize = sizeof(Dialog);
+	Dialog.hwndOwner = GetActiveWindow();
+	Dialog.lpstrFile = FilePath;
+	Dialog.nMaxFile = static_cast<DWORD>(std::size(FilePath));
+	Dialog.lpstrFilter = L"Lua Scripts (*.lua)\0*.lua\0";
+	Dialog.lpstrInitialDir = InitialDir.c_str();
+	Dialog.lpstrTitle = L"Choose Lua Script";
+	Dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+	if (!GetOpenFileNameW(&Dialog))
+	{
+		const DWORD Error = CommDlgExtendedError();
+		if (Error != 0) HTR_LOG(Error, "Lua script dialog failed: {}", Error);
+		return {};
+	}
+
+	// 스크립트는 작업 폴더 기준 상대 경로로 로드·저장되므로, 그 아래 파일이면 상대 경로로 바꾼다.
+	std::filesystem::path Selected = std::filesystem::path(FilePath).lexically_normal();
+	const std::filesystem::path Relative = Selected.lexically_relative(WorkingDir.lexically_normal());
+	if (!Relative.empty() && *Relative.begin() != L"..")
+		Selected = Relative;
+	else
+		HTR_LOG(Warning, "[Lua] Script is outside the project folder; the absolute path is stored and may not work on other machines.");
+
+	const auto Utf8 = Selected.generic_u8string();
+	return FString(Utf8.begin(), Utf8.end());
+}
+
 bool FEditorFileUtils::NewScene(UWorld* World)
 {
 	if (!World)

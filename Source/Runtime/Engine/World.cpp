@@ -865,25 +865,25 @@ bool UWorld::LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
 void UWorld::BeginPlay()
 {
 	if (!IsGameWorld() || bBegunPlay) return;
-	if (!PlayerPawn)
-	{
-		for (AActor* Actor : PersistentLevel->GetActors())
-		{
-			if (APawn* Pawn = Cast<APawn>(Actor)) { PlayerPawn = Pawn; break; }
-		}
-	}
-	if (!PlayerPawn)
-	{
-		FTransform Transform = MainCamera ? MainCamera->GetActorTransform() : FTransform::Identity;
-		PlayerPawn = SpawnActor<ADefaultPawn>(NAME_None, &Transform);
-	}
-	if (!PlayerController) 
-		PlayerController = SpawnActor<APlayerController>();
-	
-	if (PlayerController)
-		PlayerController->SpawnPlayerCameraManager();
-	
-	if (PlayerController && PlayerPawn) PlayerController->Possess(PlayerPawn);
+	//if (!PlayerPawn)
+	//{
+	//	for (AActor* Actor : PersistentLevel->GetActors())
+	//	{
+	//		if (APawn* Pawn = Cast<APawn>(Actor)) { PlayerPawn = Pawn; break; }
+	//	}
+	//}
+	//if (!PlayerPawn)
+	//{
+	//	FTransform Transform = MainCamera ? MainCamera->GetActorTransform() : FTransform::Identity;
+	//	PlayerPawn = SpawnActor<ADefaultPawn>(NAME_None, &Transform);
+	//}
+	//if (!PlayerController) 
+	//	PlayerController = SpawnActor<APlayerController>();
+	//
+	//if (PlayerController)
+	//	PlayerController->SpawnPlayerCameraManager();
+	//
+	//if (PlayerController && PlayerPawn) PlayerController->Possess(PlayerPawn);
 
 	// 기존 액터 목록을 고정한 후 시작한다. BeginPlay 중 생성된 액터는 대기열로 간다.
 	TArray<AActor*> InitialActors;

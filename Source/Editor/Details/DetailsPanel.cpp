@@ -91,6 +91,12 @@ namespace
 					}
 				}
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Choose Script..."))
+			{
+				const FString Selected = FEditorFileUtils::ChooseLuaScriptFile();
+				if (!Selected.empty()) Actor->ScriptPath = Selected;   // 리플렉션 프로퍼티라 씬 저장 때 같이 저장된다
+			}
 			return;
 		}
 
@@ -98,6 +104,12 @@ namespace
 		if (ImGui::Button("Edit Script"))
 		{
 			FLuaScriptManager::Get().OpenScriptInEditor(Actor->ScriptPath);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Change..."))
+		{
+			const FString Selected = FEditorFileUtils::ChooseLuaScriptFile();
+			if (!Selected.empty()) Actor->ScriptPath = Selected;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Detach"))
