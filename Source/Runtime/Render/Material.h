@@ -20,8 +20,10 @@ struct FStaticMeshMaterialParams
 	FVector4 BaseColor;
 	FVector2 UVOffset;
 	FVector2 TextureFlags; // 텍스처 플래그 및 노멀 반전
+	float ColorNeedsSRGBDecode;
+	float Padding[3];
 };
-static_assert(sizeof(FStaticMeshMaterialParams) == 32);
+static_assert(sizeof(FStaticMeshMaterialParams) == 48);
 
 UCLASS()
 class UMaterial : public UMaterialInterface
@@ -29,7 +31,7 @@ class UMaterial : public UMaterialInterface
 	GENERATED_BODY()
 
 public:
-	UMaterial() :SortID(NextSortID++) {};
+	UMaterial() = default;
 	virtual ~UMaterial() override = default;
 
 	EMaterialParamLayout ParamLayout = EMaterialParamLayout::None;
@@ -40,9 +42,11 @@ public:
 	EBlendState BlendState = EBlendState::Opaque;
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
 	ESamplerState SamplerState = ESamplerState::LinearClamp;
+	ELightingModel ShadingModel = ELightingModel::BlinnPhong;
 
-	FVector4 BaseColor = FVector4(1, 1, 1, 1);
-	FVector SpecularColor = FVector(1.0f, 1.0f, 1.0f);
+	// 색상은 선형 RGB, BaseColor의 W는 불투명도다.
+	FVector4 BaseColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	FVector SpecularColor = FVector(0.18f, 0.18f, 0.18f);
 	FVector EmissiveColor = FVector(0.0f, 0.0f, 0.0f);
 	float Shininess = 32.0f;
 	FVector2 UVScrollSpeed = FVector2(0.0f, 0.0f);
@@ -59,7 +63,7 @@ public:
 	// 경로가 있는(=에셋으로 등록된) 가장 가까운 원본. 자신이 에셋이면 자신
 	const UMaterial* GetBaseAsset() const;
 
-	const uint16 SortID;
+	const uint16 SortID = NextSortID++;
 
 	using Super::Serialize;
 	// 인스턴스의 값(색, 텍스처, 상태). 객체는 이미 만들어져 있어야 한다.

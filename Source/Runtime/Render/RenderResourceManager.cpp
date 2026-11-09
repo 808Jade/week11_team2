@@ -68,7 +68,7 @@ void FRenderResourceManager::InitPipelineStates()
 		State->BlendState = Entry.BlendState;
 		State->DepthStencilState = Entry.DepthStencilState;
 	}
-	const char* Names[] = { "LIGHTING_MODEL_GOURAUD", "LIGHTING_MODEL_LAMBERT", "LIGHTING_MODEL_PHONG", "LIGHTING_MODEL_UNLIT", "VIEW_MODE_WORLD_NORMAL" };
+	const char* Names[] = { "LIGHTING_MODEL_GOURAUD", "LIGHTING_MODEL_LAMBERT", "LIGHTING_MODEL_BLINN_PHONG", "LIGHTING_MODEL_UNLIT", "VIEW_MODE_WORLD_NORMAL" };
 	for (const char* Name : Names)
 	{
 		const D3D_SHADER_MACRO Defines[] = { { Name, "1" }, { nullptr, nullptr } };
@@ -108,7 +108,7 @@ FShaderProgram* FRenderResourceManager::GetForwardShaderProgram(ELightingModel M
 	switch (Model)
 	{
 	case ELightingModel::Gouraud: Name = "LIGHTING_MODEL_GOURAUD"; break;
-	case ELightingModel::Phong: Name = "LIGHTING_MODEL_PHONG"; break;
+	case ELightingModel::BlinnPhong: Name = "LIGHTING_MODEL_BLINN_PHONG"; break;
 	case ELightingModel::Unlit: Name = "LIGHTING_MODEL_UNLIT"; break;
 	default: break;
 	}

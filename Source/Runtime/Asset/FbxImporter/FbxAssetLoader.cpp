@@ -150,6 +150,7 @@ public:
 			if ((Base->ParamBuffer && !Material->ParamBuffer) || Material->Textures.Num() < 2)
 			{ Error = "Cannot initialize FBX material resources"; return nullptr; }
 			Material->BaseColor = Asset.Material.DiffuseOrFactor;
+			Material->ShadingModel = Asset.Material.ShadingModel;
 			Material->Shininess = Asset.Material.Shininess;
 			Material->SpecularColor = Asset.Material.SpecularColor * Asset.Material.SpecularFactor;
 			Material->EmissiveColor = Asset.Material.EmissiveColor * Asset.Material.EmissiveFactor;

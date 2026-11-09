@@ -34,5 +34,5 @@ struct FSceneRenderOptions
 	bool bShowSkeletalMesh = true;
 
 	ERenderingPath RenderingPath = ERenderingPath::Deferred;
-	ELightingModel LightingModel = ELightingModel::Gouraud;
+	TOptional<ELightingModel> ShadingModelOverride;
 };

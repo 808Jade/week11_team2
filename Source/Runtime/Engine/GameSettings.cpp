@@ -23,15 +23,6 @@ namespace
 		return Fallback;
 	}
 
-	ELightingModel ParseLightingModel(const FString& Name, ELightingModel Fallback)
-	{
-		if (Name == "Gouraud") return ELightingModel::Gouraud;
-		if (Name == "Lambert") return ELightingModel::Lambert;
-		if (Name == "Phong") return ELightingModel::Phong;
-		if (Name == "Unlit") return ELightingModel::Unlit;
-		return Fallback;
-	}
-
 	ELightCullingMode ParseLightCullingMode(const FString& Name, ELightCullingMode Fallback)
 	{
 		if (Name == "Off") return ELightCullingMode::Off;
@@ -70,7 +61,8 @@ FGameSettings FGameSettings::Load(const FString& Path)
 
 	FSceneRenderOptions& Options = Settings.RenderOptions;
 	Options.RenderingPath = ParseRenderingPath(Config.GetString("Rendering", "RenderingPath", ""), Options.RenderingPath);
-	Options.LightingModel = ParseLightingModel(Config.GetString("Rendering", "LightingModel", ""), Options.LightingModel);
+	const FString LegacyLightingModel = Config.GetString("Rendering", "LightingModel", "");
+	Options.ShadingModelOverride = ParseLightingModel(Config.GetString("Rendering", "ShadingModelOverride", LegacyLightingModel));
 	Options.LightCullingMode = ParseLightCullingMode(Config.GetString("Rendering", "LightCullingMode", ""), Options.LightCullingMode);
 	Options.bEnableFXAA = Config.GetBool("Rendering", "EnableFXAA", Options.bEnableFXAA);
 	Options.bGammaCorrection = Config.GetBool("Rendering", "GammaCorrection", Options.bGammaCorrection);

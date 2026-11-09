@@ -47,18 +47,15 @@ float InterleavedGradientNoise(float2 pixelPos)
     return frac(52.9829189f * frac(dot(pixelPos, float2(0.06711056f, 0.00583715f))));
 }
 
-float CalculateDistanceAttenuation(float DistanceSquared, float RadiusSquared)
+float CalculateDistanceAttenuation(float Distance, float Radius, float FalloffExponent)
 {
-    if (RadiusSquared <= 0.0f || DistanceSquared >= RadiusSquared || DistanceSquared < 1.0e-8f)
-        return 0.0f;
-    float RadiusFade = saturate(1.0f - DistanceSquared / RadiusSquared);
-    return RadiusFade * RadiusFade / (1.0f + DistanceSquared);
+    return pow(saturate(1.0f - Distance / max(Radius, 0.001f)), max(FalloffExponent, 0.001f));
 }
 
 float CalculateConeAttenuation(float CosAngle, float CosInner, float CosOuter)
 {
-    if (CosAngle <= CosOuter) return 0.0f;
-    return saturate((CosAngle - CosOuter) / max(CosInner - CosOuter, 1.0e-8f));
+    float T = saturate((CosAngle - CosOuter) / max(CosInner - CosOuter, 1.0e-8f));
+    return T * T * (3.0f - 2.0f * T);
 }
 
 void AccumulateLight(inout FLightResult Result, float3 N, float3 V, float3 L,

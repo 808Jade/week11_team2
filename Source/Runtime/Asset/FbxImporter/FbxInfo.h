@@ -57,7 +57,7 @@ struct FFbxMaterialData
 	float SpecularFactor = 1.f; // 반사광 강도 계수
 	FVector EmissiveColor = FVector(0, 0, 0); // 선형 자체 발광 색상
 	float EmissiveFactor = 1.f; // 자체 발광 강도 계수
-	ELightingModel ShadingModel = ELightingModel::Phong;
+	ELightingModel ShadingModel = ELightingModel::BlinnPhong;
 	ESamplerState SamplerState = ESamplerState::LinearClamp;
 	EBlendState BlendState = EBlendState::Opaque;
 	FString DiffuseTexture;

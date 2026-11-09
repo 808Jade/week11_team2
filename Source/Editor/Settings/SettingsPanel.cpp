@@ -11,6 +11,14 @@
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
 
+namespace
+{
+	const char* GetShadingModelOverrideName(const TOptional<ELightingModel>& Override)
+	{
+		return Override ? LightingModelNames[static_cast<int>(*Override)] : "None";
+	}
+}
+
 // 종료 시 렌더·에디터·뷰포트 설정을 함께 저장한다.
 FSettingsPanel::~FSettingsPanel()
 {
@@ -68,11 +76,21 @@ void FSettingsPanel::OnRender()
 	if (ImGui::Combo("Rendering Path", &RenderingPathIndex, RenderingPaths, IM_ARRAYSIZE(RenderingPaths)))
 		Settings.RenderingPath = static_cast<ERenderingPath>(RenderingPathIndex);
 
-	const char* LightingModels[] = { "Gouraud", "Lambert", "Phong", "Unlit" };
-	int LightingModelIndex = static_cast<int>(Settings.LightingModel);
 	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::Combo("Lighting Model", &LightingModelIndex, LightingModels, IM_ARRAYSIZE(LightingModels)))
-		Settings.LightingModel = static_cast<ELightingModel>(LightingModelIndex);
+	if (ImGui::BeginCombo("Shading Model Override", GetShadingModelOverrideName(Settings.ShadingModelOverride)))
+	{
+		if (ImGui::Selectable("None", !Settings.ShadingModelOverride))
+			Settings.ShadingModelOverride.Reset();
+		for (int Index = 0; Index < IM_ARRAYSIZE(LightingModelNames); ++Index)
+		{
+			const auto Choice = static_cast<ELightingModel>(Index);
+			if (ImGui::Selectable(LightingModelNames[Index], Settings.ShadingModelOverride == Choice))
+				Settings.ShadingModelOverride = Choice;
+		}
+		ImGui::EndCombo();
+	}
+	if (!Settings.ShadingModelOverride)
+		ImGui::TextDisabled("None uses each material's shading model in Forward.");
 	const char* LightCullingModes[] = { "Off", "Tiled", "Clustered", "Tiled 2.5D" };
 	int LightCullingModeIndex = static_cast<int>(Settings.LightCullingMode);
 	ImGui::SetNextItemWidth(200.0f);
@@ -81,8 +99,8 @@ void FSettingsPanel::OnRender()
 	{
 		Settings.LightCullingMode = static_cast<ELightCullingMode>(LightCullingModeIndex);
 	}
-	ImGui::TextDisabled("Forward Lambert/Phong only; Off evaluates all uploaded local lights.");
-	ImGui::TextDisabled("Forward Lambert/Phong only; off evaluates all visible local lights.");
+	ImGui::TextDisabled("Forward Lambert/Blinn-Phong only; Off evaluates all uploaded local lights.");
+	ImGui::TextDisabled("Forward Lambert/Blinn-Phong only; off evaluates all visible local lights.");
 
 	ImGui::Dummy(ImVec2(0.0f, SectionGap));
 	ImGui::SeparatorText("Scene Depth");
@@ -224,9 +242,7 @@ bool FSettingsPanel::SaveSettings() const
 
 	File << "LightCullingMode=" << (Settings.LightCullingMode == ELightCullingMode::Off ? "Off" : Settings.LightCullingMode == ELightCullingMode::Tiled ? "Tiled" : Settings.LightCullingMode == ELightCullingMode::Tiled25D ? "Tiled25D" : "Clustered") << "\n";
 	File << "RenderingPath=" << (Settings.RenderingPath == ERenderingPath::Forward ? "Forward" : "Deferred") << "\n";
-	File << "LightingModel=" << (Settings.LightingModel == ELightingModel::Gouraud ? "Gouraud" :
-		Settings.LightingModel == ELightingModel::Lambert ? "Lambert" :
-		Settings.LightingModel == ELightingModel::Unlit ? "Unlit" : "Phong") << "\n";
+	File << "ShadingModelOverride=" << GetShadingModelOverrideName(Settings.ShadingModelOverride) << "\n";
 	File << "\n";
 
 	File << "[Editor]\n";
@@ -282,6 +298,7 @@ bool FSettingsPanel::LoadSettings()
 		Settings.bViewRotationSaved[Index] = false;
 	}
 
+	bool bHasShadingModelOverride = false;
 	std::string Line;
 	while (std::getline(File, Line))
 	{
@@ -394,12 +411,10 @@ bool FSettingsPanel::LoadSettings()
 					if (ValueStr == "Forward") Settings.RenderingPath = ERenderingPath::Forward;
 					else if (ValueStr == "Deferred") Settings.RenderingPath = ERenderingPath::Deferred;
 				}
-				else if (Key == "LightingModel")
+				else if (Key == "ShadingModelOverride" || (Key == "LightingModel" && !bHasShadingModelOverride))
 				{
-					if (ValueStr == "Gouraud") Settings.LightingModel = ELightingModel::Gouraud;
-					else if (ValueStr == "Lambert") Settings.LightingModel = ELightingModel::Lambert;
-					else if (ValueStr == "Phong") Settings.LightingModel = ELightingModel::Phong;
-					else if (ValueStr == "Unlit") Settings.LightingModel = ELightingModel::Unlit;
+					Settings.ShadingModelOverride = ParseLightingModel(ValueStr);
+					bHasShadingModelOverride = Key == "ShadingModelOverride";
 				}
 
 				else if (Key == "CameraMoveSpeed") Settings.CameraSpeed = std::stof(ValueStr);

@@ -686,6 +686,25 @@ namespace
 					ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 110.0f);
 					ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted("Shading Model");
+					ImGui::TableSetColumnIndex(1);
+					ImGui::SetNextItemWidth(-1.0f);
+					const char* Models[] = { "Gouraud", "Lambert", "Blinn-Phong", "Unlit" };
+					int ModelIndex = static_cast<int>(Effective ? Effective->ShadingModel : ELightingModel::BlinnPhong);
+					if (ImGui::Combo("##ShadingModel", &ModelIndex, Models, IM_ARRAYSIZE(Models)))
+					{
+						Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
+						if (Override)
+						{
+							Override->ShadingModel = static_cast<ELightingModel>(ModelIndex);
+							Effective = Override;
+						}
+					}
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Used by opaque meshes in Forward when Shading Model Override is None.");
+
 					DrawMaterialTextureSlot(MeshComponent, Slot, 0, "Texture", Effective, Override);
 					DrawMaterialTextureSlot(MeshComponent, Slot, 1, "Normal Map", Effective, Override);
 

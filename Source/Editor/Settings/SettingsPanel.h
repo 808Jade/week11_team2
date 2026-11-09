@@ -33,7 +33,7 @@ struct FEditorSettings
 	bool bDecalOBBTree = true;
 	ELightCullingMode LightCullingMode = ELightCullingMode::Tiled;
 	ERenderingPath RenderingPath = ERenderingPath::Deferred;
-	ELightingModel LightingModel = ELightingModel::Gouraud;
+	TOptional<ELightingModel> ShadingModelOverride;
 
 	// Values
 	float SceneDepthMaxRange = 50.0f;

@@ -1208,14 +1208,14 @@ FString FImport::Material(FbxSurfaceMaterial* M)
 		Asset.Material.EmissiveFactor = static_cast<float>(Lambert->EmissiveFactor.Get());
 	}
 	else Warn("Unsupported material model; engine default used: " + FString(M->GetName()));
-	if (auto* Phong = FbxCast<FbxSurfacePhong>(M))
+	if (auto* SourcePhong = FbxCast<FbxSurfacePhong>(M))
 	{
-		Asset.Material.ShadingModel = ELightingModel::Phong;
-		const FbxDouble3 Specular = Phong->Specular.Get();
+		Asset.Material.ShadingModel = ELightingModel::BlinnPhong;
+		const FbxDouble3 Specular = SourcePhong->Specular.Get();
 		Asset.Material.SpecularColor = FVector(static_cast<float>(Specular[0]), static_cast<float>(Specular[1]), static_cast<float>(Specular[2]));
-		Asset.Material.SpecularFactor = static_cast<float>(Phong->SpecularFactor.Get());
+		Asset.Material.SpecularFactor = static_cast<float>(SourcePhong->SpecularFactor.Get());
 		// Phong의 반사 벡터 지수를 Blinn-Phong의 하프 벡터 지수로 근사한다.
-		Asset.Material.Shininess = static_cast<float>(4. * std::max(0., Phong->Shininess.Get()));
+		Asset.Material.Shininess = static_cast<float>(4. * std::max(0., SourcePhong->Shininess.Get()));
 	}
 	for (const char* PropertyName : { FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor,
 		FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor })

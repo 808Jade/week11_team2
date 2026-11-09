@@ -1,6 +1,6 @@
 #pragma pack_matrix(row_major)
 
-#include "LightData.hlsli"
+#include "LightEvaluation.hlsli"
 
 Texture2D<float4> BaseColorMetallic : register(t0);
 Texture2D<float4> NormalRoughness : register(t1); // w < 0이면 bReceiveShadow가 꺼진 물체 (Roughness = -w - 1)
@@ -82,10 +82,9 @@ float3 EvaluateLight(FLightRenderParameters Light, float3 WorldPosition, float3 
         if (RadiusSquared <= 0.0f || DistanceSquared >= RadiusSquared || DistanceSquared < 1.0e-8f)
             return 0.0f;
 
-        float Distance = sqrt(max(DistanceSquared, 1.0e-6f));
+        float Distance = sqrt(DistanceSquared);
         float3 L = ToLight / Distance;
-        float x = Distance / Light.Radius;
-        float Attenuation = pow(saturate(1.0 - x), max(Light.FalloffExponent, 0.0f));
+        float Attenuation = CalculateDistanceAttenuation(Distance, Light.Radius, Light.FalloffExponent);
         float3 Radiance = Light.Color * Light.Intensity * Attenuation;
         AccumulateLocalLight(Diffuse, Specular, Albedo, Metallic, Roughness, N, V, L, Radiance);
     }
@@ -97,13 +96,11 @@ float3 EvaluateLight(FLightRenderParameters Light, float3 WorldPosition, float3 
         if (RadiusSquared <= 0.0f || DistanceSquared >= RadiusSquared || DistanceSquared < 1.0e-8f)
             return 0.0f;
 
-        float Distance = sqrt(max(DistanceSquared, 1.0e-6f));
+        float Distance = sqrt(DistanceSquared);
         float3 L = ToLight / Distance;
         float ConeCos = dot(-L, normalize(Light.Direction));
-        float ConeFade = pow(smoothstep(Light.OuterConeCos, Light.InnerConeCos, ConeCos),
-            max(Light.FalloffExponent, 0.0001f));
-        float DistanceFactor = saturate(1.0f - Distance / Light.Radius);
-        float RadiusFade = DistanceFactor * DistanceFactor;
+        float ConeFade = CalculateConeAttenuation(ConeCos, Light.InnerConeCos, Light.OuterConeCos);
+        float RadiusFade = CalculateDistanceAttenuation(Distance, Light.Radius, Light.FalloffExponent);
         float3 Radiance = Light.Color * Light.Intensity * ConeFade * RadiusFade;
         AccumulateLocalLight(Diffuse, Specular, Albedo, Metallic, Roughness, N, V, L, Radiance);
     }
@@ -122,10 +119,10 @@ float3 EvaluateLight(FLightRenderParameters Light, float3 WorldPosition, float3 
         if (RadiusSquared <= 0.0f || DistanceSquared >= RadiusSquared || DistanceSquared < 1.0e-8f)
             return 0.0f;
 
-        float Distance = sqrt(max(DistanceSquared, 1.0e-6f));
+        float Distance = sqrt(DistanceSquared);
         float3 L = ToLight / Distance;
 
-        float Attenuation = pow(saturate(1.0f - Distance / max(Light.Radius, 0.001f)), max(Light.FalloffExponent, 0.001f));
+        float Attenuation = CalculateDistanceAttenuation(Distance, Light.Radius, Light.FalloffExponent);
         float FrontFace = saturate(dot(-L, Light.Direction));
         if (FrontFace <= 0.0f || Attenuation <= 0.0f)
             return 0.0f;

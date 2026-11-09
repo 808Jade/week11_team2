@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
+#include "Core/Misc/Optional.h"
 
 enum class EShaderType
 {
@@ -19,9 +21,19 @@ enum class ELightingModel
 {
     Gouraud,
     Lambert,
-    Phong,
-    Unlit // 조명과 그림자 없이 Base Color만 출력한다
+    BlinnPhong,
+    Unlit
 };
+
+inline constexpr const char* LightingModelNames[] = { "Gouraud", "Lambert", "BlinnPhong", "Unlit" };
+
+inline TOptional<ELightingModel> ParseLightingModel(std::string_view Name)
+{
+    if (Name == "Phong") return ELightingModel::BlinnPhong;
+    for (int Index = 0; Index <= static_cast<int>(ELightingModel::Unlit); ++Index)
+        if (Name == LightingModelNames[Index]) return static_cast<ELightingModel>(Index);
+    return {};
+}
 
 enum class ELightCullingMode
 {

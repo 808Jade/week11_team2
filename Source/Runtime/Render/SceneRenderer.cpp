@@ -249,7 +249,7 @@ bool FSceneRenderer::BindDeferredLighting(FRenderer* Renderer, uint32 Width, uin
 	return true;
 }
 
-bool FSceneRenderer::BindForwardLighting(FRenderer* Renderer, const FSceneRenderOptions& Options, FTexture2D* ShadowMask)
+bool FSceneRenderer::BindForwardLighting(FRenderer* Renderer, FTexture2D* ShadowMask)
 {
 	FSceneLightResources& LightResources = RenderData.ViewLightResources;
 
@@ -260,13 +260,6 @@ bool FSceneRenderer::BindForwardLighting(FRenderer* Renderer, const FSceneRender
 		return false;
 	}
 	
-	FPipelineState* BasePSO = FRenderResourceManager::GetPSO(EPSOType::StaticMesh_Forward);
-	FShaderProgram* Program = FRenderResourceManager::GetForwardShaderProgram(Options.LightingModel);
-	if (!BasePSO || !Program)
-	{
-		return false;
-	}
-
 	FForwardLightingConstants Constants{};
 
 	const FSkyLightEnvironment* Sky = RenderData.bHasSkyLight ? World->GetScene().FindSkyLightEnvironment(RenderData.SkyLight.SourcePath) : nullptr;
@@ -522,7 +515,7 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 		{
 			FMeshPassProcessor Processor;
 			if (!Processor.Build(View, RenderData.RenderQueue, &RenderData,
-				EMeshPassType::Forward, ForwardBatches, Options.LightingModel)) return false;
+				EMeshPassType::Forward, ForwardBatches, Options.ShadingModelOverride)) return false;
 		}
 		// 현재 업로드된 광원 정보를 기존 그리드에 전달한다.
 		FForwardLightTileGrid& Tiles = RenderData.ViewLightResources.GetTiles();
@@ -532,8 +525,8 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 		std::memcpy(GridLighting.LightOffsets, RenderData.LightParameterOffsets, sizeof(RenderData.LightParameterOffsets));
 
 		// 픽셀 조명 경로에서만 목록을 사용한다.
-		const ELightCullingMode CullingMode = !View.bIsWireframe && Options.LightingModel != ELightingModel::Gouraud &&
-			Options.LightingModel != ELightingModel::Unlit ? Options.LightCullingMode : ELightCullingMode::Off;
+		const ELightCullingMode CullingMode = !View.bIsWireframe && Options.ShadingModelOverride != ELightingModel::Gouraud &&
+			Options.ShadingModelOverride != ELightingModel::Unlit ? Options.LightCullingMode : ELightCullingMode::Off;
 
 		// Off도 이번 프레임의 화면 정보와 입력 광원 개수를 갱신한다.
 		bool bUseDepthPrepass = false;
@@ -619,10 +612,10 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 			{ LightingHDR, ERenderGraphLoadAction::Load }
 		};
 		Forward.DepthAttachment = { Depth, bUseDepthPrepass ? ERenderGraphLoadAction::Load : ERenderGraphLoadAction::Clear, 1.0f, 0 };
-		if (!Graph.AddRasterPass(std::move(Forward), [this, Renderer, &Graph, LightingOptions = Options, bUseDepthPrepass, ForwardShadowMask]
+		if (!Graph.AddRasterPass(std::move(Forward), [this, Renderer, &Graph, bDrawPrimitives = Options.bDrawPrimitives, bUseDepthPrepass, ForwardShadowMask]
 		{
-			if (!LightingOptions.bDrawPrimitives) return;
-			bCorePassSucceeded = BindForwardLighting(Renderer, LightingOptions, ForwardShadowMask ? Graph.Resolve(ForwardShadowMask) : nullptr);
+			if (!bDrawPrimitives) return;
+			bCorePassSucceeded = BindForwardLighting(Renderer, ForwardShadowMask ? Graph.Resolve(ForwardShadowMask) : nullptr);
 			if (!bCorePassSucceeded) return;
 			if (bUseDepthPrepass)
 			{
@@ -836,9 +829,9 @@ bool FSceneRenderer::AddViewportPasses(FRenderGraphBuilder& Graph, FRenderer* Re
 	{
 		// 디버그 보기에서 현재 뷰의 실제 타일 목록을 생성한다.
 		CoreOptions.RenderingPath = ERenderingPath::Forward;
-		CoreOptions.LightingModel = ELightingModel::Lambert;
+		CoreOptions.ShadingModelOverride = ELightingModel::Lambert;
 	}
-	else if (Options.LightingModel == ELightingModel::Unlit)
+	else if (Options.ShadingModelOverride == ELightingModel::Unlit)
 	{
 		// Deferred 조명 패스는 Unlit 변형이 없다. 조명이 필요 없으므로 Uber Shader의 Unlit 변형으로 바로 그린다.
 		CoreOptions.RenderingPath = ERenderingPath::Forward;

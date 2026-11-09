@@ -13,6 +13,32 @@ static const FAABB ConservativeBounds = FAABB(FVector(0.0f, 0.0f, 0.0f), FVector
 
 namespace
 {
+	bool NeedsColorSRGBDecode(const UTexture2D* Texture)
+	{
+		if (!Texture || !Texture->GetResource() || !Texture->GetResource()->GetSRV()) return false;
+		switch (Texture->GetResource()->GetFormat())
+		{
+		// sRGB 리소스는 GPU가 샘플링 시 변환한다. HDR 리소스는 이미 선형이다.
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		case DXGI_FORMAT_R32G32B32_FLOAT:
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		case DXGI_FORMAT_R11G11B10_FLOAT:
+		case DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+			return false;
+		default:
+			return true;
+		}
+	}
+
 	float GetNormalEncoding(UTexture2D* Texture)
 	{
 		if (!Texture || !Texture->GetResource() || !Texture->GetResource()->GetSRV()) return 0.0f;
@@ -38,7 +64,7 @@ namespace
 	}
 
 	bool BuildBatch(FMeshDrawBatch& Batch, FVertexBuffer* VB, FIndexBuffer* IB,
-		UMaterial* Material, EMeshPassType Pass, const FSceneView& View, ELightingModel LightingModel,
+		UMaterial* Material, EMeshPassType Pass, const FSceneView& View, TOptional<ELightingModel> ShadingModelOverride,
 		const void* OverrideParams = nullptr, uint32 OverrideSize = 0)
 	{
 		if (!VB || !IB || !Material) return false;
@@ -51,8 +77,9 @@ namespace
 			const bool bWorldNormal = Pass == EMeshPassType::WorldNormal;
 			FPipelineState* Base = FRenderResourceManager::GetPSO(bWorldNormal
 				? EPSOType::StaticMesh_WorldNormal : EPSOType::StaticMesh_Forward);
+			const ELightingModel Model = ShadingModelOverride.Get(Material->ShadingModel);
 			FShaderProgram* Shader = bWorldNormal ? (Base ? Base->Shader : nullptr)
-				: FRenderResourceManager::GetForwardShaderProgram(LightingModel);
+				: FRenderResourceManager::GetForwardShaderProgram(Model);
 			if (!Base || !Shader || !Shader->VertexShader || !Shader->PixelShader) return false;
 			Batch.Pipeline = *Base;
 			Batch.Pipeline.Shader = Shader;
@@ -73,7 +100,7 @@ namespace
 			UTexture2D* Color = Material->Textures.IsEmpty() ? nullptr : Material->Textures[0];
 			UTexture2D* Normal = Material->Textures.Num() > 1 ? Material->Textures[1] : nullptr;
 			const bool bHasColor = Color && Color->GetResource() && Color->GetResource()->GetSRV();
-			Params.SurfaceParams = FVector4(Material->bFlipNormalY ? 1.0f : 0.0f, 0.0f, bHasColor ? 1.0f : 0.0f,
+			Params.SurfaceParams = FVector4(Material->bFlipNormalY ? 1.0f : 0.0f, NeedsColorSRGBDecode(Color) ? 1.0f : 0.0f, bHasColor ? 1.0f : 0.0f,
 				GetNormalEncoding(Normal));
 			const FVector2 UV = Material->UVScrollSpeed * EngineTimer::GetTotalTime();
 			Params.UVTransform = FVector4(UV.X, UV.Y, 1.0f, 1.0f);
@@ -100,6 +127,7 @@ namespace
 				Params.UVOffset = Material->UVScrollSpeed * EngineTimer::GetTotalTime();
 				Params.TextureFlags.X = GetNormalEncoding(Material->Textures.Num() > 1 ? Material->Textures[1] : nullptr);
 				Params.TextureFlags.Y = Material->bFlipNormalY ? 1.0f : 0.0f;
+				Params.ColorNeedsSRGBDecode = NeedsColorSRGBDecode(Material->Textures.IsEmpty() ? nullptr : Material->Textures[0]) ? 1.0f : 0.0f;
 				std::memcpy(Batch.MaterialData.data(), &Params, sizeof(Params));
 				Batch.MaterialDataSize = sizeof(Params);
 			}
@@ -217,7 +245,7 @@ namespace
 
 bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue,
 	const FSceneRenderData* SceneData, EMeshPassType Pass,
-	TArray<FMeshDrawBatch>& Out, ELightingModel LightingModel) const
+	TArray<FMeshDrawBatch>& Out, TOptional<ELightingModel> ShadingModelOverride) const
 {
 	Out.Reset();
 	if (Pass != EMeshPassType::Translucent && SceneData)
@@ -233,7 +261,7 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 		for (const FStaticDrawGroup* Group : Groups)
 		{
 			FMeshDrawBatch Batch; // Render에게 전달하는 최종 구조체
-			if (!BuildBatch(Batch, Group->Mesh->GetVertexBuffer(Group->LODIndex), Group->Mesh->GetIndexBuffer(Group->LODIndex), Group->Material, Pass, View, LightingModel))
+			if (!BuildBatch(Batch, Group->Mesh->GetVertexBuffer(Group->LODIndex), Group->Mesh->GetIndexBuffer(Group->LODIndex), Group->Material, Pass, View, ShadingModelOverride))
 				return false;
 
 			Batch.Items.Reserve(static_cast<uint32>(Group->Items.size()));
@@ -257,7 +285,7 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 		FVertexBuffer* VB = Packet.Mesh ? Packet.Mesh->GetVertexBuffer(Packet.LODIndex) : Packet.VertexBuffer;
 		FIndexBuffer* IB = Packet.Mesh ? Packet.Mesh->GetIndexBuffer(Packet.LODIndex) : Packet.IndexBuffer;
 		if (!BuildBatch(Batch, VB, IB, Packet.Material, Pass, View,
-			LightingModel, Packet.MaterialParamData, Packet.MaterialParamDataSize)) return false;
+			ShadingModelOverride, Packet.MaterialParamData, Packet.MaterialParamDataSize)) return false;
 		if (!ApplyGpuSkin(Batch, Packet)) continue;
 
 		const uint32 IndexCount = Packet.IndexCount ? Packet.IndexCount : Batch.IndexBuffer->GetIndexCount();

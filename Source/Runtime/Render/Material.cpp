@@ -37,6 +37,7 @@ UMaterial* UMaterial::CreateInstance(const UMaterial* Source)
 	Instance->BlendState = Source->BlendState;
 	Instance->DepthStencilState = Source->DepthStencilState;
 	Instance->SamplerState = Source->SamplerState;
+	Instance->ShadingModel = Source->ShadingModel;
 	Instance->BaseColor = Source->BaseColor;
 	Instance->SpecularColor = Source->SpecularColor;
 	Instance->EmissiveColor = Source->EmissiveColor;
@@ -133,6 +134,15 @@ void UMaterial::Serialize(FStructuredArchive::FRecord Record)
 			<< SA_VALUE("Shininess", Shininess)
 			<< SA_VALUE("UVScrollSpeed", UVScrollSpeed)
 			<< SA_VALUE("FlipNormalY", bFlipNormalY);
+
+	// 기존 씬에 필드가 없으면 CreateInstance가 복사한 원본의 모델을 사용한다.
+	if (auto Slot = Record.TryEnterField("ShadingModel", Ar.IsSaving()))
+	{
+		FString Model = LightingModelNames[static_cast<int>(ShadingModel)];
+		Slot.GetValue() << Model;
+		if (Ar.IsLoading())
+			ShadingModel = ParseLightingModel(Model).Get(ShadingModel);
+	}
 
 	if (Record.HasDocumentTree())
 	{

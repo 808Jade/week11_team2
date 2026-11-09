@@ -1,77 +1,10 @@
 {
     "Version": 4,
     "World": {
-        "Properties": {},
         "PersistentLevel": {
-            "Properties": {},
             "Actors": [
                 {
                     "Class": "ASkeletalMeshActor",
-                    "Name": "X Bot",
-                    "Properties": { "ScriptPath": "Scripts/x_bot_capoeira.lua" },
-                    "Components": [
-                        {
-                            "Class": "USkeletalMeshComponent",
-                            "Name": "USkeletalMeshComponent",
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "SkeletalMesh": "Assets/Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin"
-                            },
-                            "OverrideMaterials": [],
-                            "BonePose": []
-                        }
-                    ]
-                },
-                {
-                    "Class": "APawn",
-                    "Name": "CapoeiraCamera",
-                    "Properties": { "bActorEnableCollision": false },
-                    "Components": [
-                        {
-                            "Class": "UCameraComponent",
-                            "Name": "CameraComponent",
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": { "X": 1.25, "Y": -4.4, "Z": 1.65 },
-                                    "Rotation": { "Pitch": 10.0, "Roll": 0.0, "Yaw": 105.9 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
-                            }
-                        }
-                    ]
-                },
-                {
-                    "Class": "ADirectionalLightActor",
-                    "Name": "CapoeiraKeyLight",
-                    "Properties": {},
-                    "Components": [
-                        {
-                            "Class": "UDirectionalLightComponent",
-                            "Name": "UDirectionalLightComponent",
-                            "Parent": "",
-                            "Properties": {
-                                "Intensity": 1.25,
-                                "Transform": {
-                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 3.0 },
-                                    "Rotation": { "Pitch": 48.0, "Roll": 0.0, "Yaw": 65.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UArrowComponent",
-                            "Parent": "UDirectionalLightComponent",
-                            "Properties": { "bHiddenInGame": true },
-                            "OverrideMaterials": [{ "Asset": "EditorArrowMaterial" }]
-                        }
-                    ]
-                },
-                {
-                    "Class": "AStaticMeshActor",
-                    "Name": "Floor",
-                    "Properties": {},
                     "Components": [
                         {
                             "Class": "USceneComponent",
@@ -79,22 +12,1731 @@
                             "Parent": "",
                             "Properties": {
                                 "Transform": {
-                                    "Location": { "X": 0.0, "Y": 0.0, "Z": -0.1 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 12.0, "Y": 12.0, "Z": 0.2 }
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "BonePose": [
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -7.727290807224563e-08,
+                                            "Y": 0.015543158166110516,
+                                            "Z": 1.0427486896514893
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -2.8706519515253603e-05,
+                                            "Roll": -0.7400791049003601,
+                                            "Yaw": -1.2722221415456883e-14
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Hips"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -4.255830497040813e-12,
+                                            "Y": -3.996802716596996e-17,
+                                            "Z": 0.10182436555624008
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 2.8335049137240276e-05,
+                                            "Roll": 9.195035934448242,
+                                            "Yaw": 2.278547754031024e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Spine"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -8.470328967672024e-23,
+                                            "Y": -0.0,
+                                            "Z": 0.10002674907445908
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0,
+                                            "Roll": -0.0,
+                                            "Yaw": -2.1919710679738784e-22
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Spine1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.137543145896558e-16,
+                                            "Y": 2.8236810667436885e-09,
+                                            "Z": 0.09322091192007065
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 4.2429960558365565e-06,
+                                            "Roll": -1.4766243696212769,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Spine2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 4.147488342348682e-12,
+                                            "Y": 5.861977273559295e-16,
+                                            "Z": 0.1686532199382782
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0,
+                                            "Roll": -7.951388384660552e-16,
+                                            "Yaw": -0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Neck"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.0756747714779635e-09,
+                                            "Y": 0.0284104086458683,
+                                            "Z": 0.09341923147439957
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0,
+                                            "Roll": -7.951388384660552e-16,
+                                            "Yaw": -0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:Head"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 9.85697390376572e-09,
+                                            "Y": 0.10122934728860855,
+                                            "Z": 0.20962780714035034
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 7.583034882221748e-22,
+                                            "Roll": -7.951388384660552e-16,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:HeadTop_End"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.045699700713157654,
+                                            "Y": -0.00806631799787283,
+                                            "Z": 0.11195844411849976
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 7.412101745605469,
+                                            "Roll": -91.33149719238281,
+                                            "Yaw": 101.97172546386719
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightShoulder"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 3.552713599391162e-17,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.10838175565004349
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 11.884977340698242,
+                                            "Roll": 2.836343765258789,
+                                            "Yaw": -2.7264910329449776e-08
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightArm"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -9.964062908096594e-11,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.27841517329216003
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.3501471775360314e-21,
+                                            "Roll": 0.0,
+                                            "Yaw": -4.7393968013885926e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightForeArm"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 2.2858598924813123e-07,
+                                            "Y": 4.4725386061372774e-08,
+                                            "Z": 0.2832883894443512
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -1.6830667753526679e-21,
+                                            "Roll": -7.583034882221748e-22,
+                                            "Yaw": -4.7393968013885926e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHand"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.026818517595529556,
+                                            "Y": 0.015739839524030685,
+                                            "Z": 0.024648049846291542
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 23.386978149414063,
+                                            "Roll": -33.255340576171875,
+                                            "Yaw": -14.590188980102539
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandThumb1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.4210854397564648e-16,
+                                            "Y": -0.0,
+                                            "Z": 0.04188985377550125
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -1.0660367012023926,
+                                            "Roll": 0.26415228843688965,
+                                            "Yaw": 0.13167232275009155
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandThumb2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.1316281596346973e-16,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.03416271135210991
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.7931039929389954,
+                                            "Roll": 0.19013814628124237,
+                                            "Yaw": 0.09125127643346786
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandThumb3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.4210854397564648e-16,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.025749772787094116
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 5.626943588256836,
+                                            "Roll": -5.3619231721313554e-08,
+                                            "Yaw": 13.513113021850586
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandThumb4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.022598350420594215,
+                                            "Y": 0.005178621504455805,
+                                            "Z": 0.09108282625675201
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.01882367767393589,
+                                            "Roll": 6.943495100131258e-05,
+                                            "Yaw": 7.951389443451736e-16
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandIndex1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -8.88178366760566e-17,
+                                            "Y": -0.0,
+                                            "Z": 0.03700000047683716
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.02929467335343361,
+                                            "Roll": 0.0,
+                                            "Yaw": -4.739397432477317e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandIndex2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -3.4283686068688592e-15,
+                                            "Y": -8.893152707301066e-12,
+                                            "Z": 0.028499998152256012
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.010075118392705917,
+                                            "Roll": 0.0,
+                                            "Yaw": 4.7393968013885926e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandIndex3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 7.904787596517936e-15,
+                                            "Y": 5.114202464295836e-12,
+                                            "Z": 0.02772190421819687
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.009976156055927277,
+                                            "Roll": 7.954217551287002e-08,
+                                            "Yaw": -0.11490009725093842
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandIndex4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.3687323391641257e-07,
+                                            "Y": 3.985568923781102e-07,
+                                            "Z": 0.09532500803470612
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.057502735406160355,
+                                            "Roll": 0.00011209052900085226,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandMiddle1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -9.769962563761818e-17,
+                                            "Y": -0.0,
+                                            "Z": 0.03700000047683716
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.0973881259560585,
+                                            "Roll": 0.0,
+                                            "Yaw": -9.478806855640393e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandMiddle2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.504663084262047e-15,
+                                            "Y": -1.5411358300632116e-10,
+                                            "Z": 0.029500000178813934
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.036880385130643845,
+                                            "Roll": 1.3793463770899808e-33,
+                                            "Yaw": -4.739397432477317e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandMiddle3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.1457501275318437e-15,
+                                            "Y": 7.20586923463884e-11,
+                                            "Z": 0.029466288164258003
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.019067415967583656,
+                                            "Roll": -4.962521771290085e-08,
+                                            "Yaw": -0.10643430799245834
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandMiddle4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.018651330843567848,
+                                            "Y": 0.00043069649836979806,
+                                            "Z": 0.09103591740131378
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.017856726422905922,
+                                            "Roll": -7.979203473951202e-06,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandRing1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -7.105427198782324e-17,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.033792730420827866
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.025383764877915382,
+                                            "Roll": 1.5166071783927414e-21,
+                                            "Yaw": -9.478794864954634e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandRing2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 2.6201263804670168e-15,
+                                            "Y": 8.202505515086944e-12,
+                                            "Z": 0.028896845877170563
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.012926515191793442,
+                                            "Roll": 7.583034882221748e-22,
+                                            "Yaw": 4.7393968013885926e-23
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandRing3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 4.716227357785688e-15,
+                                            "Y": 5.682068097284665e-12,
+                                            "Z": 0.026388155296444893
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.091591477394104,
+                                            "Roll": 1.9719793726835633e-06,
+                                            "Yaw": -0.016738969832658768
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandRing4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.038062773644924164,
+                                            "Y": 0.004867036826908588,
+                                            "Z": 0.08076675981283188
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.05962922424077988,
+                                            "Roll": -0.0005352252046577632,
+                                            "Yaw": -2.5444458077506817e-14
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandPinky1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -8.88178366760566e-17,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.035999998450279236
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.09697103500366211,
+                                            "Roll": 0.0,
+                                            "Yaw": -3.791522742256157e-22
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandPinky2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -5.329070200563396e-16,
+                                            "Y": -2.1163884533770272e-10,
+                                            "Z": 0.020999997854232788
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.056926555931568146,
+                                            "Roll": -0.0,
+                                            "Yaw": -0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandPinky3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.2789768693110388e-15,
+                                            "Y": 1.4407361415003095e-10,
+                                            "Z": 0.02115781046450138
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.004730951506644487,
+                                            "Roll": -6.760405568684291e-08,
+                                            "Yaw": -0.17984940111637115
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightHandPinky4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.04570445790886879,
+                                            "Y": -0.008066272363066673,
+                                            "Z": 0.11195643991231918
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -7.411894798278809,
+                                            "Roll": -91.33036041259766,
+                                            "Yaw": -101.9723892211914
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftShoulder"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -3.108624482185328e-17,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.10837705433368683
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -11.885680198669434,
+                                            "Roll": 2.8352067470550537,
+                                            "Yaw": -2.3993181912373984e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftArm"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 8.88178366760566e-17,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.2784152030944824
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -9.45329792124303e-21,
+                                            "Roll": 0.0,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftForeArm"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 5.4387349734952295e-08,
+                                            "Y": -5.5642486174178885e-09,
+                                            "Z": 0.2832883298397064
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 2.679557284466592e-21,
+                                            "Roll": -2.4265711623109594e-20,
+                                            "Yaw": 1.1570792972140119e-26
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHand"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.026817314326763153,
+                                            "Y": 0.015761928632855415,
+                                            "Z": 0.02466144785284996
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -23.305246353149414,
+                                            "Roll": -33.19853591918945,
+                                            "Yaw": 14.514023780822754
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandThumb1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.0658140798173486e-16,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.04187094420194626
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.9414425492286682,
+                                            "Roll": 0.23590697348117828,
+                                            "Yaw": -0.11755430698394775
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandThumb2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -7.105427198782324e-17,
+                                            "Y": 5.684341759025859e-16,
+                                            "Z": 0.03418388217687607
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.696062445640564,
+                                            "Roll": 0.17497189342975616,
+                                            "Yaw": -0.08433880656957626
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandThumb3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.4210854397564648e-16,
+                                            "Y": -0.0,
+                                            "Z": 0.025805814191699028
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -4.810722351074219,
+                                            "Roll": 2.6774753223435255e-06,
+                                            "Yaw": -14.106413841247559
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandThumb4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.02259862795472145,
+                                            "Y": 0.0051803430542349815,
+                                            "Z": 0.09109309315681458
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.005050797946751118,
+                                            "Roll": -7.638399983989075e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandIndex1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -6.661337750704245e-17,
+                                            "Y": -2.8421708795129297e-16,
+                                            "Z": 0.03700000047683716
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.012043367139995098,
+                                            "Roll": -3.9043799915816635e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandIndex2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -7.176481563414376e-15,
+                                            "Y": 5.684341759025859e-16,
+                                            "Z": 0.028499998152256012
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0075915902853012085,
+                                            "Roll": -3.8359594327630475e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandIndex3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 8.588685386262847e-15,
+                                            "Y": 5.684341759025859e-16,
+                                            "Z": 0.027748655527830124
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0014976593665778637,
+                                            "Roll": -6.485913104370411e-07,
+                                            "Yaw": 0.04326557368040085
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandIndex4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -3.6604359365810524e-07,
+                                            "Y": -3.254047271639138e-07,
+                                            "Z": 0.0953340157866478
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.0036264117807149887,
+                                            "Roll": -4.680763595388271e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandMiddle1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.6645351995433716e-17,
+                                            "Y": -0.0,
+                                            "Z": 0.03700000047683716
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.0024288995191454887,
+                                            "Roll": 1.874533154477831e-05,
+                                            "Yaw": -2.4848088702064225e-17
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandMiddle2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.86970425721067e-14,
+                                            "Y": -0.0,
+                                            "Z": 0.029500000178813934
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.002370842732489109,
+                                            "Roll": 4.8998204874806106e-05,
+                                            "Yaw": 9.93923548082569e-17
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandMiddle3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -8.712141793577877e-14,
+                                            "Y": -1.4210853868169056e-15,
+                                            "Z": 0.029528634622693062
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.003206819063052535,
+                                            "Roll": -2.1782926751257037e-07,
+                                            "Yaw": 0.11735792458057404
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandMiddle4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.018650811165571213,
+                                            "Y": 0.00043028235086239874,
+                                            "Z": 0.09104528278112411
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.000723448465578258,
+                                            "Roll": -7.160823588492349e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandRing1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -3.552713599391162e-17,
+                                            "Y": -0.0,
+                                            "Z": 0.03150000050663948
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -9.279277214937772e-20,
+                                            "Roll": 0.0,
+                                            "Yaw": 1.851326875542419e-25
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandRing2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 2.643289143122729e-08,
+                                            "Y": 5.2098596547978104e-09,
+                                            "Z": 0.029500000178813934
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 4.270012546852782e-21,
+                                            "Roll": 0.0,
+                                            "Yaw": 1.851326875542419e-25
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandRing3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -2.3274330374079e-07,
+                                            "Y": -1.460757559357262e-08,
+                                            "Z": 0.02644316293299198
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.001838838099502027,
+                                            "Roll": 3.2210264180321246e-05,
+                                            "Yaw": -0.05654376745223999
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandRing4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.03806263208389282,
+                                            "Y": 0.004868770018219948,
+                                            "Z": 0.08077778667211533
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -0.23431728780269623,
+                                            "Roll": 0.0005701607442460954,
+                                            "Yaw": -2.332195208509802e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandPinky1"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.776356799695581e-17,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.035999998450279236
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.02413986250758171,
+                                            "Roll": -7.202616689028218e-05,
+                                            "Yaw": 1.5902778886903472e-15
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandPinky2"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 2.415845326995329e-15,
+                                            "Y": 2.8421708795129297e-16,
+                                            "Z": 0.021000001579523087
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.007687045261263847,
+                                            "Roll": -1.2101491847715806e-05,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandPinky3"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 1.1031176040438191e-14,
+                                            "Y": -0.0,
+                                            "Z": 0.021255314350128174
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 0.03384871035814285,
+                                            "Roll": 1.2671188187596272e-06,
+                                            "Yaw": 0.08977092057466507
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftHandPinky4"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -0.08207789063453674,
+                                            "Y": -0.0151221863925457,
+                                            "Z": -0.06771764159202576
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -2.9927514333394356e-05,
+                                            "Roll": 178.81326293945313,
+                                            "Yaw": 180.0000457763672
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightUpLeg"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 6.19727533179848e-11,
+                                            "Y": -1.662003791630894e-15,
+                                            "Z": 0.44371461868286133
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -2.455748926877277e-06,
+                                            "Roll": 4.366007328033447,
+                                            "Yaw": 6.3611107077284415e-15
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightLeg"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -5.538293088025448e-11,
+                                            "Y": 1.820765744503389e-16,
+                                            "Z": 0.4452781081199646
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.2652094483200926e-05,
+                                            "Roll": -54.74068069458008,
+                                            "Yaw": -6.549914814968361e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightFoot"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.0,
+                                            "Y": 3.552713599391162e-17,
+                                            "Z": 0.13816866278648376
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.201609120471403e-05,
+                                            "Roll": -39.17445755004883,
+                                            "Yaw": -4.2757192204589956e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightToeBase"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -1.776356799695581e-17,
+                                            "Y": 4.2888868083343706e-17,
+                                            "Z": 0.09278120845556259
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.2132855811554797e-20,
+                                            "Roll": 0.0,
+                                            "Yaw": -1.3302167654037476
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:RightToe_End"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.08207788318395615,
+                                            "Y": -0.01512213796377182,
+                                            "Z": -0.0677180290222168
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -3.1158557249000296e-05,
+                                            "Roll": 178.8119354248047,
+                                            "Yaw": -180.0000457763672
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftUpLeg"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 6.468267588211063e-11,
+                                            "Y": 3.763655905248515e-16,
+                                            "Z": 0.443713903427124
+                                        },
+                                        "Rotation": {
+                                            "Pitch": -2.457232540109544e-06,
+                                            "Roll": 4.368424415588379,
+                                            "Yaw": 0.0
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftLeg"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": -5.547778902936784e-11,
+                                            "Y": -2.1316281596346973e-16,
+                                            "Z": 0.44527846574783325
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.1874228221131489e-05,
+                                            "Roll": -54.741783142089844,
+                                            "Yaw": -6.147362910269294e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftFoot"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 3.552713599391162e-17,
+                                            "Y": -2.6645351995433716e-17,
+                                            "Z": 0.13816864788532257
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.2363712812657468e-05,
+                                            "Roll": -39.17445755004883,
+                                            "Yaw": -4.39941368313157e-06
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftToeBase"
+                                },
+                                {
+                                    "Local": {
+                                        "Location": {
+                                            "X": 0.0,
+                                            "Y": -1.3127519275797222e-17,
+                                            "Z": 0.09278137236833572
+                                        },
+                                        "Rotation": {
+                                            "Pitch": 1.2132855811554797e-20,
+                                            "Roll": 0.0,
+                                            "Yaw": 1.3601384162902832
+                                        },
+                                        "Scale": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        }
+                                    },
+                                    "Name": "mixamorig:LeftToe_End"
                                 }
+                            ],
+                            "Class": "USkeletalMeshComponent",
+                            "Name": "USkeletalMeshComponent",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "Imported/X Bot/M_X Bot_Beta_HighLimbsGeoSG3.fbxbin",
+                                    "Instance": {
+                                        "BaseColor": { "X": 0.56, "Y": 0.23, "Z": 0.17, "W": 1.0 },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 28.0,
+                                        "SpecularColor": { "X": 0.25, "Y": 0.25, "Z": 0.25 },
+                                        "Textures": ["WhiteTexture", "FlatNormalTexture"],
+                                        "UVScrollSpeed": [0.0, 0.0]
+                                    }
+                                },
+                                {
+                                    "Base": "Imported/X Bot/M_X Bot_Beta_Joints_MAT1.fbxbin",
+                                    "Instance": {
+                                        "BaseColor": { "X": 0.18, "Y": 0.075, "Z": 0.058, "W": 1.0 },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 18.0,
+                                        "SpecularColor": { "X": 0.16, "Y": 0.16, "Z": 0.16 },
+                                        "Textures": ["WhiteTexture", "FlatNormalTexture"],
+                                        "UVScrollSpeed": [0.0, 0.0]
+                                    }
+                                }
+                            ],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "SkeletalMesh": "Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "X Bot",
+                    "Properties": {
+                        "ScriptPath": "Scripts/x_bot_capoeira.lua",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "APawn",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UCameraComponent",
+                            "Name": "CameraComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 4.0,
+                                        "Z": 1.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": -90.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "CapoeiraCamera",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    }
+                },
+                {
+                    "Class": "ADirectionalLightActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UDirectionalLightComponent",
+                            "Name": "UDirectionalLightComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "AngularRadiusDegrees": 3.0,
+                                "CascadeDistributionExponent": 3.0,
+                                "CascadeTransitionFraction": 0.10000000149011612,
+                                "DynamicShadowCascades": 4,
+                                "DynamicShadowDistanceMovableLight": 1000.0,
+                                "Intensity": 1.25,
+                                "LightColor": 4294967295,
+                                "ShadowBias": 0.5,
+                                "ShadowDistanceFadeoutFraction": 0.10000000149011612,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowSharpen": 0.0,
+                                "ShadowSlopeBias": 0.5,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 3.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 36.283660888671875,
+                                        "Roll": 180.00003051757813,
+                                        "Yaw": -115.00004577636719
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bCastShadows": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UBillboardComponent",
+                            "Material": {
+                                "Base": "BillboardMaterial",
+                                "Instance": {
+                                    "BaseColor": {
+                                        "W": 1.0,
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "BlendState": "AlphaBlend",
+                                    "FlipNormalY": false,
+                                    "PSOType": 14,
+                                    "Properties": {},
+                                    "SamplerState": "LinearClamp",
+                                    "Shininess": 32.0,
+                                    "SpecularColor": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "Textures": [
+                                        "Assets/Icons/Directional.png"
+                                    ],
+                                    "UVScrollSpeed": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                }
+                            },
+                            "Name": "UBillboardComponent",
+                            "Parent": "UDirectionalLightComponent",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": true,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UArrowComponent",
+                            "OverrideMaterials": [
+                                {
+                                    "Asset": "EditorArrowMaterial"
+                                }
+                            ],
+                            "Parent": "UDirectionalLightComponent",
+                            "Properties": {
+                                "StaticMesh": "Arrow",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 90.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 0.30000001192092896,
+                                        "Y": 0.30000001192092896,
+                                        "Z": 0.5
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": true,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "CapoeiraKeyLight",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": -0.10000000149011612
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 12.0,
+                                        "Y": 12.0,
+                                        "Z": 0.20000000298023224
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
                             }
                         },
                         {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": { "X": 0.16, "Y": 0.20, "Z": 0.25, "W": 1.0 },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 16.0,
+                                        "SpecularColor": { "X": 0.035, "Y": 0.035, "Z": 0.035 },
+                                        "Textures": ["WhiteTexture", "FlatNormalTexture"],
+                                        "UVScrollSpeed": [0.0, 0.0]
+                                    }
+                                }
+                            ],
                             "Parent": "DefaultSceneRoot",
-                            "Properties": { "StaticMesh": "Cube" },
-                            "OverrideMaterials": []
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
                         }
-                    ]
+                    ],
+                    "Name": "Floor",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 }
-            ]
-        }
+            ],
+            "Properties": {}
+        },
+        "Properties": {}
     }
 }
