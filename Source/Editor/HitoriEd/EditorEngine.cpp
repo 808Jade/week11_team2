@@ -346,7 +346,7 @@ void UEditorEngine::Tick(const float DeltaTime)
 		if (FWorldContext* PIEContext = GetWorldContextFromWorld(PlayWorld))
 			TickWorldTravel(*PIEContext);
 
-	BeginFrame(DeltaTime);
+	BeginFrame(EngineTimer::GetFrameDeltaTime());
 	UpdateViewportState(DeltaTime);
 	TickWorldAndEditor(DeltaTime);
 	if (FAudioDevice* AudioDevice = GetMainAudioDevice())

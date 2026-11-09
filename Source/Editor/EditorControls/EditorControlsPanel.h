@@ -5,6 +5,7 @@
 
 #include "GameFramework/Actor/ParticleActor.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
+#include "GameFramework/Actor/SkeletalMeshActor.h"
 #include "GameFramework/Actor/DirectionalLightActor.h"
 #include "GameFramework/Actor/PointLightActor.h"
 #include "GameFramework/Actor/SpotLightActor.h"
@@ -41,7 +42,7 @@ public:
 
 	int32 SelectedIndex = 0;
 
-	const char* Items[7] = {"StaticMesh", "Particle", "Text", "HeightFog", "FireBall", "Projectile", "ScoreboardManager" };
+	const char* Items[8] = {"StaticMesh", "SkeletalMesh", "Particle", "Text", "HeightFog", "FireBall", "Projectile", "ScoreboardManager" };
 
 	FGizmo* Gizmo = nullptr;
 	int32 GizmoSelectedIndex = 0;
@@ -53,6 +54,7 @@ public:
 	TArray<UClass*> Classes
 	{
 		AStaticMeshActor::StaticClass(),
+		ASkeletalMeshActor::StaticClass(),
 		AParticleActor::StaticClass(),
 		ATextRenderActor::StaticClass(),
 		AExponentialHeightFogActor::StaticClass(),

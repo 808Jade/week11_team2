@@ -1,6 +1,8 @@
 #include "EnginePCH.h"
 #include "Render/Renderer.h"
 #include "Render/RenderCommand.h"
+#include "Render/GPUTimer.h"
+#include "Engine/PrimitiveSceneProxy.h"
 #include <algorithm>
 #include <chrono>
 #include <unordered_map>
@@ -80,11 +82,19 @@ void FRenderer::BindObject(const FMeshDrawBatch& Batch, const FMeshDrawBatch::FI
 	}
 }
 
-void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
+void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches, FGPUTimer* SkeletalTimer)
 {
 	uint32 PreviousTextureCount = 0;
+	bool bInSkeletalRange = false;
 	for (const FMeshDrawBatch& Batch : Batches)
 	{
+		// 스켈레탈 패킷은 섹션마다 별도 배치를 사용한다.
+		const FPrimitiveSceneProxy* Proxy = SkeletalTimer && !Batch.Items.IsEmpty()
+			? Batch.Items[0].Proxy : nullptr;
+		const bool bSkeletal = Proxy && Proxy->IsSkinned();
+		if (bInSkeletalRange && !bSkeletal)
+			SkeletalTimer->EndRange();
+
 		BindBatch(Batch);
 		if (PreviousTextureCount > Batch.Textures.Num())
 			RenderCommand::UnbindShaderResources(static_cast<uint32>(Batch.Textures.Num()),
@@ -92,12 +102,18 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 				EShaderBindFlagBits::Vertex | EShaderBindFlagBits::Pixel);
 		
 		PreviousTextureCount = static_cast<uint32>(Batch.Textures.Num());
+		if (bSkeletal && !bInSkeletalRange)
+			SkeletalTimer->BeginRange();
+		bInSkeletalRange = bSkeletal;
+
 		for (const FMeshDrawBatch::FItem& Item : Batch.Items)
 		{
 			BindObject(Batch, Item);
 			RenderCommand::DrawIndexed(Item.IndexCount, Item.StartIndex);
 		}
 	}
+	if (bInSkeletalRange)
+		SkeletalTimer->EndRange();
 }
 
 void FRenderer::EnsurePerObjectSlotCapacity(uint32 SlotCount)

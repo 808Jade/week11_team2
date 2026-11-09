@@ -28,6 +28,7 @@ struct FCycleStatData
 	uint64 LastCycles = 0;
 	uint64 TotalCycles = 0;
 	uint32 CallCount = 0;
+	uint64 LastSampleFrame = 0;
 
 	uint64 FrameCycles[Duration] = {};
 	uint64 WindowSumCycles = 0;
@@ -67,9 +68,12 @@ class FStatRegistry
 public:
 	static void EndFrame()
 	{
+		++CompletedFrame;
 		for (const auto& [Name, Cycles] : PendingStatCycles)
 		{
-			Stats[Name].PushFrame(Cycles);
+			FCycleStatData& Data = Stats[Name];
+			Data.PushFrame(Cycles);
+			Data.LastSampleFrame = CompletedFrame;
 		}
 		PendingStatCycles.Reset();
 	}
@@ -90,6 +94,10 @@ public:
 
 	static const FCycleStatData* Find(TStatId StatId) { return Stats.Find(StatId.GetName()); }
 	static const TMap<const char*, FCycleStatData>& GetAll() { return Stats; }
+	static bool WasSampledLastFrame(const FCycleStatData& Data)
+	{
+		return Data.LastSampleFrame != 0 && Data.LastSampleFrame == CompletedFrame;
+	}
 
 	// 끄면 일반 스코프 타이머는 사이클을 읽지도 않는다. 항상 재야 하는 것(피킹 시간)은 SCOPE_CYCLE_COUNTER_ALWAYS로 잰다.
 	static bool IsEnabled() { return bEnabled; }
@@ -97,6 +105,7 @@ public:
 
 private:
 	inline static bool bEnabled = true;
+	inline static uint64 CompletedFrame = 0;
 	inline static TMap<const char*, FCycleStatData> Stats;
 	inline static TMap<const char*, uint64> PendingStatCycles;
 };
