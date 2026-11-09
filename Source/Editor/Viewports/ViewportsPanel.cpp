@@ -7,8 +7,10 @@
 #include "Render/RenderCommand.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <format>
+#include <string_view>
 
 #include "Core/Stats/EditorStats.h"
 
@@ -25,6 +27,7 @@ constexpr float StatOverlayPadding = 6.0f;
 constexpr ImU32 StatOverlayBackgroundColor = IM_COL32(0, 0, 0, 140);
 constexpr ImU32 TitleColor = IM_COL32(255, 210, 60, 255);
 constexpr ImU32 ValueColor = IM_COL32(235, 235, 235, 255);
+constexpr ImU32 DemoStatColor = IM_COL32(130, 224, 255, 255);
 } // namespace
 
 // 네 View의 렌더 타깃을 최소 크기로 초기화한다.
@@ -376,20 +379,48 @@ void FViewportsPanel::DrawStatOverlay(ImDrawList* DrawList, const ImVec2& ViewMi
 		ImU32 Color;
 		FString Values[3];
 	};
+	FSceneRenderData& RenderData = GameViewportClient && Client == GetViewportClient(GameViewportIndex)
+		? GameViewportClient->GetRenderData() : Client->GetRenderData();
+	const FRenderStats& Stats = RenderData.RenderStats;
 	TArray<FProfileStatLine> ProfileLines;
 	if (FStatOverlay::IsEnabled(EStatFlags::Profile)) {
 		ProfileLines.Add({"CPU Profile (ms)", TitleColor, {"Last", "Avg", "Max"}});
 
+		constexpr std::array<std::string_view, 4> OcclusionStatNames = {
+			"GPU Occlusion (Total)", "  Occ Prepare+Occluders", "  Occ Draw", "  Occ Wait GPU"};
+		std::array<const FCycleStatData*, OcclusionStatNames.size()> OcclusionStats{};
+		const auto AddCPUStat = [&ProfileLines](std::string_view Name, const FCycleStatData& Data, ImU32 Color) {
+			ProfileLines.Add({"  " + FString(Name), Color, {
+				std::format("{:.2f}", Data.GetLastMs()),
+				std::format("{:.2f}", Data.GetRecentAverageMs()),
+				std::format("{:.2f}", Data.GetMaxMs())}});
+		};
+
 		for (const auto &[Name, Data] : FStatRegistry::GetAll()) {
 			if (TStatId{Name} == EditorStats::STAT_PickingTime)
 				continue;
+			const std::string_view StatName(Name);
+			const auto OcclusionStat = std::find(OcclusionStatNames.begin(), OcclusionStatNames.end(), StatName);
+			if (OcclusionStat != OcclusionStatNames.end()) {
+				OcclusionStats[OcclusionStat - OcclusionStatNames.begin()] = &Data;
+				continue;
+			}
 
-			FProfileStatLine Line{"  " + FString(Name), ValueColor};
-			Line.Values[0] = std::format("{:.2f}", Data.GetLastMs());
-			Line.Values[1] = std::format("{:.2f}", Data.GetRecentAverageMs());
-			Line.Values[2] = std::format("{:.2f}", Data.GetMaxMs());
-			ProfileLines.Add(Line);
+			const bool bSkinningStat = StatName == "CPU Skinning" || StatName == "Skin Upload" || StatName == "Bone Upload";
+			if (bSkinningStat && !FStatRegistry::WasSampledLastFrame(Data))
+				continue;
+
+			const bool bDemoStat = bSkinningStat || StatName == "CPU Frame (Engine Tick)";
+			AddCPUStat(StatName, Data, bDemoStat ? DemoStatColor : ValueColor);
 		}
+		for (size_t Index = 0; Index < OcclusionStats.size(); ++Index) {
+			if (const FCycleStatData* Data = OcclusionStats[Index])
+				AddCPUStat(OcclusionStatNames[Index], *Data, ValueColor);
+		}
+
+		ProfileLines.Add({"GPU Profile (ms)", TitleColor, {"Last"}});
+		ProfileLines.Add({"  Skeletal Draw", DemoStatColor, {
+			Stats.SkeletalDrawGPUMs >= 0.0f ? std::format("{:.3f}", Stats.SkeletalDrawGPUMs) : "--"}});
 	}
 
 	if (const FCycleStatData *PickingData =
@@ -402,8 +433,6 @@ void FViewportsPanel::DrawStatOverlay(ImDrawList* DrawList, const ImVec2& ViewMi
 		ProfileLines.Add(Line);
 	}
 
-FSceneRenderData& RenderData = Client->GetRenderData();
-const FRenderStats& Stats = RenderData.RenderStats;
 	if (FStatOverlay::IsEnabled(EStatFlags::Light)) {
 		Lines.Add({ "Light", TitleColor });
 		Lines.Add({ std::format("  Total Lights {} ", Stats.DirectionalCount + Stats.PointCount + Stats.SpotCount), ValueColor });
