@@ -4,6 +4,7 @@
 #include "Engine/SkeletalMeshSceneProxy.h"
 #include "Engine/Scene.h"
 #include "Collision/Ray.h"
+#include "UObject/UObjectIterator.h"
 
 #include <cfloat>
 
@@ -11,7 +12,7 @@ namespace
 {
 	TUniquePtr<FSkeletalMeshObject> MakeMeshObject(USkeletalMesh* Mesh)
 	{
-		if (USkinnedMeshComponent::bUseGPUSkinning)
+		if (USkinnedMeshComponent::IsGPUSkinningEnabled())
 		{
 			TUniquePtr<FSkeletalMeshObjectGPUSkin> GPUObject = MakeUnique<FSkeletalMeshObjectGPUSkin>(Mesh);
 			if (GPUObject->IsValid())
@@ -139,6 +140,15 @@ void USkinnedMeshComponent::RecreateMeshObject()
 	MarkRenderStateDirty();
 	OnTransformDirty();
 	bBoneTransformsDirty = true;
+}
+
+void USkinnedMeshComponent::SetUseGPUSkinning(bool bEnabled)
+{
+	if (bUseGPUSkinning == bEnabled) return;
+	bUseGPUSkinning = bEnabled;
+
+	for (TObjectIterator<USkinnedMeshComponent> Component; Component; ++Component)
+		Component->RefreshSkinningMode();
 }
 
 void USkinnedMeshComponent::RefreshSkinningMode()

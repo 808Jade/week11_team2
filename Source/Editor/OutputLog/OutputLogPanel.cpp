@@ -2,6 +2,7 @@
 #include "Editor/OutputLog/OutputLogPanel.h"
 
 #include "Core/StatOverlay.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Render/SceneRenderer.h"
 
 #include "Editor/Settings/SettingsPanel.h"
@@ -33,6 +34,7 @@ bool FOutputLogPanel::Init()
 	Commands.Add("STAT");
 	Commands.Add("CSM");
 	Commands.Add("r.shadow.CacheWholeSceneShadows");
+	Commands.Add("r.SkinningMode");
 
 	HistoryPos = -1;
 	InputBuf[0] = '\0';
@@ -183,12 +185,31 @@ void FOutputLogPanel::ExecCommand(const FString& CommandLine)
 		return;
 	}
 
-	std::istringstream CsmInput(CommandLine);
+	std::istringstream Input(CommandLine);
 	FString Command, Argument, Value, Extra;
-	CsmInput >> Command;
+	Input >> Command;
+
+	if (EqualsIgnoreCase(Command, "r.SkinningMode"))
+	{
+		Input >> Argument;
+		const bool bCPU = EqualsIgnoreCase(Argument, "CPU");
+		const bool bGPU = EqualsIgnoreCase(Argument, "GPU");
+		if ((bCPU || bGPU) && !(Input >> Extra))
+		{
+			USkinnedMeshComponent::SetUseGPUSkinning(bGPU);
+			FLog::Log(ELogVerbosity::Info, "r.SkinningMode = {}", bGPU ? "GPU" : "CPU");
+		}
+		else
+		{
+			FLog::Log(ELogVerbosity::Info, "Usage: r.SkinningMode <CPU|GPU>");
+		}
+		ScrollToBottom = true;
+		return;
+	}
+
 	if (EqualsIgnoreCase(Command, "CSM"))
 	{
-		if ((CsmInput >> Argument >> Value) && !(CsmInput >> Extra))
+		if ((Input >> Argument >> Value) && !(Input >> Extra))
 		{
 			if (EqualsIgnoreCase(Argument, "COUNT"))
 			{
@@ -213,6 +234,9 @@ void FOutputLogPanel::ExecCommand(const FString& CommandLine)
 				}
 			}
 		}
+		FLog::Log(ELogVerbosity::Info, "Usage: CSM Count <1-4> | CSM LogRatio <0.0-1.0>");
+		ScrollToBottom = true;
+		return;
 	}
 
 	if (EqualsIgnoreCase(Command, "r.shadow.CacheWholeSceneShadows"))
@@ -234,9 +258,6 @@ void FOutputLogPanel::ExecCommand(const FString& CommandLine)
 		ScrollToBottom = true;
 		return;
 	}
-	FLog::Log(ELogVerbosity::Info, "Usage: CSM Count <1-4> | CSM LogRatio <0.0-1.0>");
-	ScrollToBottom = true;
-	return;
 
 	if (EqualsIgnoreCase(CommandLine, "CLEAR"))
 	{
@@ -251,6 +272,7 @@ void FOutputLogPanel::ExecCommand(const FString& CommandLine)
 		OnLog(ELogVerbosity::Info, "- CSM Count <1-4>");
 		OnLog(ELogVerbosity::Info, "- CSM LogRatio <0.0-1.0>");
 		OnLog(ELogVerbosity::Info, "- r.shadow.CacheWholeSceneShadows");
+		OnLog(ELogVerbosity::Info, "- r.SkinningMode <CPU|GPU>");
 	}
 	else if (EqualsIgnoreCase(CommandLine, "HISTORY"))
 	{
