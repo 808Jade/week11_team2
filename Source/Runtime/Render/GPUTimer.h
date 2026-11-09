@@ -1,52 +1,100 @@
 #pragma once
 
 #include "Render/RenderDevice.h"
+#include <utility>
+#include <vector>
 
-// D3D11 타임스탬프 쿼리로 GPU가 한 구간을 실행하는 데 걸린 시간을 잰다.
-// GPU는 CPU가 명령을 넣은 뒤에야 그 구간을 실행하므로 결과가 바로 나오지 않는다.
-// 슬롯을 여러 개 돌려 쓰고, 슬롯을 다시 쓸 차례가 왔을 때 기다리지 않고 지난 결과를 읽는다.
-// 그래서 GetLastMs()는 몇 프레임 전 값이다. 프레임마다 튀는 값이 아니라 평균을 보는 용도.
+// 뷰의 한 패스에서 찍은 구간들을 합산한다. 결과는 GPU가 끝낸 이전 프레임 값이다.
 class FGPUTimer
 {
 public:
 	void Begin()
 	{
-		ID3D11DeviceContext* Context = GetContext();
-		if (!Context || !EnsureQueries()) return;
-
-		FSlot& Slot = Slots[Current];
-		if (Slot.bPending) Resolve(Context, Slot);
-
-		Context->Begin(Slot.Disjoint.Get());
-		Context->End(Slot.Start.Get());
-		bMeasuring = true;
+		BeginFrame();
+		BeginRange();
 	}
 
 	void End()
 	{
+		EndRange();
+		EndFrame();
+	}
+
+	void BeginFrame()
+	{
+		ID3D11DeviceContext* Context = GetContext();
+		if (!Context || !EnsureQueries()) return;
+
+		FSlot& Slot = Slots[Current];
+		if (Slot.bPending && !Resolve(Context, Slot)) return;
+
+		Slot.RangeCount = 0;
+		Slot.bValid = true;
+		Context->Begin(Slot.Disjoint.Get());
+		bMeasuring = true;
+	}
+
+	void BeginRange()
+	{
+		if (!bMeasuring) return;
+		FSlot& Slot = Slots[Current];
+		if (!Slot.bValid) return;
+
+		if (Slot.RangeCount == Slot.Ranges.size())
+		{
+			const D3D11_QUERY_DESC Desc{ D3D11_QUERY_TIMESTAMP, 0 };
+			ID3D11Device* Device = FRenderDevice::Get()->GetDevice();
+			FRange Range;
+			if (FAILED(Device->CreateQuery(&Desc, Range.Start.GetAddressOf())) ||
+				FAILED(Device->CreateQuery(&Desc, Range.Stop.GetAddressOf())))
+			{
+				Slot.bValid = false;
+				return;
+			}
+			Slot.Ranges.push_back(std::move(Range));
+		}
+		GetContext()->End(Slot.Ranges[Slot.RangeCount].Start.Get());
+	}
+
+	void EndRange()
+	{
+		if (!bMeasuring) return;
+		FSlot& Slot = Slots[Current];
+		if (!Slot.bValid) return;
+
+		GetContext()->End(Slot.Ranges[Slot.RangeCount].Stop.Get());
+		++Slot.RangeCount;
+	}
+
+	void EndFrame()
+	{
 		if (!bMeasuring) return;
 		bMeasuring = false;
 
-		ID3D11DeviceContext* Context = GetContext();
-		if (!Context) return;
-
 		FSlot& Slot = Slots[Current];
-		Context->End(Slot.Stop.Get());
-		Context->End(Slot.Disjoint.Get());
+		GetContext()->End(Slot.Disjoint.Get());
 		Slot.bPending = true;
 		Current = (Current + 1) % SlotCount;
 	}
 
 	float GetLastMs() const { return LastMs; }
+	bool HasSample() const { return bHasSample; }
 
 private:
 	static constexpr uint32 SlotCount = 4;
 
+	struct FRange
+	{
+		ComPtr<ID3D11Query> Start;
+		ComPtr<ID3D11Query> Stop;
+	};
+
 	struct FSlot
 	{
 		ComPtr<ID3D11Query> Disjoint;
-		ComPtr<ID3D11Query> Start;
-		ComPtr<ID3D11Query> Stop;
+		std::vector<FRange> Ranges;
+		size_t RangeCount = 0;
+		bool bValid = false;
 		bool bPending = false;
 	};
 
@@ -69,44 +117,57 @@ private:
 			return false;
 		}
 
-		const D3D11_QUERY_DESC DisjointDesc{ D3D11_QUERY_TIMESTAMP_DISJOINT, 0 };
-		const D3D11_QUERY_DESC TimestampDesc{ D3D11_QUERY_TIMESTAMP, 0 };
-		bool bSucceeded = true;
+		const D3D11_QUERY_DESC Desc{ D3D11_QUERY_TIMESTAMP_DISJOINT, 0 };
 		for (FSlot& Slot : Slots)
 		{
-			bSucceeded = bSucceeded
-				&& SUCCEEDED(Device->CreateQuery(&DisjointDesc, Slot.Disjoint.GetAddressOf()))
-				&& SUCCEEDED(Device->CreateQuery(&TimestampDesc, Slot.Start.GetAddressOf()))
-				&& SUCCEEDED(Device->CreateQuery(&TimestampDesc, Slot.Stop.GetAddressOf()));
+			if (FAILED(Device->CreateQuery(&Desc, Slot.Disjoint.GetAddressOf())))
+			{
+				bCreateFailed = true;
+				return false;
+			}
 		}
-
-		bCreated = bSucceeded;
-		bCreateFailed = !bSucceeded;
-		return bCreated;
+		bCreated = true;
+		return true;
 	}
 
-	// 아직 GPU가 끝내지 않았으면 기다리지 않고 그냥 버린다. 슬롯이 4개라 보통은 이미 끝나 있다.
-	void Resolve(ID3D11DeviceContext* Context, FSlot& Slot)
+	// 쿼리가 준비되지 않았으면 대기하지 않고 슬롯을 다음 프레임에 다시 확인한다.
+	bool Resolve(ID3D11DeviceContext* Context, FSlot& Slot)
 	{
-		Slot.bPending = false;
-
+		constexpr UINT Flags = D3D11_ASYNC_GETDATA_DONOTFLUSH;
 		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT DisjointData{};
-		UINT64 StartTicks = 0;
-		UINT64 StopTicks = 0;
-		if (Context->GetData(Slot.Disjoint.Get(), &DisjointData, sizeof(DisjointData), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
-		if (Context->GetData(Slot.Start.Get(), &StartTicks, sizeof(StartTicks), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
-		if (Context->GetData(Slot.Stop.Get(), &StopTicks, sizeof(StopTicks), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
+		const HRESULT Result = Context->GetData(Slot.Disjoint.Get(), &DisjointData, sizeof(DisjointData), Flags);
+		if (Result == S_FALSE) return false;
 
-		// Disjoint면 그 사이 GPU 클럭이 바뀌어 타임스탬프를 믿을 수 없다.
-		if (DisjointData.Disjoint || DisjointData.Frequency == 0 || StopTicks < StartTicks) return;
+		Slot.bPending = false;
+		if (Result != S_OK || !Slot.bValid || DisjointData.Disjoint || DisjointData.Frequency == 0)
+			return true;
 
-		LastMs = static_cast<float>(static_cast<double>(StopTicks - StartTicks) * 1000.0 / static_cast<double>(DisjointData.Frequency));
+		UINT64 TotalTicks = 0;
+		for (size_t Index = 0; Index < Slot.RangeCount; ++Index)
+		{
+			const FRange& Range = Slot.Ranges[Index];
+			UINT64 Start = 0;
+			UINT64 Stop = 0;
+			const HRESULT StartResult = Context->GetData(Range.Start.Get(), &Start, sizeof(Start), Flags);
+			const HRESULT StopResult = Context->GetData(Range.Stop.Get(), &Stop, sizeof(Stop), Flags);
+			if (StartResult == S_FALSE || StopResult == S_FALSE)
+			{
+				Slot.bPending = true;
+				return false;
+			}
+			if (StartResult != S_OK || StopResult != S_OK || Stop < Start) return true;
+			TotalTicks += Stop - Start;
+		}
+		LastMs = static_cast<float>(1000.0 * static_cast<double>(TotalTicks) / static_cast<double>(DisjointData.Frequency));
+		bHasSample = true;
+		return true;
 	}
 
 	FSlot Slots[SlotCount];
 	uint32 Current = 0;
 	float LastMs = 0.0f;
 	bool bMeasuring = false;
+	bool bHasSample = false;
 	bool bCreated = false;
 	bool bCreateFailed = false;
 };

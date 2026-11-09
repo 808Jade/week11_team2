@@ -5,11 +5,8 @@
 #include "Camera/CameraComponent.h"
 
 #include "Engine/World.h"
-#include "Engine/Level.h"
 #include "Editor/Viewports/ViewportsPanel.h"
 #include "Editor/Viewports/EditorViewportClient.h"
-
-#include "GameFramework/Actor/SkeletalMeshActor.h"
 
 #include "Input/InputSystem.h"
 
@@ -113,38 +110,6 @@ void FEditorControlsPanel::OnRender()
 		World->SpawnActor(ADecalActor::StaticClass());
 	if (ImGui::Button("Fake Spot"))
 		World->SpawnActor(AFakeSpotLightActor::StaticClass());
-
-	ImGui::Dummy(ImVec2(0.0f, SubsectionGap));
-	ImGui::SeparatorText("Skeletal Mesh");
-	if (ImGui::Button("Test Bone Stick"))
-		World->SpawnActor(ASkeletalMeshActor::StaticClass());
-
-	if (ImGui::Checkbox("GPU Skinning", &USkinnedMeshComponent::bUseGPUSkinning))
-	{
-		for (AActor* Actor : World->GetPersistentLevel()->GetActors())
-		{
-			if (ASkeletalMeshActor* SkelActor = Cast<ASkeletalMeshActor>(Actor))
-				SkelActor->GetSkeletalMeshComponent()->RefreshSkinningMode();
-		}
-	}
-
-	static float Bone1Pitch = 0.0f;
-	if (ImGui::SliderFloat("Bone_1 Pitch", &Bone1Pitch, -90.0f, 90.0f))
-	{
-		for (AActor* Actor : World->GetPersistentLevel()->GetActors())
-		{
-			ASkeletalMeshActor* SkelActor = Cast<ASkeletalMeshActor>(Actor);
-			if (!SkelActor) continue;
-			USkeletalMeshComponent* Comp = SkelActor->GetSkeletalMeshComponent();
-			const int32 Bone = Comp->FindBoneIndex("Bone_1");
-			if (Bone < 0) continue;
-
-			FTransform Local = Comp->GetBoneLocalTransform(Bone);
-			Local.Rotation = FRotator(Bone1Pitch, 0.0f, 0.0f);
-			Comp->SetBoneLocalTransform(Bone, Local);
-			Comp->RefreshBoneTransformsNow();   // 에디터 월드에서 Tick이 안 돌아도 바로 반영
-		}
-	}
 
 	//////////////////////////////////////////////////////
 
