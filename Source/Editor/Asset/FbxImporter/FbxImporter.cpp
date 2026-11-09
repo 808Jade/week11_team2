@@ -132,6 +132,46 @@ FName UnqualifiedBoneName(const FString& Name)
 	return FName(Separator == FString::npos ? Name : Name.substr(Separator + 1));
 }
 
+FName NormalizedBoneName(const FString& Name)
+{
+	FString Result = Name;
+	for (char& C : Result)
+	{
+		if (C >= 'A' && C <= 'Z') C = static_cast<char>(C - 'A' + 'a');
+		else if (C == ':') C = '_';
+	}
+	const auto Separator = Result.find_last_of('_');
+	if (Separator != FString::npos && Separator > 0 && Separator + 1 < Result.size()
+		&& std::all_of(Result.begin() + Separator + 1, Result.end(), [](char C) { return C >= '0' && C <= '9'; }))
+	{
+		Result.resize(Separator);
+	}
+	return FName(Result);
+}
+
+// 일부 FBX(예: Takes 섹션이 없는 Sketchfab 변환본)는 파일에 CurveNode→Layer 연결이 있어도
+// SDK로 읽은 뒤 레이어가 비고, 커브노드는 뼈 속성에만 연결된 채 남는다.
+// 그대로 두면 IsAnimated(Layer)가 모두 false라 애니메이션이 없는 것으로 판단되므로,
+// 대상을 알 수 있는 스택과 레이어가 하나뿐일 때만 다시 넣는다.
+int32 RepairDetachedCurveNodes(FbxScene* Scene)
+{
+	if (Scene->GetSrcObjectCount<FbxAnimStack>() != 1) return 0;
+	FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(0);
+	if (Stack->GetMemberCount<FbxAnimLayer>() != 1) return 0;
+	FbxAnimLayer* Layer = Stack->GetMember<FbxAnimLayer>(0);
+	if (Layer->GetMemberCount<FbxAnimCurveNode>() > 0) return 0;
+
+	int32 Repaired = 0;
+	for (int I = 0; I < Scene->GetSrcObjectCount<FbxAnimCurveNode>(); ++I)
+	{
+		FbxAnimCurveNode* CurveNode = Scene->GetSrcObject<FbxAnimCurveNode>(I);
+		if (CurveNode->GetDstPropertyCount() == 0) continue;
+		Layer->AddMember(CurveNode);
+		++Repaired;
+	}
+	return Repaired;
+}
+
 // 기존 Week11 에셋의 이름은 보존하고, 다른 DCC namespace에서 온 본은 고유한 짧은 이름으로도 찾는다.
 class FTargetBoneNames
 {
@@ -143,6 +183,7 @@ public:
 			const auto& Name = Skeleton.RefBoneInfo[Index].Name;
 			Add(Exact, FName(Name), Index);
 			Add(Unqualified, UnqualifiedBoneName(Name), Index);
+			Add(Normalized, NormalizedBoneName(Name), Index);
 		}
 	}
 
@@ -150,6 +191,8 @@ public:
 	{
 		if (const auto It = Exact.find(FName(Name)); It != Exact.end()) return It->second;
 		if (const auto It = Unqualified.find(UnqualifiedBoneName(Name)); It != Unqualified.end()) return It->second;
+		// 정규화 후 겹치는 이름은 Add()가 INDEX_NONE으로 막아 두므로 어느 뼈인지 모호하면 매칭하지 않는다.
+		if (const auto It = Normalized.find(NormalizedBoneName(Name)); It != Normalized.end()) return It->second;
 		return INDEX_NONE;
 	}
 
@@ -160,7 +203,7 @@ private:
 		const auto [It, bAdded] = Indices.emplace(Name, Index);
 		if (!bAdded) It->second = INDEX_NONE;
 	}
-	FIndices Exact, Unqualified;
+	FIndices Exact, Unqualified, Normalized;
 };
 
 bool Near(const FbxAMatrix& A, const FbxAMatrix& B)
@@ -467,15 +510,19 @@ void FImport::Gather(FbxNode* Node, bool ParentVisible, FbxNode* Group, int LOD)
 void FImport::FindRigs()
 {
 	std::set<FbxNode*> Links;
-	auto MatchesSelectedRoot = [](FbxNode* Node, FName RootName)
+	// Skeleton 속성이 없는 본(예: NodeAttribute 없이 LimbNode만 있는 Sketchfab 변환본)은
+	// 선택한 Skeleton의 루트 이름으로 찾는다. 표기 차이("mixamorig:Hips" vs "mixamorig_Hips_01")도 허용한다.
+	auto MatchesSelectedRoot = [](FbxNode* Node, const FString& RootName)
 	{
-		return (!Node->GetNodeAttribute() || HasAttribute(Node, FbxNodeAttribute::eNull)) &&
-			UnqualifiedBoneName(Node->GetName()) == RootName;
+		if (Node->GetNodeAttribute() && !HasAttribute(Node, FbxNodeAttribute::eNull)) return false;
+		const FString NodeName = Node->GetName();
+		return UnqualifiedBoneName(NodeName) == UnqualifiedBoneName(RootName)
+			|| NormalizedBoneName(NodeName) == NormalizedBoneName(RootName);
 	};
 	const auto SelectedMesh = Options.bImportOnlyAnimations
 		? SelectedSkeletons.end() : SelectedSkeletons.find(Options.SkeletalMeshSkeletonKey);
-	const FName MeshRootName = SelectedMesh == SelectedSkeletons.end()
-		? NAME_None : UnqualifiedBoneName(SelectedMesh->second.RefSkeleton.RefBoneInfo[0].Name);
+	const FString MeshRootName = SelectedMesh == SelectedSkeletons.end()
+		? FString() : SelectedMesh->second.RefSkeleton.RefBoneInfo[0].Name;
 	for (int N = 0; N < Scene->GetNodeCount(); ++N)
 	{
 		FbxNode* Node = Scene->GetNode(N);
@@ -547,7 +594,7 @@ void FImport::FindRigs()
 	if (const auto Selected = SelectedSkeletons.find(Options.AnimationSkeletonKey);
 		(Options.bImportAnimations || Options.bImportOnlyAnimations) && Selected != SelectedSkeletons.end())
 	{
-		const FName RootName = UnqualifiedBoneName(Selected->second.RefSkeleton.RefBoneInfo[0].Name);
+		const FString& RootName = Selected->second.RefSkeleton.RefBoneInfo[0].Name;
 		for (int I = 0; I < Scene->GetNodeCount(); ++I)
 		{
 			FbxNode* Node = Scene->GetNode(I);
@@ -909,6 +956,10 @@ bool FImport::CookAnimations(FRig& Rig)
 	FbxNode* Root = Rig.Bones[SourceRoot];
 	const FbxAMatrix RootParentBind = Bind(Root->GetParent());
 	const FbxAMatrix FrameInverse = bBake ? FbxAMatrix() : RootParentBind.Inverse();
+	// Skeleton 속성이 없는 루트(이름 힌트로 찾은 루트, 예: Sketchfab 변환본의 Hips)의 조상은 뼈대가 아닌 컨테이너다.
+	// 그 변환(스케일 0.01, 축 회전 등)을 다른 파일의 Skeleton 루트 트랙에 구우면 메시가 축소·이동되므로 부모 기준 로컬만 쓴다.
+	const bool bRootRelativeToParent = !Root->GetNodeAttribute() && Root->GetParent()
+		&& SkeletonKey != Rig.MeshSkeletonKey;
 
 	std::map<FString, int32> Occurrences;
 	for (int StackIndex = 0; StackIndex < Scene->GetSrcObjectCount<FbxAnimStack>(); ++StackIndex)
@@ -939,7 +990,11 @@ bool FImport::CookAnimations(FRig& Rig)
 		const FString Context = StackName + " [" + NodePath(Rig.Root) + "]";
 		if (bSkippedUnmatched)
 			Warn("Animation tracks outside the matched Skeleton are ignored: " + Context);
-		if (TrackIndices.empty()) continue;
+		if (TrackIndices.empty())
+		{
+			Warn("Animation skipped " + Context + ": no keyed transform track on the matched bones");
+			continue;
+		}
 		// Ancestor motion affects the root in the same imported frame as its bind pose.
 		FAnimatedTime Ancestors;
 		for (FbxNode* Node = Root->GetParent(); Node; Node = Node->GetParent())
@@ -979,7 +1034,7 @@ bool FImport::CookAnimations(FRig& Rig)
 				const int32 SourceIndex = TrackIndices[Track];
 				FbxNode* Node = Rig.Bones[SourceIndex];
 				const FbxAMatrix Global = Node->EvaluateGlobalTransform(Time);
-				const FbxAMatrix Local = SourceIndex == SourceRoot ? FrameInverse * Global
+				const FbxAMatrix Local = SourceIndex == SourceRoot && !bRootRelativeToParent ? FrameInverse * Global
 					: Node->GetParent()->EvaluateGlobalTransform(Time).Inverse() * Global;
 				if (!FiniteMatrix(EngineMatrix(Local, UnitScale)))
 				{
@@ -1569,8 +1624,18 @@ bool FImport::Run()
 	for (const auto& [Key, Group] : Groups) if (!CookMesh(Group)) return false;
 	if (bImportAnimations)
 	{
+		if (Rigs.empty())
+			Warn("No skeleton joint or node matching the selected Skeleton root was found");
 		for (auto& [Path, Rig] : Rigs)
-			if (Rig.bHasTransformAnimation && !CookAnimations(Rig)) return false;
+		{
+			if (!Rig.bHasTransformAnimation)
+			{
+				Warn("Animation skipped for rig without animated transforms [" + Path + "], " +
+					std::to_string(Rig.Needed.size()) + " node(s)");
+				continue;
+			}
+			if (!CookAnimations(Rig)) return false;
+		}
 	}
 	if (MeshSkeleton && MeshSkeleton->RefSkeleton.GetNum() != OriginalMeshBoneCount)
 	{
@@ -1623,6 +1688,8 @@ bool FFbxImporter::Cook(const FString& SourcePath, const FFbxImportOptions& Opti
 		Parser->SetEmbeddingExtractionFolder(CanonicalExtraction.c_str());
 		FbxScene* Scene = FbxScene::Create(Manager.get(), "Import");
 		if (!Parser->Import(Scene)) { Error = Parser->GetStatus().GetErrorString(); return false; }
+		if (const int32 Repaired = RepairDetachedCurveNodes(Scene))
+			Warnings.Add("Reattached " + std::to_string(Repaired) + " animation curve nodes missing from the layer");
 		bool Blender = false;
 		if (auto* Info = Scene->GetSceneInfo()) Blender = Lower(Info->Original_ApplicationName.Get().Buffer()).find("blender") != FString::npos;
 		const double UnitScale = Scene->GetGlobalSettings().GetSystemUnit().GetScaleFactor() / 100.;
