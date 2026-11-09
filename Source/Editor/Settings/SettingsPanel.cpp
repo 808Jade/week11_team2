@@ -8,6 +8,7 @@
 #include "Editor/Viewports/ViewportsPanel.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "GameFramework/DefaultPawn.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
 
@@ -75,6 +76,10 @@ void FSettingsPanel::OnRender()
 	ImGui::SetNextItemWidth(200.0f);
 	if (ImGui::Combo("Rendering Path", &RenderingPathIndex, RenderingPaths, IM_ARRAYSIZE(RenderingPaths)))
 		Settings.RenderingPath = static_cast<ERenderingPath>(RenderingPathIndex);
+
+	bool bUseGPUSkinning = USkinnedMeshComponent::IsGPUSkinningEnabled();
+	if (ImGui::Checkbox("GPU Skinning", &bUseGPUSkinning))
+		USkinnedMeshComponent::SetUseGPUSkinning(bUseGPUSkinning);
 
 	ImGui::SetNextItemWidth(200.0f);
 	if (ImGui::BeginCombo("Shading Model Override", GetShadingModelOverrideName(Settings.ShadingModelOverride)))
