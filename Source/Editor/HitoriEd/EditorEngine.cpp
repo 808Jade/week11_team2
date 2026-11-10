@@ -1,6 +1,10 @@
 #include "EnginePCH.h"
 
 #include "Editor/HitoriEd/EditorEngine.h"
+#include "Asset/FbxImporter/FbxAssetLoader.h"
+#include "Asset/FbxImporter/FbxPath.h"
+#include "Editor/Asset/FbxImporter/FbxImporter.h"
+#include <shellapi.h>
 
 #include "Core/EngineStatics.h"
 #include "Core/EngineTimer.h"
@@ -334,8 +338,103 @@ bool UEditorEngine::Init()
 
 // 프레임 시작·View 상태·월드 갱신 후 View별 오프스크린 렌더와 UI 합성을 진행한다.
 // 입력·창 메시지는 FEngineLoop가 먼저 처리하고 Present는 호출 직후에 한다.
+namespace
+{
+	// 명령줄 일괄 애니메이션 임포트. 폴더의 .fbx를 전부 지정한 Skeleton으로 리타깃 임포트하고 에디터를 끝냅니다.
+	//   HitoriEditor.exe -ImportAnimFolder "Assets/Models/TekkenAnim" -AnimSkeleton "Imported/Devil Jin/SKEL_Devil Jin_Root ground 2.fbxbin" [-ImportLog "path.txt"]
+	// 에디터 Import FBX 창에서 Import Only Animations + Skeleton + Retarget (Humanoid)를 고른 것과 같습니다. 출력 폴더도 같은 기본값(Assets/Imported/<FBX 이름>)입니다.
+	// 반환값: 명령줄에 요청이 있었으면 true (처리 후 에디터를 닫음)
+	bool RunCommandLineAnimationImport()
+	{
+		int Argc = 0;
+		LPWSTR* Argv = CommandLineToArgvW(GetCommandLineW(), &Argc);
+		if (!Argv) return false;
+		auto ToUtf8 = [](const wchar_t* Value)
+		{
+			const std::u8string Utf8 = std::filesystem::path(Value).u8string();
+			return FString(Utf8.begin(), Utf8.end());
+		};
+		FString Folder, SkeletonKey, LogPath;
+		for (int Index = 1; Index + 1 < Argc; ++Index)
+		{
+			if (_wcsicmp(Argv[Index], L"-ImportAnimFolder") == 0) Folder = ToUtf8(Argv[++Index]);
+			else if (_wcsicmp(Argv[Index], L"-AnimSkeleton") == 0) SkeletonKey = ToUtf8(Argv[++Index]);
+			else if (_wcsicmp(Argv[Index], L"-ImportLog") == 0) LogPath = ToUtf8(Argv[++Index]);
+		}
+		LocalFree(Argv);
+		if (Folder.empty()) return false;
+
+		TArray<FString> Lines;
+		auto Report = [&Lines](ELogVerbosity Verbosity, const FString& Line)
+		{
+			FLog::Log(Verbosity, "{}", Line);
+			Lines.Add(Line);
+		};
+
+		std::vector<std::filesystem::path> Sources;
+		std::error_code Ec;
+		for (std::filesystem::directory_iterator It(FbxPath::FromString(Folder), Ec), End; !Ec && It != End; It.increment(Ec))
+		{
+			FString Extension = FbxPath::ToString(It->path().extension());
+			std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+			if (It->is_regular_file() && Extension == ".fbx") Sources.push_back(It->path());
+		}
+		std::sort(Sources.begin(), Sources.end());
+
+		if (SkeletonKey.empty()) Report(ELogVerbosity::Error, "ImportAnimFolder: -AnimSkeleton is required");
+		else if (Ec || Sources.empty()) Report(ELogVerbosity::Error, "ImportAnimFolder: no .fbx files in " + Folder);
+		else
+		{
+			FFbxImportOptions Options;
+			Options.bImportAnimations = true;
+			Options.bImportOnlyAnimations = true;
+			Options.AnimationSkeletonKey = SkeletonKey;
+			Options.bRetargetHumanoid = true;
+
+			int32 Succeeded = 0;
+			for (const std::filesystem::path& Source : Sources)
+			{
+				const FString SourcePath = FbxPath::ToString(Source);
+				const FString Output = FbxPath::DefaultOutputDirectory(SourcePath);
+				const FFbxImportResult Result = FFbxAssetLoader::Import(SourcePath, Options, Output, FFbxImporter::Cook);
+				for (const FString& Warning : Result.Warnings) Report(ELogVerbosity::Warning, "  warning: " + Warning);
+				if (Result.bSuccess)
+				{
+					++Succeeded;
+					Report(ELogVerbosity::Info, "OK   " + SourcePath + " -> " + std::to_string(Result.AssetKeys.Num()) + " asset(s)");
+					for (const FString& Key : Result.AssetKeys) Report(ELogVerbosity::Info, "     " + Key);
+				}
+				else
+				{
+					Report(ELogVerbosity::Error, "FAIL " + SourcePath + ": " + Result.Error);
+				}
+			}
+			Report(ELogVerbosity::Info, "ImportAnimFolder: " + std::to_string(Succeeded) + " / " + std::to_string(Sources.size()) + " succeeded");
+		}
+
+		if (!LogPath.empty())
+		{
+			std::ofstream File(FbxPath::FromString(LogPath), std::ios::binary | std::ios::trunc);
+			for (const FString& Line : Lines) File << Line << '\n';
+		}
+		return true;
+	}
+}
+
 void UEditorEngine::Tick(const float DeltaTime)
 {
+	// 명령줄 일괄 임포트는 엔진·에셋 초기화가 끝난 첫 Tick에 한 번만 처리합니다.
+	static bool bCheckedCommandLine = false;
+	if (!bCheckedCommandLine)
+	{
+		bCheckedCommandLine = true;
+		if (RunCommandLineAnimationImport())
+		{
+			GetEngineLoop().RequestExit();
+			return;
+		}
+	}
+
 	// PIE 창 닫기 요청 처리
 	if (PIEWindow && PIEWindow->ConsumeCloseRequest())
 		RequestEndPlayMap();
