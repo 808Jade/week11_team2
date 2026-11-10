@@ -1,0 +1,25 @@
+{
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Speed",
+            "Min": 0,
+            "Max": 1,
+            "Divisions": 4
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "Imported/X Bot/AS_X Bot_mixamo.com.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "Imported/X Bot/AS_Capoeira_mixamo.com.fbxbin",
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}
