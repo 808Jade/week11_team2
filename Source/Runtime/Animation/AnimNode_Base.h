@@ -1,69 +1,160 @@
 #pragma once
 
-#include "Animation/BoneContainer.h"
-#include "Math/Quat.h"
+#include "Core/Types.h"
+#include "Core/EngineString.h"
+#include <vector>
+#include "Math/Transform.h"
+#include "Containers/Array.h"
 
-struct FAnimNotifyQueue;
+class UAnimInstance;
+struct FAnimNode_Base;
 
-struct FAnimationUpdateContext
-{
-	explicit FAnimationUpdateContext(float InDeltaTime, FAnimNotifyQueue* InNotifyQueue = nullptr)
-		: DeltaTime(InDeltaTime), NotifyQueue(InNotifyQueue) {}
-	float GetDeltaTime() const { return DeltaTime; }
-	// 노드가 이번 Update에 지나간 구간의 Notify를 넣는 곳. nullptr면 Notify를 모으지 않습니다.
-	FAnimNotifyQueue* GetNotifyQueue() const { return NotifyQueue; }
+struct FAnimationUpdateContext {
+public:
 
-private:
-	float DeltaTime;
-	FAnimNotifyQueue* NotifyQueue = nullptr;
-};
+    FAnimationUpdateContext(UAnimInstance& AnimInstance, float DeltaTime, uint64 UpdateCounter);
 
-struct FPoseContext
-{
-	explicit FPoseContext(const FBoneContainer& InRequiredBones)
-		: RequiredBones(InRequiredBones) {}
+public:
 
-	void ResetToRefPose() { RequiredBones.FillWithRefPose(Pose); }
+    FAnimationUpdateContext FractionalWeight(float Multiplier) const;
 
-	const FBoneContainer& RequiredBones;
-	TArray<FTransform> Pose;
-};
+    UAnimInstance& GetAnimInstance() const;
 
-// 한 프레임 동안의 root 이동량. 둘 다 컴포넌트 공간 기준이다.
-struct FRootMotionDelta
-{
-	FVector Translation = FVector(0, 0, 0);
-	FQuat Rotation = FQuat::Identity();
-};
+    float GetDeltaTime() const;
 
-struct FAnimNode_Base
-{
-	virtual ~FAnimNode_Base() = default;
-	virtual void Update(const FAnimationUpdateContext& Context) = 0;
-	virtual void Evaluate(FPoseContext& Output) = 0;
-	// 이번 Update에서 추출한 root 이동량. root 이동이 없는 노드는 이동 0, 단위 회전을 돌려준다.
-	virtual FRootMotionDelta GetRootMotionDelta() const { return {}; }
-};
+    float GetFinalBlendWeight() const;
 
-struct FPoseLink
-{
-	void SetLinkNode(FAnimNode_Base* NewLinkNode) { LinkedNode = NewLinkNode; }
-	FAnimNode_Base* GetLinkNode() const { return LinkedNode; }
-
-	void Update(const FAnimationUpdateContext& Context) const
-	{
-		if (LinkedNode)
-			LinkedNode->Update(Context);
-	}
-
-	void Evaluate(FPoseContext& Output) const
-	{
-		if (LinkedNode)
-			LinkedNode->Evaluate(Output);
-		else
-			Output.ResetToRefPose();
-	}
+    uint64 GetUpdateCounter() const;
 
 private:
-	FAnimNode_Base* LinkedNode = nullptr; // Non-owning. The animation instance owns the nodes.
+
+    UAnimInstance* mAnimInstance{};
+
+    float mDeltaTime{};
+
+    float mWeight{1.0f};
+
+    uint64 mUpdateCounter{};
+};
+
+struct FPoseContext {
+public:
+
+    explicit FPoseContext(UAnimInstance& AnimInstance);
+    FPoseContext(UAnimInstance& AnimInstance, TArray<FTransform>&& ReusablePose);
+
+public:
+
+    UAnimInstance& GetAnimInstance() const;
+
+    void ResetToReferencePose();
+
+public:
+
+    TArray<FTransform> mPose{};
+
+private:
+
+    UAnimInstance* mAnimInstance{};
+};
+
+struct FPoseLink {
+public:
+
+    void Initialize(UAnimInstance& AnimInstance);
+
+    void Update(const FAnimationUpdateContext& Context);
+
+    void Evaluate(FPoseContext& Output);
+
+    float GetDebugWeight(uint64 UpdateCounter) const;
+
+public:
+
+    FAnimNode_Base* mLinkedNode{};
+
+private:
+    uint64 mLastUpdateCounter{};
+    float mLastWeight{};
+};
+
+struct FAnimNodePoseInput {
+public:
+
+    FString mName{};
+
+    FPoseLink* mLink{};
+
+    float mWeight{};
+};
+
+enum class EAnimNodeValueType : uint8 {
+
+    Float,
+
+    Bool,
+
+    Text
+};
+
+struct FAnimNodeValue {
+public:
+
+    FString mName{};
+
+    EAnimNodeValueType mType{EAnimNodeValueType::Text};
+
+    float* mFloat{};
+
+    bool* mBool{};
+
+    FString mText{};
+
+    float mMin{};
+
+    float mMax{};
+
+    FString mBinding{};
+    const char* mBindingParameter{};
+};
+
+struct FAnimNode_Base {
+public:
+    FAnimNode_Base() = default;
+
+    virtual ~FAnimNode_Base() = default;
+
+    FAnimNode_Base(const FAnimNode_Base&) = delete;
+
+    FAnimNode_Base& operator=(const FAnimNode_Base&) = delete;
+
+public:
+
+    virtual void Initialize(UAnimInstance& AnimInstance);
+
+    virtual void Update(const FAnimationUpdateContext& Context);
+
+    virtual void Evaluate(FPoseContext& Output);
+
+    virtual const char* GetNodeType() const = 0;
+
+    virtual void GetPoseInputs(std::vector<FAnimNodePoseInput>& OutInputs);
+
+    virtual void GetDebugValues(std::vector<FAnimNodeValue>& OutValues);
+
+    float GetDebugWeight(uint64 UpdateCounter) const;
+
+    void RecordUpdate(const FAnimationUpdateContext& Context);
+
+public:
+
+    FString mName{};
+
+    int32 mGraphNodeId{-1};
+
+private:
+
+    float mLastWeight{};
+
+    uint64 mLastUpdateCounter{};
 };

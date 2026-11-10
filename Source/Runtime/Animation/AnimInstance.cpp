@@ -1,126 +1,110 @@
 #include "EnginePCH.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimationPoseData.h"
 #include "Animation/AnimNode_Base.h"
+#include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
-#include <utility>
 
-UAnimInstance::~UAnimInstance()
-{
-	if (auto* Component = GetSkelMeshComponent(); Component && Component->AnimScriptInstance == this)
-		Component->AnimScriptInstance = nullptr;
+UAnimInstance::~UAnimInstance() {
+    if (auto* Component{GetSkelMeshComponent()}; Component && Component->AnimScriptInstance == this) {
+        Component->AnimScriptInstance = nullptr;
+    }
 }
 
-USkeletalMeshComponent* UAnimInstance::GetSkelMeshComponent() const
-{
-	return Cast<USkeletalMeshComponent>(GetOuter());
+USkeletalMeshComponent* UAnimInstance::GetSkelMeshComponent() const {
+    return Cast<USkeletalMeshComponent>(GetOuter());
 }
 
-bool UAnimInstance::InitializeAnimation(FString& OutError)
-{
-	const USkeletalMeshComponent* Component = GetSkelMeshComponent();
-	const USkeletalMesh* Mesh = Component ? Component->GetSkeletalMesh() : nullptr;
-	if (!Mesh)
-	{
-		OutError = "Set a skeletal mesh before initializing animation";
-		return false;
-	}
-	if (!RequiredBones.InitializeTo(*Mesh, OutError)) return false;
+bool UAnimInstance::InitializeAnimation(FString& OutError) {
+    const USkeletalMeshComponent* Component{GetSkelMeshComponent()};
+    const USkeletalMesh* Mesh{Component ? Component->GetSkeletalMesh() : nullptr};
+    if (!Mesh) {
+        OutError = "Set a skeletal mesh before initializing animation";
+        return false;
+    }
+    if (!mRequiredBones.InitializeTo(*Mesh, OutError)) {
+        return false;
+    }
 
-	NativeInitializeAnimation();
-	return true;
+    mHasLastOwnerLocation = false;
+    mOwnerVelocity = {};
+    NativeInitializeAnimation();
+
+    if (mRootNode) {
+        mRootNode->Initialize(*this);
+    }
+    return true;
 }
 
-void UAnimInstance::UpdateAnimation(float DeltaSeconds)
-{
-	NativeUpdateAnimation(DeltaSeconds);
-	if (!RootNode) return;
+void UAnimInstance::UpdateAnimation(float DeltaSeconds) {
+    if (const auto* Component{GetSkelMeshComponent()}) {
+        const FVector Location{Component->GetWorldLocation()};
+        if (mHasLastOwnerLocation && DeltaSeconds > 0.0f) {
+            mOwnerVelocity = (Location - mLastOwnerLocation) * (1.0f / DeltaSeconds);
+        }
+        mLastOwnerLocation = Location;
+        mHasLastOwnerLocation = true;
+    }
 
-	FAnimNotifyQueue Queue;
-	RootNode->Update(FAnimationUpdateContext{ DeltaSeconds, &Queue });
-	TriggerAnimNotifies(Queue);
+    NativeUpdateAnimation(DeltaSeconds);
+    ++mUpdateCounter;
+
+    if (mRootNode) {
+        const FAnimationUpdateContext Context{*this, DeltaSeconds, mUpdateCounter};
+        mRootNode->RecordUpdate(Context);
+        mRootNode->Update(Context);
+    }
 }
 
-namespace
-{
-	bool IsSameNotify(const FAnimNotifyQueue::FEntry& A, const FAnimNotifyQueue::FEntry& B)
-	{
-		return A.Sequence == B.Sequence && A.Event == B.Event;
-	}
+bool UAnimInstance::EvaluateAnimation(TArray<FTransform>& OutPose) {
+    if (!mRootNode || !mRequiredBones.IsValid()) {
+        return false;
+    }
+
+    FPoseContext Context{*this, std::move(OutPose)};
+    mRootNode->Evaluate(Context);
+    OutPose = std::move(Context.mPose);
+    return true;
 }
 
-void UAnimInstance::TriggerAnimNotifies(const FAnimNotifyQueue& Queue)
-{
-	// 시간이 흐르지 않았으면(정지·배속 0) NotifyState도 끝냅니다. 활성 State는 재생 중에만 존재합니다.
-	if (!Queue.bTimeAdvanced)
-	{
-		EndAllNotifyStates();
-		return;
-	}
-
-	TArray<FAnimNotifyQueue::FEntry> NewActiveStates;
-	for (const FAnimNotifyQueue::FEntry& Entry : Queue.Entries)
-	{
-		if (!Entry.Event.IsNotifyState())
-		{
-			PendingNotifies.Add(FAnimNotifyDispatch{ Entry.Event, EAnimNotifyEventType::Notify, Entry.Sequence });
-			continue;
-		}
-		// 루프로 구간이 둘로 나뉘면 같은 State가 두 번 들어올 수 있습니다.
-		bool bDuplicate = false;
-		for (const FAnimNotifyQueue::FEntry& Added : NewActiveStates)
-			bDuplicate = bDuplicate || IsSameNotify(Added, Entry);
-		if (!bDuplicate)
-			NewActiveStates.Add(Entry);
-	}
-
-	// 지난 Update에는 있었는데 이번엔 없는 State → End
-	for (const FAnimNotifyQueue::FEntry& Old : ActiveNotifyStates)
-	{
-		bool bStillActive = false;
-		for (const FAnimNotifyQueue::FEntry& New : NewActiveStates)
-			bStillActive = bStillActive || IsSameNotify(Old, New);
-		if (!bStillActive)
-			PendingNotifies.Add(FAnimNotifyDispatch{ Old.Event, EAnimNotifyEventType::StateEnd, Old.Sequence });
-	}
-	// 이번에 새로 들어온 State → Begin, 계속 있는 State → Tick
-	for (const FAnimNotifyQueue::FEntry& New : NewActiveStates)
-	{
-		bool bWasActive = false;
-		for (const FAnimNotifyQueue::FEntry& Old : ActiveNotifyStates)
-			bWasActive = bWasActive || IsSameNotify(Old, New);
-		PendingNotifies.Add(FAnimNotifyDispatch{ New.Event,
-			bWasActive ? EAnimNotifyEventType::StateTick : EAnimNotifyEventType::StateBegin, New.Sequence });
-	}
-
-	ActiveNotifyStates = std::move(NewActiveStates);
+void UAnimInstance::GetReferencePose(TArray<FTransform>& OutPose) const {
+    mRequiredBones.FillWithRefPose(OutPose);
 }
 
-void UAnimInstance::EndAllNotifyStates()
-{
-	for (const FAnimNotifyQueue::FEntry& Old : ActiveNotifyStates)
-		PendingNotifies.Add(FAnimNotifyDispatch{ Old.Event, EAnimNotifyEventType::StateEnd, Old.Sequence });
-	ActiveNotifyStates.Empty();
+void UAnimInstance::EvaluateSequence(const UAnimSequenceBase& Sequence, double Time, TArray<FTransform>& OutPose) const {
+    FAnimationPoseData PoseData{mRequiredBones, OutPose};
+    Sequence.GetAnimationPose(PoseData, FAnimExtractContext{Time});
 }
 
-TArray<FAnimNotifyDispatch> UAnimInstance::TakePendingNotifies()
-{
-	TArray<FAnimNotifyDispatch> Out;
-	Out.Swap(PendingNotifies);
-	return Out;
+FAnimNode_Base* UAnimInstance::GetRootNode() const {
+    return mRootNode;
 }
 
-bool UAnimInstance::EvaluateAnimation(TArray<FTransform>& OutPose)
-{
-	if (!RootNode || !RequiredBones.IsValid()) return false;
-
-	FPoseContext Context(RequiredBones);
-	Context.Pose = std::move(OutPose);
-	RootNode->Evaluate(Context);
-	OutPose = std::move(Context.Pose);
-	return true;
+uint64 UAnimInstance::GetUpdateCounter() const {
+    return mUpdateCounter;
 }
 
-FRootMotionDelta UAnimInstance::GetRootMotionDelta() const
-{
-	return RootNode ? RootNode->GetRootMotionDelta() : FRootMotionDelta{};
+const FVector& UAnimInstance::GetOwnerVelocity() const {
+    return mOwnerVelocity;
+}
+
+void UAnimInstance::GetDebugVariables(std::vector<FAnimNodeValue>&) {
+}
+
+bool UAnimInstance::GetNodeLayout(const FAnimNode_Base*, float&, float&) const {
+    return false;
+}
+
+void UAnimInstance::NativeInitializeAnimation() {
+}
+
+void UAnimInstance::NativeUpdateAnimation(float) {
+}
+
+const FBoneContainer& UAnimInstance::GetRequiredBones() const {
+    return mRequiredBones;
+}
+
+void UAnimInstance::SetRootNode(FAnimNode_Base* RootNode) {
+    mRootNode = RootNode;
 }
