@@ -70,5 +70,5 @@ void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)
 	}
 
 	FAnimationPoseData PoseData{ Output.RequiredBones, Output.Pose };
-	Sequence->GetAnimationPose(PoseData, FAnimExtractContext{ InternalTimeAccumulator });
+	Sequence->GetAnimationPose(PoseData, FAnimExtractContext{ InternalTimeAccumulator, true });
 }

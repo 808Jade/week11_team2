@@ -8,6 +8,7 @@ class USkeleton;
 struct FAnimExtractContext
 {
 	double CurrentTime = 0.0;
+	bool bExtractRootMotion = false;
 };
 
 UCLASS()

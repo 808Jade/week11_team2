@@ -120,6 +120,14 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 		Bone.Scale = Raw.ScaleKeys.Num() == 1 ? Raw.ScaleKeys[0]
 			: FMath::Lerp(Raw.ScaleKeys[First], Raw.ScaleKeys[Second], Alpha);
 	}
+
+	if (ExtractionContext.bExtractRootMotion)
+	{
+		// root 이동은 Actor로 넘기므로, Pose 안의 root는 첫 프레임 위치에 고정한다
+		const int32 RootIndex = OutPoseData.RequiredBones.GetMeshPoseIndexFromSkeletonPoseIndex(0);
+		if (RootIndex != INDEX_NONE)
+			OutPoseData.Pose[RootIndex].Location = GetRootLocationAtTime(0.0);
+	}
 }
 
 FVector UAnimSequence::GetRootLocationAtTime(double Time) const
