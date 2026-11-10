@@ -226,6 +226,7 @@ private:
 	void CreatePIESession();
 	void StopPIESession();
 	void DrawPIEWindows();
+	class USkeletalMeshComponent* FindAnimGraphDebugTarget() const;
 
 
 	void UpdateInputOwner();

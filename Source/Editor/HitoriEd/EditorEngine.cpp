@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Components/SkeletalMeshComponent.h"
 
 #include "Editor/HitoriEd/EditorEngine.h"
 #include "Asset/FbxImporter/FbxAssetLoader.h"
@@ -181,6 +182,7 @@ bool UEditorEngine::Init()
 	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { UIEditorPanel->OpenAsset(Path); });
 
 	// StaticMesh / SkeletalMesh Viewer 열기
+	DetailsPanel->SetOpenAnimGraphDebugCallback([this] { EditorManager->OpenAnimGraphDebug(); });
 	ContentDrawerPanel->SetOpenMeshCallback([this](const FString& Path) { EditorManager->OpenEditor(Path); });
 
 	Outline = MakeUnique<FOutline>();
@@ -1415,12 +1417,46 @@ void UEditorEngine::PresentFrame()
 
 		ImGuiRenderer->Begin();
 
-		EditorManager->DrawEditorUI();
+		EditorManager->DrawEditorUI(FindAnimGraphDebugTarget(), PlayWorld != nullptr);
 
 		ImGuiRenderer->End();
 	}
 
 	RenderCommand::EndRenderPass();
+}
+
+USkeletalMeshComponent* UEditorEngine::FindAnimGraphDebugTarget() const {
+    auto* Component{DetailsPanel ? Cast<USkeletalMeshComponent>(DetailsPanel->GetSelectedComponent()) : nullptr};
+    const auto* Selected{Component ? Component->GetOwner() : OutlinerPanel ? OutlinerPanel->GetSelectedActor() : nullptr};
+    if (!Selected) {
+        return nullptr;
+    }
+
+    if (!Component) {
+        for (auto* Candidate : Selected->GetComponents()) {
+            if (auto* Mesh{Cast<USkeletalMeshComponent>(Candidate)}) {
+                Component = Mesh;
+                break;
+            }
+        }
+    }
+    if (!PlayWorld || Selected->GetWorld() == PlayWorld || !Component) {
+        return Component;
+    }
+
+    for (const auto* Level : PlayWorld->GetLevels()) {
+        for (const auto* Actor : Level->GetActors()) {
+            if (!Actor || Actor->GetFName() != Selected->GetFName()) {
+                continue;
+            }
+            for (auto* Candidate : Actor->GetComponents()) {
+                if (Candidate && Candidate->GetFName() == Component->GetFName()) {
+                    return Cast<USkeletalMeshComponent>(Candidate);
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 void UEditorEngine::DrawPIEWindows()

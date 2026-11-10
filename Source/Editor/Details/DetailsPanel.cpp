@@ -1761,6 +1761,14 @@ FDetailsPanel::~FDetailsPanel()
 	//delete transform;
 }
 
+UActorComponent* FDetailsPanel::GetSelectedComponent() const {
+    return TargetComponent;
+}
+
+void FDetailsPanel::SetOpenAnimGraphDebugCallback(std::function<void()> Callback) {
+    mOpenAnimGraphDebug = std::move(Callback);
+}
+
 void FDetailsPanel::DrawAnimGraphSlot(USkeletalMeshComponent* Component) {
     FString Path{Component->GetAnimGraph()};
     if (DrawAnimationAssetPicker("Anim Graph", Path, EAssetType::AnimGraph)) {
@@ -1768,5 +1776,8 @@ void FDetailsPanel::DrawAnimGraphSlot(USkeletalMeshComponent* Component) {
     }
     if (!mAnimGraphError.empty()) {
         ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", mAnimGraphError.c_str());
+    }
+    if (mOpenAnimGraphDebug && ImGui::Button("Anim Graph Debug")) {
+        mOpenAnimGraphDebug();
     }
 }

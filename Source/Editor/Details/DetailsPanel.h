@@ -39,6 +39,8 @@ public:
 
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	const ULightComponent* GetSelectedLight() const;
+	UActorComponent* GetSelectedComponent() const;
+	void SetOpenAnimGraphDebugCallback(std::function<void()> Callback);
 	void SetShadowPreviewQuery(FShadowPreviewQuery InQuery) { QueryShadowPreview = std::move(InQuery); }
 	void SetImGuiRenderer(FImGuiRenderer* InRenderer) { ImGuiRenderer = InRenderer; }
 
@@ -48,6 +50,7 @@ private:
 	void DrawShadowPreview();
 	void DrawAnimGraphSlot(class USkeletalMeshComponent* Component);
 	FShadowPreviewQuery QueryShadowPreview;
+	std::function<void()> mOpenAnimGraphDebug{};
 	FString mAnimGraphError{};
 	FImGuiRenderer* ImGuiRenderer = nullptr;
 	float ShadowPreviewContrast = 32.0f;

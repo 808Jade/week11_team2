@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Editor/AssetEditor/EditorManager.h"
 #include "Editor/AnimationEditor/FAnimGraphEditor.h"
+#include "Editor/AnimationEditor/FAnimGraphPanel.h"
 #include "Editor/AnimationEditor/FBlendSpaceEditor.h"
 #include "Asset/FbxImporter/FbxPath.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
@@ -239,6 +240,7 @@ void FEditorManager::Shutdown()
 	}
 
 	bShuttingDown = true;
+	mAnimGraphPanel.reset();
 	mAnimGraphEditor.reset();
 	mBlendSpaceEditor.reset();
 	
@@ -254,7 +256,7 @@ void FEditorManager::Shutdown()
 	LevelEditorTab.reset();
 }
 
-void FEditorManager::DrawEditorUI() {
+void FEditorManager::DrawEditorUI(USkeletalMeshComponent* DebugTarget, bool Playing) {
     TabContainer.OnRender();
     if (mAnimGraphEditor) {
         mAnimGraphEditor->Draw();
@@ -262,4 +264,14 @@ void FEditorManager::DrawEditorUI() {
     if (mBlendSpaceEditor) {
         mBlendSpaceEditor->Draw();
     }
+    if (mAnimGraphPanel && mAnimGraphDebugOpen) {
+        mAnimGraphPanel->Draw(DebugTarget, Playing, mAnimGraphDebugOpen);
+    }
+}
+
+void FEditorManager::OpenAnimGraphDebug() {
+    if (!mAnimGraphPanel) {
+        mAnimGraphPanel = MakeUnique<FAnimGraphPanel>();
+    }
+    mAnimGraphDebugOpen = true;
 }

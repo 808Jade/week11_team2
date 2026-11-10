@@ -6,7 +6,9 @@
 #include "Editor/LevelEditor/LevelEditorTab.h"
 
 class FAnimGraphEditor;
+class FAnimGraphPanel;
 class FBlendSpaceEditor;
+class USkeletalMeshComponent;
 
 class FEditorManager
 {
@@ -41,7 +43,8 @@ public:
 	IEditorTab* GetFocusedTab() const { return TabContainer.GetFocusedTab(); }
 
 	// 에디터 탭과 패널 UI를 그립니다.
-	void DrawEditorUI();
+	void DrawEditorUI(USkeletalMeshComponent* DebugTarget, bool Playing);
+	void OpenAnimGraphDebug();
 
 	FLevelEditorTab& GetLevelEditorTab() { return *LevelEditorTab; }
 
@@ -62,4 +65,6 @@ private:
 	bool bShuttingDown = false;
 	TUniquePtr<FAnimGraphEditor> mAnimGraphEditor{};
 	TUniquePtr<FBlendSpaceEditor> mBlendSpaceEditor{};
+	TUniquePtr<FAnimGraphPanel> mAnimGraphPanel{};
+	bool mAnimGraphDebugOpen{};
 };
