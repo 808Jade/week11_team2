@@ -29,7 +29,13 @@ namespace
 
 		auto IsNumber = [](const FString& S) { return !S.empty() && std::all_of(S.begin(), S.end(), [](char C) { return C >= '0' && C <= '9'; }); };
 		// 끝 번호(중복 이름 접미사, "spine_01")는 지운다. 단독 토큰이면 남긴다.
-		if (Tokens.Num() > 1 && IsNumber(Tokens.Last())) Tokens.Pop();
+		// 철권 규칙은 끝 번호가 본을 구분하므로("Arm left shoulder 1/2") 아래 별칭 비교용으로 남겨 둔다.
+		FString TrailingNumber;
+		if (Tokens.Num() > 1 && IsNumber(Tokens.Last()))
+		{
+			TrailingNumber = Tokens.Last();
+			Tokens.Pop();
+		}
 
 		FString Side, Part;
 		for (FString& T : Tokens)
@@ -47,6 +53,31 @@ namespace
 				Side = Prefix;
 				Part.erase(0, strlen(Prefix));
 			}
+
+		// 철권 모델(Devil Jin 등) 규칙: "Root hips", "Spine lower", "Arm left shoulder 2", "Leg left knee", "Arm left finger index a"
+		//   어깨 1 = 쇄골, 어깨 2 = 위팔, 손가락 a/b/c = 1/2/3 마디.
+		//   "Pelvis"는 다리의 부모일 뿐이고 실제 Hips는 "Root hips"다. 둘 다 "hips"가 되지만 겹치는 이름은 이름 대응에서 빠지고,
+		//   BuildLayout은 먼저 나오는 "Root hips"를 Hips로 고른다. Pelvis는 기준 자세 그대로 Root hips를 따라간다.
+		static const std::unordered_map<FString, FString> TekkenAliases{
+			{ "roothips", "hips" },
+			{ "spinelower", "spine" }, { "spineupper", "spine2" },
+			{ "headnecklower", "neck" }, { "headneckupper", "head" },
+			{ "armshoulder1", "shoulder" }, { "armshoulder2", "arm" },
+			{ "armelbow", "forearm" }, { "armwrist", "hand" },
+			{ "legthigh", "upleg" }, { "legknee", "leg" }, { "legankle", "foot" }, { "legtoe", "toebase" },
+			// 머리 방향을 맞출 기준점(Mixamo "LeftEye", "HeadTop_End")
+			{ "headeyeball", "eye" }, { "unusedathheadtop", "headtopend" },
+		};
+		if (const auto It = TekkenAliases.find(Part + TrailingNumber); It != TekkenAliases.end())
+			return Side + It->second;
+		// "armfingerindexa" → "handindex1" (Mixamo "LeftHandIndex1")
+		if (Part.starts_with("armfinger") && Part.size() > 10 && TrailingNumber.empty())
+		{
+			const char Joint = Part.back();
+			const FString Finger = Part.substr(9, Part.size() - 10);
+			if (Joint >= 'a' && Joint <= 'c' && (Finger == "thumb" || Finger == "index" || Finger == "middle" || Finger == "ring" || Finger == "pinky"))
+				return Side + "hand" + Finger + static_cast<char>('1' + (Joint - 'a'));
+		}
 
 		static const std::unordered_map<FString, FString> Aliases{
 			{ "pelvis", "hips" }, { "hip", "hips" }, { "head1", "head" },
@@ -210,6 +241,60 @@ namespace
 		return Layout;
 	}
 
+	// 손가락 마디 키인지 본다. 예: "lefthandindex3", "righthandthumb2"
+	bool IsFingerKey(const FString& Key)
+	{
+		const size_t Hand = Key.find("hand");
+		return Hand != FString::npos && Key.size() > Hand + 5 && Key.back() >= '1' && Key.back() <= '9'
+			&& (Key.find("thumb") != FString::npos || Key.find("index") != FString::npos || Key.find("middle") != FString::npos
+				|| Key.find("ring") != FString::npos || Key.find("pinky") != FString::npos);
+	}
+
+	// 같은 본에서 본 기준점(매핑된 하위 본) 방향. Target은 타깃 기준 자세, Source는 소스 기준 자세를 타깃 캐릭터 축으로 옮긴 값이다.
+	struct FLandmark
+	{
+		FVector Target;
+		FVector Source;
+	};
+
+	// 기준점들로 타깃 본 방향을 소스 본 방향으로 돌리는 회전(row-vector: TargetDir × Out = SourceDir)을 구한다.
+	// 기준점이 둘 이상이면 비틀림까지 맞춘다. 손목(손가락 첫 마디들)이나 머리(눈·머리끝)처럼 자식이 여럿인 본에 쓴다.
+	bool LandmarkRotation(const TArray<FLandmark>& Landmarks, FMatrix& Out)
+	{
+		FVector TargetSum, SourceSum;
+		for (const FLandmark& L : Landmarks)
+		{
+			TargetSum = TargetSum + L.Target;
+			SourceSum = SourceSum + L.Source;
+		}
+		if (TargetSum.Length() < 1.e-4f || SourceSum.Length() < 1.e-4f) return false;
+		const FVector TargetMain = TargetSum.Normalized();
+		const FVector SourceMain = SourceSum.Normalized();
+
+		// 두 번째 축: 주 방향에 가장 수직으로 벌어진 기준점 쌍(손이면 검지↔새끼, 머리면 왼눈↔오른눈). 같은 쌍을 양쪽에 쓴다.
+		float Best = 1.e-3f;
+		FVector TargetSide, SourceSide;
+		for (int32 I = 0; I < Landmarks.Num(); ++I)
+			for (int32 J = I + 1; J < Landmarks.Num(); ++J)
+			{
+				const FVector Delta = Landmarks[I].Target - Landmarks[J].Target;
+				const float Perpendicular = (Delta - TargetMain * Delta.Dot(TargetMain)).Length();
+				if (Perpendicular <= Best) continue;
+				Best = Perpendicular;
+				TargetSide = Delta;
+				SourceSide = Landmarks[I].Source - Landmarks[J].Source;
+			}
+
+		FMatrix TargetFrame, SourceFrame;
+		if (Best > 1.e-3f && CharacterFrame(TargetMain, TargetSide, TargetFrame) && CharacterFrame(SourceMain, SourceSide, SourceFrame))
+		{
+			Out = TargetFrame.GetTransposed() * SourceFrame;
+			return true;
+		}
+		Out = RotationBetween(TargetMain, SourceMain); // 기준점이 하나이거나 한 줄이면 방향만 맞춘다.
+		return true;
+	}
+
 	// 길이가 다른 두 체인을 비율로 대응시킨다. 예: 소스 Spine~Spine3(4개) → 타깃 Spine~Spine2(3개)
 	void MapChain(const TArray<int32>& SourceChain, const TArray<int32>& TargetChain, TArray<int32>& TargetToSource)
 	{
@@ -328,24 +413,86 @@ bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const F
 		return Count == 1 ? Found : static_cast<int32>(INDEX_NONE);
 	};
 
-	RotationOffset.SetNum(InTarget.GetNum());
-	TargetRefLocalRot.SetNum(InTarget.GetNum());
+	const int32 NumTarget = InTarget.GetNum();
+	auto TargetPos = [&](int32 Bone) { return Origin(TargetRefWorld[Bone]); };
+	auto SourcePos = [&](int32 Bone) { return Origin(SourceRefWorld[Bone]); };
+
+	// 가장 가까운 매핑된 조상. 손목 → Hand base(매핑 안 됨) → 손가락처럼 중간에 매핑 안 된 본이 있어도 이어 준다.
+	// 그 조상에서 본 매핑된 하위 본 방향을 기준점으로 모은다.
+	TArray<int32> MappedAncestor;
+	MappedAncestor.SetNum(NumTarget);
+	TArray<TArray<FLandmark>> Landmarks;
+	Landmarks.SetNum(NumTarget);
+	for (int32 T = 0; T < NumTarget; ++T)
+	{
+		const int32 Parent = InTarget.RefBoneInfo[T].ParentIndex;
+		MappedAncestor[T] = Parent == INDEX_NONE ? INDEX_NONE
+			: TargetToSource[Parent] != INDEX_NONE ? Parent : MappedAncestor[Parent];
+		const int32 A = MappedAncestor[T];
+		if (A == INDEX_NONE || TargetToSource[T] == INDEX_NONE) continue;
+		const int32 SA = TargetToSource[A], ST = TargetToSource[T];
+		if (ST == SA || !IsSourceDescendant(ST, SA)) continue;
+		const FVector TargetDir = TargetPos(T) - TargetPos(A);
+		const FVector SourceDir = RotateRow(SourcePos(ST) - SourcePos(SA), Align);
+		if (TargetDir.Length() > 1.e-4f && SourceDir.Length() > 1.e-4f)
+			Landmarks[A].Add({ TargetDir, SourceDir });
+	}
+	TArray<int32> SourceChildCount, SourceChild;
+	SourceChildCount.SetNum(InSource.GetNum());
+	SourceChild.SetNum(InSource.GetNum());
+	std::fill(SourceChildCount.begin(), SourceChildCount.end(), 0);
+	for (int32 I = 0; I < InSource.GetNum(); ++I)
+		if (const int32 Parent = InSource.RefBoneInfo[I].ParentIndex; Parent != INDEX_NONE)
+		{
+			++SourceChildCount[Parent];
+			SourceChild[Parent] = I;
+		}
+
+	RotationOffset.SetNum(NumTarget);
+	TargetRefLocalRot.SetNum(NumTarget);
 	DrivenTargetBones.Empty();
-	for (int32 T = 0; T < InTarget.GetNum(); ++T)
+	TArray<FMatrix> Corrections;
+	Corrections.SetNum(NumTarget);
+	for (int32 T = 0; T < NumTarget; ++T)
 	{
 		TargetRefLocalRot[T] = RotationMatrix(InTarget.RefBonePose[T]);
+		Corrections[T] = FMatrix::Identity;
 		const int32 S = TargetToSource[T];
 		if (S == INDEX_NONE) continue;
 
+		// 소스 기준 자세가 T-포즈가 아닐 수 있다. 스킨 없는 Mixamo 애니메이션 FBX는 BindPose가 없어 0프레임 자세가 기준이 된다.
+		// 그래서 타깃 기준 자세를 본마다 소스 기준 자세 쪽으로 돌려 둔다.
+		//   a) 자식 하나를 조준한다(팔·다리·척추).
+		//   b) 자식이 여럿이거나 매핑 안 된 중간 본을 건너야 하면 매핑된 하위 본들로 비틀림까지 맞춘다(손목→손가락 첫 마디, 머리→눈·머리끝).
+		//   c) 기준점이 없으면 부모 보정을 물려받는다(눈, 손가락 끝마디). 손가락 끝마디는 소스 끝마디의 굽힘을 더한다.
+		//   보정이 없으면 그 본만 T-포즈 방향에 남아 주먹이 펴지거나 머리가 엉뚱한 곳을 본다.
 		FMatrix Correction = FMatrix::Identity;
-		if (const int32 C = T == TargetHips ? INDEX_NONE : AimChild(T); C != INDEX_NONE)
+		bool bCorrected = T == TargetHips;
+		if (const int32 C = bCorrected ? INDEX_NONE : AimChild(T); C != INDEX_NONE)
 		{
 			const int32 SC = TargetToSource[C];
-			const FVector TargetDir = Origin(TargetRefWorld[C]) - Origin(TargetRefWorld[T]);
-			const FVector SourceDir = RotateRow(Origin(SourceRefWorld[SC]) - Origin(SourceRefWorld[S]), Align);
+			const FVector TargetDir = TargetPos(C) - TargetPos(T);
+			const FVector SourceDir = RotateRow(SourcePos(SC) - SourcePos(S), Align);
 			if (TargetDir.Length() > 1.e-4f && SourceDir.Length() > 1.e-4f)
 				Correction = RotationBetween(TargetDir.Normalized(), SourceDir.Normalized());
+			bCorrected = true;
 		}
+		if (!bCorrected && !Landmarks[T].IsEmpty())
+			bCorrected = LandmarkRotation(Landmarks[T], Correction);
+		if (!bCorrected && MappedAncestor[T] != INDEX_NONE)
+		{
+			Correction = Corrections[MappedAncestor[T]];
+			const int32 Parent = InTarget.RefBoneInfo[T].ParentIndex;
+			if (IsFingerKey(TargetLayout.Keys[T]) && SourceChildCount[S] == 1)
+			{
+				// 타깃 끝마디는 부모 마디의 연장선(T-포즈의 곧은 손가락)이라고 보고, 소스 끝마디→끝점 방향으로 더 굽힌다.
+				const FVector TargetDir = RotateRow(TargetPos(T) - TargetPos(Parent), Correction);
+				const FVector SourceDir = RotateRow(SourcePos(SourceChild[S]) - SourcePos(S), Align);
+				if (TargetDir.Length() > 1.e-4f && SourceDir.Length() > 1.e-4f)
+					Correction = Correction * RotationBetween(TargetDir.Normalized(), SourceDir.Normalized());
+			}
+		}
+		Corrections[T] = Correction;
 
 		// row-vector, 소스 월드 변화량 D = SrcRefWorld⁻¹ × SrcWorld를 타깃 축으로 옮기면 Align⁻¹ × D × Align.
 		// TgtWorld = (TgtRefWorld × Correction) × Align⁻¹ × SrcRefWorld⁻¹ × SrcWorld × Align (회전 행렬의 역은 전치)
