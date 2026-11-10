@@ -21,6 +21,7 @@ struct FLuaScriptInstance
 	void Call(const char* Name);
 	void Call(const char* Name, float Value);
 	void Call(const char* Name, AActor* Other);
+	void Call(const char* Name, const FString& Value);
 
 	AActor* GetOwner() const { return Owner; }
 	const FString& GetPath() const { return Path; }

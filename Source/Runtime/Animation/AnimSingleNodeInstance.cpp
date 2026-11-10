@@ -16,6 +16,8 @@ bool UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset, bool 
 		OutError = "Animation and mesh must share the same skeleton asset";
 		return false;
 	}
+	// 이전 애니메이션의 NotifyState는 여기서 끝납니다.
+	EndAllNotifyStates();
 	if (!SingleNode.SetSequence(Sequence, bLooping, PlayRate, OutError)) return false;
 
 	CurrentAsset = NewAsset;
@@ -24,6 +26,7 @@ bool UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset, bool 
 
 void UAnimSingleNodeInstance::PlayAnim()
 {
+	EndAllNotifyStates();
 	SingleNode.SetAccumulatedTime(SingleNode.GetPlayRate() < 0.0f ? SingleNode.GetCurrentAssetLength() : 0.0);
 	SingleNode.SetPlaying(true);
 }

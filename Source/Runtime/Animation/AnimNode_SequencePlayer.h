@@ -47,6 +47,9 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 	void Evaluate(FPoseContext& Output) override;
 
 private:
+	// 이번 Update에 지나간 구간의 Notify를 Queue에 넣습니다. 루프로 감싸졌으면 구간을 둘로 나눕니다.
+	void CollectNotifies(FAnimNotifyQueue& Queue, double From, double To, double Length) const;
+
 	const UAnimSequenceBase* Sequence = nullptr;
 	double InternalTimeAccumulator = 0.0;
 	double PreviousTimeAccumulator = 0.0;
@@ -54,4 +57,7 @@ private:
 	bool bLoopAnimation = true;
 	bool bPlaying = true;
 	bool bWrappedThisUpdate = false;
+	// 시간을 직접 정한 뒤(재생 시작·스크러빙·처음으로) 아직 한 번도 진행하지 않았는지.
+	// 그 첫 구간은 출발 시점도 포함해서, 0초나 멈춘 자리에 있는 Notify도 재생을 시작하면 발동합니다.
+	bool bIncludeStartOnNextAdvance = true;
 };

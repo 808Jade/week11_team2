@@ -1,6 +1,8 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshComponent.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "GameFramework/Actor.h"
+#include "Script/LuaScriptInstance.h"
 #include "Serialization/MathSerialization.h"
 #include <memory>
 #include <utility>
@@ -27,8 +29,31 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
         AnimScriptInstance->UpdateAnimation(DeltaTime);
         if (AnimScriptInstance->EvaluateAnimation(BoneSpaceTransforms))
             MarkBoneTransformsDirty();
+        DispatchAnimNotifies();
     }
     Super::TickComponent(DeltaTime);
+}
+
+void USkeletalMeshComponent::DispatchAnimNotifies()
+{
+    if (!AnimScriptInstance) return;
+
+    // 받는 쪽(Lua)이 PlayAnimation·메시 교체로 인스턴스를 바꿔도 안전하도록 목록을 먼저 꺼냅니다.
+    const TArray<FAnimNotifyDispatch> Notifies = AnimScriptInstance->TakePendingNotifies();
+    for (const FAnimNotifyDispatch& Notify : Notifies)
+    {
+        OnAnimNotify.Broadcast(this, Notify.Event, Notify.Type);
+
+        AActor* Owner = GetOwner();
+        if (!Owner || !Owner->Script) continue;
+        switch (Notify.Type)
+        {
+        case EAnimNotifyEventType::Notify:     Owner->Script->Call("OnAnimNotify", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateBegin: Owner->Script->Call("OnAnimNotifyBegin", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateEnd:   Owner->Script->Call("OnAnimNotifyEnd", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateTick:  break;
+        }
+    }
 }
 
 bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping,

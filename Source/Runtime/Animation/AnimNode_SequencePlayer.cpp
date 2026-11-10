@@ -2,6 +2,7 @@
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "Animation/AnimationPoseData.h"
 #include "Animation/AnimSequenceBase.h"
+#include "Animation/AnimNotifyTypes.h"
 #include <algorithm>
 #include <cmath>
 
@@ -26,6 +27,7 @@ bool FAnimNode_SequencePlayer::SetSequence(const UAnimSequenceBase* InSequence,
 	bLoopAnimation = bInLoopAnimation;
 	bPlaying = true;
 	bWrappedThisUpdate = false;
+	bIncludeStartOnNextAdvance = true;
 	// 역재생은 끝에서 시작해야 바로 멈추지 않습니다.
 	InternalTimeAccumulator = PreviousTimeAccumulator = PlayRate < 0.0f ? Length : 0.0;
 	return true;
@@ -38,6 +40,7 @@ void FAnimNode_SequencePlayer::SetAccumulatedTime(double NewTime)
 	// 시간을 직접 옮긴 것(스크러빙·처음으로)은 재생으로 지나간 구간이 아닙니다.
 	PreviousTimeAccumulator = InternalTimeAccumulator;
 	bWrappedThisUpdate = false;
+	bIncludeStartOnNextAdvance = true;
 }
 
 bool FAnimNode_SequencePlayer::SetPlayRate(float InPlayRate)
@@ -81,6 +84,37 @@ void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
 		bPlaying = false;
 	}
 	InternalTimeAccumulator = Next;
+
+	if (FAnimNotifyQueue* Queue = Context.GetNotifyQueue(); Queue && Sequence)
+		CollectNotifies(*Queue, PreviousTimeAccumulator, InternalTimeAccumulator, Length);
+	bIncludeStartOnNextAdvance = false;
+}
+
+void FAnimNode_SequencePlayer::CollectNotifies(FAnimNotifyQueue& Queue, double From, double To, double Length) const
+{
+	if (From == To && !bWrappedThisUpdate) return;
+	Queue.bTimeAdvanced = true;
+
+	TArray<const FAnimNotifyEvent*> Found;
+	if (!bWrappedThisUpdate)
+	{
+		Sequence->GetAnimNotifiesFromDeltaPositions(From, To, bIncludeStartOnNextAdvance, Found);
+	}
+	else if (PlayRate > 0.0f)
+	{
+		// 정방향으로 감쌈: (From, Length] 다음 [0, To]. 0에서 새로 출발하므로 두 번째 구간은 0을 포함합니다.
+		Sequence->GetAnimNotifiesFromDeltaPositions(From, Length, bIncludeStartOnNextAdvance, Found);
+		Sequence->GetAnimNotifiesFromDeltaPositions(0.0, To, true, Found);
+	}
+	else
+	{
+		// 역방향으로 감쌈: [0, From) 다음 [To, Length].
+		Sequence->GetAnimNotifiesFromDeltaPositions(From, 0.0, bIncludeStartOnNextAdvance, Found);
+		Sequence->GetAnimNotifiesFromDeltaPositions(Length, To, true, Found);
+	}
+
+	for (const FAnimNotifyEvent* Notify : Found)
+		Queue.Entries.Add(FAnimNotifyQueue::FEntry{ *Notify, Sequence });
 }
 
 void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)

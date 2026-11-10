@@ -30,8 +30,12 @@ public:
 	void SetPlaying(bool bIsPlaying) { SingleNode.SetPlaying(bIsPlaying); }
 	bool IsPlaying() const { return SingleNode.IsPlaying(); }
 
-	// 현재 시간(초)을 옮깁니다. [0, Length]로 제한합니다.
-	void SetPosition(float InPosition) { SingleNode.SetAccumulatedTime(InPosition); }
+	// 현재 시간(초)을 옮깁니다. [0, Length]로 제한합니다. 건너뛴 구간의 Notify는 발동하지 않고, 활성 NotifyState는 끝냅니다.
+	void SetPosition(float InPosition)
+	{
+		EndAllNotifyStates();
+		SingleNode.SetAccumulatedTime(InPosition);
+	}
 	float GetCurrentTime() const { return static_cast<float>(SingleNode.GetCurrentAssetTime()); }
 	float GetPreviousTime() const { return static_cast<float>(SingleNode.GetPreviousAssetTime()); }
 	float GetLength() const { return SingleNode.GetCurrentAssetLength(); }
