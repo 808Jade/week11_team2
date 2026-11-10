@@ -1,5 +1,6 @@
 #pragma pack_matrix(row_major)
 #include "GpuSkinCommon.hlsli"
+#include "BoneWeightHeatmap.hlsli"
 #include "ColorSpace.hlsli"
 
 cbuffer ViewConstants : register(b0)
@@ -11,7 +12,7 @@ cbuffer WorldConstants : register(b2)
 {
     matrix World;
     matrix NormalMatrix;
-    float4 ObjectFlags; // x: bReceiveShadow
+    float4 ObjectFlags; // x: bReceiveShadow, y: bBoneWeightHeatmap
 };
 
 cbuffer MaterialParams : register(b1)
@@ -40,6 +41,7 @@ struct PS_INPUT
     float4 WorldTangent : TANGENT;
     float2 UV : TEXCOORD0;
     nointerpolation float ReceiveShadow : TEXCOORD1; // 오브젝트 상수(b2)는 VS에만 묶이므로 VS가 넘긴다
+    float HeatmapWeight : TEXCOORD2; // 음수이면 Heatmap을 그리지 않는다
 };
 
 struct GBUFFER_OUTPUT
@@ -86,6 +88,7 @@ PS_INPUT mainVS(VS_INPUT Input)
     Output.WorldTangent = float4(T, Handedness);
     Output.UV = Input.UV;
     Output.ReceiveShadow = ObjectFlags.x;
+    Output.HeatmapWeight = BONE_WEIGHT_HEATMAP_VS(Input, ObjectFlags);
     return Output;
 }
 
@@ -96,6 +99,8 @@ GBUFFER_OUTPUT mainPS(PS_INPUT Input)
     float4 TextureColor = ColorTexture.Sample(ColorSampler, Input.UV + UVOffset);
     float3 LinearColor = ColorNeedsSRGBDecode > 0.5f ? SRGBToLinear(TextureColor.rgb) : TextureColor.rgb;
     float3 LinearAlbedo = LinearColor * BaseColor.rgb;
+    if (Input.HeatmapWeight >= 0.0f)
+        LinearAlbedo = BoneWeightHeatmapColor(Input.HeatmapWeight);
     float3 Normal = normalize(Input.WorldNormal);
     if (TextureFlags.x > 0.5f)
     {

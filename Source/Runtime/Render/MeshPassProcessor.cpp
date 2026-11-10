@@ -171,7 +171,7 @@ namespace
 	FMeshDrawBatch::FItem BuildItem(const FMatrix& World, const FSceneView& View,
 		EMeshPassType Pass, uint32 Slot, uint32 StartIndex, uint32 IndexCount,
 		const void* ObjectKey, bool bOccludedByGpu, bool bReceiveShadow, bool bReceivesDecals, const FAABB &Bounds,
-		const FPrimitiveSceneProxy* Proxy)
+		const FPrimitiveSceneProxy* Proxy, bool bBoneWeightHeatmap = false)
 	{
 		FMeshDrawBatch::FItem Item{};
 		Item.ObjectSlot = Slot;
@@ -190,12 +190,14 @@ namespace
 			Constants.Projection = View.ProjectionMatrix;
 			Constants.NormalMatrix = World.Inverse().GetTransposed();
 			Constants.ObjectFlags.X = static_cast<float>(bReceiveShadow);
+			Constants.ObjectFlags.Y = static_cast<float>(bBoneWeightHeatmap);
 			std::memcpy(Item.ObjectData.data(), &Constants, sizeof(Constants));
 			Item.ObjectDataSize = sizeof(Constants);
 		}
 		else
 		{
-			const FPerObjectConstants Constants = MakePerObjectConstants(World, bReceiveShadow);
+			FPerObjectConstants Constants = MakePerObjectConstants(World, bReceiveShadow);
+			Constants.ObjectFlags.Y = static_cast<float>(bBoneWeightHeatmap);
 			std::memcpy(Item.ObjectData.data(), &Constants, sizeof(Constants));
 			Item.ObjectDataSize = sizeof(Constants);
 		}
@@ -294,7 +296,7 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 		Batch.Items.Add(BuildItem(PacketWorld(Packet), View, Pass, Packet.Slot,
 			Packet.StartIndex, IndexCount, ObjectKey, Packet.bOccludedByGpu, !Packet.Proxy || Packet.Proxy->bReceiveShadow, 
 			!Packet.Proxy || Packet.Proxy->bReceivesDecals, 
-			Packet.Proxy ? Packet.Proxy->GetBounds() : ConservativeBounds, Packet.Proxy));
+			Packet.Proxy ? Packet.Proxy->GetBounds() : ConservativeBounds, Packet.Proxy, Packet.bBoneWeightHeatmap));
 		Out.Add(std::move(Batch)); 
 	}
 	return true;

@@ -21,6 +21,7 @@ struct FRenderPacket
 	FVertexBuffer* VertexBuffer = nullptr; // dynamic
 	FIndexBuffer* IndexBuffer= nullptr; // dynamic
 	const FStructuredBuffer* BoneBuffer = nullptr; // GPU 스킨
+	bool bBoneWeightHeatmap = false; // true이면 정점 Color.r을 Weight로 읽어 Heatmap으로 그린다
 
 	UMaterial* Material = nullptr;
 	const void* MaterialParamData = nullptr;

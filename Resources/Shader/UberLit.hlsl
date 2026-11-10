@@ -4,6 +4,7 @@
 #include "LightEvaluation.hlsli"
 #include "LightGridCommon.hlsli"
 #include "GpuSkinCommon.hlsli"
+#include "BoneWeightHeatmap.hlsli"
 #include "ColorSpace.hlsli"
 
 // 셰이더 스캐너는 매크로 정의 없이 이 파일을 컴파일하므로 기본 변형에는 Lambert를 쓴다.
@@ -27,7 +28,7 @@ cbuffer PerObject : register(b0)
     matrix View;
     matrix Projection;
     matrix NormalMatrix; // World 행렬의 역행렬을 전치한 법선 변환 행렬
-    float4 ObjectFlags;
+    float4 ObjectFlags; // x: bReceiveShadow, y: bBoneWeightHeatmap
 };
 
 cbuffer Lighting : register(b1)
@@ -80,6 +81,7 @@ struct VS_OUT
     float2 UV : TEXCOORD0;
     float3 WorldNormal : TEXCOORD4;
     float4 WorldTangent : TEXCOORD5;
+    float HeatmapWeight : TEXCOORD6; // 음수이면 Heatmap을 그리지 않는다
 #if LIGHTING_MODEL_GOURAUD
     float3 VertexDiffuse : TEXCOORD1;
 #elif !VIEW_MODE_WORLD_NORMAL
@@ -417,6 +419,7 @@ VS_OUT Uber_VS(VS_IN Input)
     float4 ViewPosition = mul(WorldPosition, View);
     Output.Position = mul(ViewPosition, Projection);
     Output.Color = Input.Color;
+    Output.HeatmapWeight = BONE_WEIGHT_HEATMAP_VS(Input, ObjectFlags);
     Output.UV = Input.UV * UVTransform.zw + UVTransform.xy;
 
     float3 N = mul(float4(Input.Normal, 0.0f), NormalMatrix).xyz;
@@ -452,6 +455,8 @@ FUberOutput Uber_PS(VS_OUT Input)
         SurfaceColor = Input.Color;
     }
     float3 Albedo = SurfaceColor.rgb * BaseColor.rgb;
+    if (Input.HeatmapWeight >= 0.0f)
+        Albedo = BoneWeightHeatmapColor(Input.HeatmapWeight);
     float3 Diffuse;
     float3 Specular = 0.0f;
 

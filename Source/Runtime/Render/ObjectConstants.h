@@ -9,7 +9,7 @@ struct FPerObjectConstants
 {
 	FMatrix World;
 	FMatrix NormalMatrix;
-	FVector4 ObjectFlags; // x: bReceiveShadow (GBuffer가 NormalRoughness.w 부호로 넘긴다)
+	FVector4 ObjectFlags; // x: bReceiveShadow (GBuffer가 NormalRoughness.w 부호로 넘긴다), y: bBoneWeightHeatmap
 };
 
 inline FPerObjectConstants MakePerObjectConstants(const FMatrix& World, bool bReceiveShadow = true)
@@ -31,7 +31,7 @@ struct FForwardObjectConstants
 	FMatrix View;
 	FMatrix Projection;
 	FMatrix NormalMatrix;
-	FVector4 ObjectFlags;
+	FVector4 ObjectFlags; // x: bReceiveShadow, y: bBoneWeightHeatmap
 };
 
 struct FForwardMaterialConstants
