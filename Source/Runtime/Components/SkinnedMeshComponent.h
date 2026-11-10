@@ -37,6 +37,9 @@ public:
 	void MarkBoneTransformsDirty() { bBoneTransformsDirty = true; }
 	void UpdateBoneTransformsNow();
 
+	// BoneIndex가 0 이상이면 그 본의 Skin Weight를 Heatmap으로 표시하고, -1이면 끈다.
+	void SetBoneWeightHeatmapIndex(int32 BoneIndex);
+
 	const TArray<FMatrix>& GetComponentSpaceTransform() const { return ComponentSpaceTransforms; }
 
 	using Super::Serialize;
@@ -56,4 +59,5 @@ private:
 	USkeletalMesh* SkeletalMesh = nullptr;
 	TUniquePtr<FSkeletalMeshObject> MeshObject;
 	bool bBoneTransformsDirty = true;
+	bool bForceCPUSkinning = false;
 };
