@@ -121,3 +121,27 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 			: FMath::Lerp(Raw.ScaleKeys[First], Raw.ScaleKeys[Second], Alpha);
 	}
 }
+
+FVector UAnimSequence::GetRootLocationAtTime(double Time) const
+{
+	const UAnimDataModel* Model = GetDataModel();
+	if (!Model) return FVector(0, 0, 0);
+
+	// GetAnimationPose와 같은 시간 → 프레임 변환
+	const int32 LastKey = Model->GetNumberOfKeys() - 1;
+	const double Frame = Time >= GetPlayLength() ? LastKey
+		: std::clamp(Time * Model->GetFrameRate(), 0.0, static_cast<double>(LastKey));
+	const int32 First = static_cast<int32>(Frame);
+	const int32 Second = std::min(First + 1, LastKey);
+	const float Alpha = static_cast<float>(Frame - First);
+
+	for (const FBoneAnimationTrack& Track : Model->GetBoneAnimationTracks())
+	{
+		if (Track.BoneTreeIndex != 0) continue;
+
+		const auto& Keys = Track.InternalTrackData.PosKeys;
+		if (Keys.Num() == 1) return Keys[0];
+		return FMath::Lerp(Keys[First], Keys[Second], Alpha);
+	}
+	return FVector(0, 0, 0);
+}

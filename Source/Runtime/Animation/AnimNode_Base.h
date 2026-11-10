@@ -27,6 +27,8 @@ struct FAnimNode_Base
 	virtual ~FAnimNode_Base() = default;
 	virtual void Update(const FAnimationUpdateContext& Context) = 0;
 	virtual void Evaluate(FPoseContext& Output) = 0;
+	// 이번 Update에서 추출한 root 이동량(컴포넌트 공간). root 이동이 없는 노드는 0을 돌려준다.
+	virtual FVector GetRootMotionDelta() const { return FVector(0, 0, 0); }
 };
 
 struct FPoseLink

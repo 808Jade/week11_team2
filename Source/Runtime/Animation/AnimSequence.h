@@ -14,4 +14,6 @@ public:
 		TArray<FBoneAnimationTrack> InTracks, FString& OutError);
 	void GetAnimationPose(FAnimationPoseData& OutPoseData,
 		const FAnimExtractContext& ExtractionContext) const override;
+
+	FVector GetRootLocationAtTime(double Time) const override;
 };
