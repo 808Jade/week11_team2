@@ -6,7 +6,7 @@
 class FAnimSequenceEditor;
 
 // Animation 에디터 탭. 뷰포트·본 계층·본 디테일·설정은 SkeletalMesh 패널을 재사용하고,
-// 애니메이션 정보와 프리뷰 메시 선택 패널을 추가합니다. (Timeline 패널은 이후 단계에서 아래쪽에 추가)
+// Asset Details·Timeline·Asset Browser 패널을 추가합니다. (UE Animation 에디터 배치)
 class FAnimSequenceEditorTab : public FAssetEditorTab
 {
 public:
@@ -23,4 +23,6 @@ private:
 	ImGuiID DockSpaceId = 0;
 	ImGuiID PanelClassId = 0;
 	bool bLayoutInitialized = false;
+	// 탭 제목에 표시 중인 애니메이션 경로. Asset Browser로 교체되면 제목을 갱신합니다.
+	FString DisplayedSequencePath;
 };

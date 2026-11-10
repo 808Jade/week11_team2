@@ -6,6 +6,7 @@
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
 #include "Asset/FbxImporter/FbxAssetBake.h"
+#include "Editor/AssetEditor/EditorManager.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Render/SkeletalMesh.h"
 #include "UObject/UObjectIterator.h"
@@ -21,6 +22,7 @@ FAnimSequenceEditor::FAnimSequenceEditor(
 )
 	: FSkeletalMeshEditor(InEditorEngine, InEditorManager, InAssetPath, InPreviewMesh)
 	, Sequence(&InSequence)
+	, SequencePath(FAssetUtils::GetAssetKey(InAssetPath))
 {
 }
 
@@ -74,6 +76,39 @@ TArray<FString> FAnimSequenceEditor::FindPreviewMeshPaths(const UAnimSequenceBas
 	return Paths;
 }
 
+TArray<FString> FAnimSequenceEditor::FindCompatibleAnimationPaths(const UAnimSequenceBase& Sequence)
+{
+	TArray<FString> Paths;
+	const USkeleton* Skeleton = Sequence.GetSkeleton();
+	if (!Skeleton)
+	{
+		return Paths;
+	}
+
+	// DetailsPanel의 AnimToPlay 목록과 같은 방식: 로드한 뒤 같은 USkeleton 객체인지 비교합니다.
+	for (const FString& ItemPath : UAssetManager::GetUnloadedAssetPaths(EAssetType::AnimSequence))
+	{
+		UAssetManager::GetAssetByPath<UAnimSequenceBase>(ItemPath);
+	}
+
+	for (TObjectIterator<UAnimSequenceBase> Itr; Itr; ++Itr)
+	{
+		const FString Path = Itr->GetPath();
+		if (Path.empty() || UAssetManager::FindLoadedAsset(Path) != *Itr || Itr->GetSkeleton() != Skeleton)
+		{
+			continue;
+		}
+		const FString Key = FAssetUtils::GetAssetKey(Path);
+		if (!Key.empty() && std::find(Paths.begin(), Paths.end(), Key) == Paths.end())
+		{
+			Paths.Add(Key);
+		}
+	}
+
+	std::sort(Paths.begin(), Paths.end());
+	return Paths;
+}
+
 bool FAnimSequenceEditor::InitializeResources()
 {
 	if (!Sequence || !FSkeletalMeshEditor::InitializeResources())
@@ -87,8 +122,52 @@ bool FAnimSequenceEditor::InitializeResources()
 		PreviewMeshPath = FAssetUtils::GetAssetKey(Mesh->GetPath());
 	}
 
+	RefreshCompatibleAnimations();
 	RestartAnimation();
 	return true;
+}
+
+void FAnimSequenceEditor::RefreshCompatibleAnimations()
+{
+	CompatibleAnimationPaths = Sequence ? FindCompatibleAnimationPaths(*Sequence) : TArray<FString>{};
+}
+
+bool FAnimSequenceEditor::ChangeAnimation(const FString& AnimationPath)
+{
+	const FString Key = FAssetUtils::GetAssetKey(AnimationPath);
+	if (Key.empty() || Key == SequencePath)
+	{
+		return Key == SequencePath;
+	}
+
+	UAnimSequenceBase* NewSequence = UAssetManager::GetAssetByPath<UAnimSequenceBase>(AnimationPath);
+	if (!NewSequence)
+	{
+		LastPlayError = "Failed to load animation: " + AnimationPath;
+		return false;
+	}
+	// 프리뷰 메시는 그대로 쓰므로 같은 Skeleton이어야 합니다.
+	if (!Sequence || NewSequence->GetSkeleton() != Sequence->GetSkeleton())
+	{
+		LastPlayError = "Animation does not use the same Skeleton: " + AnimationPath;
+		return false;
+	}
+
+	Sequence = NewSequence;
+	SequencePath = Key;
+	RestartAnimation();
+	return true;
+}
+
+bool FAnimSequenceEditor::IsEditingAsset(const FString& Path) const
+{
+	return FAssetEditor::IsEditingAsset(Path) || (!SequencePath.empty() && Path == SequencePath);
+}
+
+void FAnimSequenceEditor::OnReopenAsset(const FString& Path)
+{
+	// 교체된 상태에서 처음 연 애니메이션을 다시 열면 그 애니메이션으로 되돌립니다.
+	ChangeAnimation(Path);
 }
 
 TUniquePtr<IEditorTab> FAnimSequenceEditor::CreateTab()
@@ -127,14 +206,16 @@ void FAnimSequenceEditor::RestartAnimation()
 	LastPlayError.clear();
 	if (!Component->PlayAnimation(Sequence, true, 1.0f, LastPlayError))
 	{
-		HTR_LOG(Warning, "Animation preview failed for {}: {}", GetAssetPath(), LastPlayError);
+		HTR_LOG(Warning, "Animation preview failed for {}: {}", SequencePath, LastPlayError);
 	}
 }
 
 void FAnimSequenceEditor::ShutdownResources()
 {
 	Sequence = nullptr;
+	SequencePath.clear();
 	PreviewMeshPaths.Empty();
+	CompatibleAnimationPaths.Empty();
 	PreviewMeshPath.clear();
 	FSkeletalMeshEditor::ShutdownResources();
 }

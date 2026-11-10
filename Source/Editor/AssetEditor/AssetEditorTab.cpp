@@ -5,7 +5,11 @@
 
 FAssetEditorTab::FAssetEditorTab(FAssetEditor& InEditor) : Editor(InEditor)
 {
-	const FString Filename = std::filesystem::path(Editor.GetAssetPath()).filename().string();
+	SetDisplayFilename(std::filesystem::path(Editor.GetAssetPath()).filename().string());
+}
+
+void FAssetEditorTab::SetDisplayFilename(const FString& Filename)
+{
 	TabName = Filename + " (" + Editor.GetEditorTypeName() + ")###AssetEditor:" + Editor.GetAssetPath();
 }
 

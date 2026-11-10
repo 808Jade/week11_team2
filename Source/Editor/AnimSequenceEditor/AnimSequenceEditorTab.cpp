@@ -1,7 +1,10 @@
 #include "EnginePCH.h"
 #include "AnimSequenceEditorTab.h"
 #include "AnimSequenceEditor.h"
-#include "Panels/AnimSequenceInfoPanel.h"
+#include "Asset/FbxImporter/FbxPath.h"
+#include "Panels/AnimAssetDetailsPanel.h"
+#include "Panels/AnimAssetBrowserPanel.h"
+#include "Panels/AnimTimelinePanel.h"
 #include "Editor/SkeletalMeshEditor/Panels/SkeletalMeshViewportPanel.h"
 #include "Editor/SkeletalMeshEditor/Panels/SkeletalMeshDetailsPanel.h"
 #include "Editor/SkeletalMeshEditor/Panels/SkeletalMeshSettingsPanel.h"
@@ -9,7 +12,17 @@
 
 namespace
 {
-	enum EPanelIndex { ViewportPanel, InfoPanel, HierarchyPanel, DetailsPanel, SettingsPanel };
+	// 'Details' 등은 다른 네임스페이스와 이름이 겹치므로 Panel 접미사를 붙입니다.
+	enum EPanelIndex
+	{
+		ViewportPanel,
+		SkeletonTreePanel,
+		AssetDetailsPanel,
+		TimelinePanel,
+		BoneDetailsPanel,
+		SettingsPanel,
+		AssetBrowserPanel
+	};
 }
 
 FAnimSequenceEditorTab::FAnimSequenceEditorTab(FAnimSequenceEditor& InEditor)
@@ -23,10 +36,12 @@ FAnimSequenceEditorTab::FAnimSequenceEditorTab(FAnimSequenceEditor& InEditor)
 
 	// 순서는 EPanelIndex와 같아야 합니다.
 	Panels.Add(MakeUnique<FSkeletalMeshViewportPanel>(InEditor));
-	Panels.Add(MakeUnique<FAnimSequenceInfoPanel>(InEditor));
 	Panels.Add(MakeUnique<FBoneHierarchyPanel>(InEditor));
+	Panels.Add(MakeUnique<FAnimAssetDetailsPanel>(InEditor));
+	Panels.Add(MakeUnique<FAnimTimelinePanel>(InEditor));
 	Panels.Add(MakeUnique<FSkeletalMeshDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FSkeletalMeshSettingsPanel>(InEditor));
+	Panels.Add(MakeUnique<FAnimAssetBrowserPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -60,29 +75,51 @@ void FAnimSequenceEditorTab::DrawMenuBar()
 
 void FAnimSequenceEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size)
 {
+	// UE Animation 에디터 배치:
+	//   왼쪽: Skeleton Tree | Asset Details (탭)
+	//   가운데: Viewport(위) / Timeline(아래)
+	//   오른쪽: Details | Settings (위, 탭) / Asset Browser (아래)
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
-	ImGuiID ViewportId = InDockSpaceId;
-	const ImGuiID RightId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Right, 0.24f, nullptr, &ViewportId);
 
-	// 오른쪽: 애니메이션 정보(위) → 본 계층 → 본 디테일 → 설정
-	ImGuiID RemainingId = RightId;
-	const ImGuiID InfoId = ImGui::DockBuilderSplitNode(RemainingId, ImGuiDir_Up, 0.30f, nullptr, &RemainingId);
-	const ImGuiID HierarchyId = ImGui::DockBuilderSplitNode(RemainingId, ImGuiDir_Up, 0.40f, nullptr, &RemainingId);
-	ImGuiID DetailsId = RemainingId;
-	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(DetailsId, ImGuiDir_Down, 0.40f, nullptr, &DetailsId);
+	ImGuiID CenterId = InDockSpaceId;
+	const ImGuiID LeftId = ImGui::DockBuilderSplitNode(CenterId, ImGuiDir_Left, 0.22f, nullptr, &CenterId);
+	const ImGuiID RightId = ImGui::DockBuilderSplitNode(CenterId, ImGuiDir_Right, 0.26f, nullptr, &CenterId);
 
+	ImGuiID ViewportId = CenterId;
+	const ImGuiID TimelineId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Down, 0.28f, nullptr, &ViewportId);
+
+	ImGuiID RightTopId = RightId;
+	const ImGuiID BrowserId = ImGui::DockBuilderSplitNode(RightTopId, ImGuiDir_Down, 0.45f, nullptr, &RightTopId);
+
+	ImGui::DockBuilderDockWindow(Panels[SkeletonTreePanel]->GetWindowName(), LeftId);
+	ImGui::DockBuilderDockWindow(Panels[AssetDetailsPanel]->GetWindowName(), LeftId);
 	ImGui::DockBuilderDockWindow(Panels[ViewportPanel]->GetWindowName(), ViewportId);
-	ImGui::DockBuilderDockWindow(Panels[InfoPanel]->GetWindowName(), InfoId);
-	ImGui::DockBuilderDockWindow(Panels[HierarchyPanel]->GetWindowName(), HierarchyId);
-	ImGui::DockBuilderDockWindow(Panels[DetailsPanel]->GetWindowName(), DetailsId);
-	ImGui::DockBuilderDockWindow(Panels[SettingsPanel]->GetWindowName(), SettingsId);
+	ImGui::DockBuilderDockWindow(Panels[TimelinePanel]->GetWindowName(), TimelineId);
+	ImGui::DockBuilderDockWindow(Panels[BoneDetailsPanel]->GetWindowName(), RightTopId);
+	ImGui::DockBuilderDockWindow(Panels[SettingsPanel]->GetWindowName(), RightTopId);
+	ImGui::DockBuilderDockWindow(Panels[AssetBrowserPanel]->GetWindowName(), BrowserId);
+
+	// 탭으로 묶인 노드에서 처음 보일 탭: 왼쪽은 Asset Details, 오른쪽 위는 Details (UE 기본 배치와 같게)
+	if (ImGuiDockNode* LeftNode = ImGui::DockBuilderGetNode(LeftId))
+	{
+		LeftNode->SelectedTabId = ImHashStr(Panels[AssetDetailsPanel]->GetWindowName());
+	}
+	if (ImGuiDockNode* RightTopNode = ImGui::DockBuilderGetNode(RightTopId))
+	{
+		RightTopNode->SelectedTabId = ImHashStr(Panels[BoneDetailsPanel]->GetWindowName());
+	}
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
 void FAnimSequenceEditorTab::OnRender(bool bActive)
 {
 	AnimEditor.SetViewportState(0, 0, {});
+	if (DisplayedSequencePath != AnimEditor.GetSequencePath())
+	{
+		DisplayedSequencePath = AnimEditor.GetSequencePath();
+		SetDisplayFilename(FbxPath::ToString(FbxPath::FromString(DisplayedSequencePath).filename()));
+	}
 	if (AnimEditor.IsCloseRequested())
 	{
 		return;

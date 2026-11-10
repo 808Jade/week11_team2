@@ -26,6 +26,9 @@ public:
 	const char* GetTabName() const override { return TabName.c_str(); }
 	bool CanClose() const override { return true; }
 
+	// 탭에 보이는 파일 이름만 바꿉니다. ImGui ID(### 뒤)는 처음 연 애셋 경로로 유지합니다.
+	void SetDisplayFilename(const FString& Filename);
+
 private:
 	FAssetEditor& Editor;
 	FString TabName;

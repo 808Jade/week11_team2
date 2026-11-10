@@ -40,7 +40,7 @@ FAssetEditor* FEditorManager::FindEditor(const FString& Path) const
 {
 	for (const auto& Editor : Editors)
 	{
-		if (Editor->GetAssetPath() == Path)
+		if (Editor->IsEditingAsset(Path))
 		{
 			return Editor.get();
 		}
@@ -54,6 +54,7 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
 	// 이미 열려 있는 에디터가 있으면 활성화
 	if (FAssetEditor* Existing = FindEditor(AssetPath))
 	{
+		Existing->OnReopenAsset(AssetPath);
 		Existing->Activate();
 		return;
 	}

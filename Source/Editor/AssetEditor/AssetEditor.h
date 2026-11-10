@@ -52,6 +52,12 @@ public:
 	FEditorViewportClient* GetViewportClient() const { return ViewportClient.get(); }
 	virtual const FGizmo* GetPreviewGizmo() const { return nullptr; }
 
+	// 이 에디터가 Path 애셋을 보여주고 있는지. 에디터 안에서 애셋을 교체하는 에디터는 재정의합니다.
+	virtual bool IsEditingAsset(const FString& Path) const { return AssetPath == Path; }
+
+	// 이미 열린 이 에디터로 Path를 다시 열 때 호출됩니다. (교체 가능한 에디터는 Path로 되돌립니다)
+	virtual void OnReopenAsset(const FString& Path) {}
+
 	bool IsCloseRequested() const { return bCloseRequested; }
 
 protected:
