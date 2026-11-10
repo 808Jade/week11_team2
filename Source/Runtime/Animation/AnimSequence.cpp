@@ -130,26 +130,33 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 	}
 }
 
-FVector UAnimSequence::GetRootLocationAtTime(double Time) const
+void UAnimSequence::GetKeyFrame(double Time, int32& OutFirst, int32& OutSecond, float& OutAlpha) const
 {
 	const UAnimDataModel* Model = GetDataModel();
-	if (!Model) return FVector(0, 0, 0);
-
-	// GetAnimationPose와 같은 시간 → 프레임 변환
 	const int32 LastKey = Model->GetNumberOfKeys() - 1;
-	const double Frame = Time >= GetPlayLength() ? LastKey
-		: std::clamp(Time * Model->GetFrameRate(), 0.0, static_cast<double>(LastKey));
-	const int32 First = static_cast<int32>(Frame);
-	const int32 Second = std::min(First + 1, LastKey);
-	const float Alpha = static_cast<float>(Frame - First);
+	const double Frame = Time >= GetPlayLength() ? LastKey : std::clamp(Time * Model->GetFrameRate(), 0.0, static_cast<double>(LastKey));
+	OutFirst = static_cast<int32>(Frame);
+	OutSecond = std::min(OutFirst + 1, LastKey);
+	OutAlpha = static_cast<float>(Frame - OutFirst);
+}
 
+const FRawAnimSequenceTrack* UAnimSequence::FindRootTrack() const
+{
+	const UAnimDataModel* Model = GetDataModel();
+	if (!Model) return nullptr;
 	for (const FBoneAnimationTrack& Track : Model->GetBoneAnimationTracks())
-	{
-		if (Track.BoneTreeIndex != 0) continue;
+		if (Track.BoneTreeIndex == 0)
+			return &Track.InternalTrackData;
+	return nullptr;
+}
 
-		const auto& Keys = Track.InternalTrackData.PosKeys;
-		if (Keys.Num() == 1) return Keys[0];
-		return FMath::Lerp(Keys[First], Keys[Second], Alpha);
-	}
-	return FVector(0, 0, 0);
+FVector UAnimSequence::GetRootLocationAtTime(double Time) const
+{
+	const FRawAnimSequenceTrack* Root = FindRootTrack();
+	if (!Root || Root->PosKeys.IsEmpty()) return FVector(0, 0, 0);
+	if (Root->PosKeys.Num() == 1) return Root->PosKeys[0];
+	int32 First, Second;
+	float Alpha;
+	GetKeyFrame(Time, First, Second, Alpha);
+	return FMath::Lerp(Root->PosKeys[First], Root->PosKeys[Second], Alpha);
 }
