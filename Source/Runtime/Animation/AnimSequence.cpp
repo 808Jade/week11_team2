@@ -123,10 +123,13 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 
 	if (ExtractionContext.bExtractRootMotion)
 	{
-		// root 이동은 Actor로 넘기므로, Pose 안의 root는 첫 프레임 위치에 고정한다
+		// root 이동·회전은 Actor로 넘기므로, Pose 안의 root는 첫 프레임 위치·회전에 고정한다
 		const int32 RootIndex = OutPoseData.RequiredBones.GetMeshPoseIndexFromSkeletonPoseIndex(0);
 		if (RootIndex != INDEX_NONE)
+		{
 			OutPoseData.Pose[RootIndex].Location = GetRootLocationAtTime(0.0);
+			OutPoseData.Pose[RootIndex].Rotation = GetRootRotationAtTime(0.0).ToFRotator();
+		}
 	}
 }
 
