@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <vector>
 
 #include "AssetManager.generated.h"
 
@@ -19,9 +20,13 @@ enum class EAssetType
 	SkeletalMesh,
 	Skeleton,
 	Material,
-	AnimSequence
+	AnimSequence,
+	BlendSpace,
+	AnimGraph
 };
 
+class UAnimGraph;
+class UBlendSpace;
 class UStaticMesh;
 class USoundWave;
 struct FSkeletalMaterialSlot;
@@ -33,6 +38,12 @@ UCLASS()
 class UAssetManager : public UObject
 {
 	GENERATED_BODY()
+private:
+	struct FAssetFile {
+		FString mPath{};
+		EAssetType mType{EAssetType::None};
+	};
+
 private:
 	UAssetManager() = default;
 
@@ -75,6 +86,9 @@ public:
 	// 스캔으로 등록됐지만 아직 로드되지 않은 에셋의 타입. 그 외에는 None
 	static EAssetType GetUnloadedAssetType(const FString& Path);
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
+	static std::vector<FString> GetAnimationAssetPaths(EAssetType Type);
+	static bool SaveAnimGraph(const FString& Path, UAnimGraph& Graph, FString& OutError);
+	static bool SaveBlendSpace(const FString& Path, UBlendSpace& BlendSpace, FString& OutError);
 
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
 	TMap<FString, URenderAsset*> PrepareAssetRegistration(const TMap<FString, URenderAsset*>& Replacements) const;
@@ -102,13 +116,9 @@ public:
 
 private:
 	URenderAsset* FindOrLoadAsset(const FString& Path);
+	const FAssetFile* FindOrDiscoverAssetFile(const FString& Key);
+	void LoadAnimationEditorAsset(const FString& Key, const FString& Path, EAssetType Type);
 
-	// 키는 Assets 기준 상대 경로. 로드 가능한 파일의 키 -> 실제 파일 경로
-	struct FAssetFile
-	{
-		FString Path;
-		EAssetType Type = EAssetType::None;
-	};
 	TMap<FString, FAssetFile> AssetPathMap;
 	TMap<FString, URenderAsset*> AssetMap;
 	TMap<FString, USoundWave*> SoundMap;

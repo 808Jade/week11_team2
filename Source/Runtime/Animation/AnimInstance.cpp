@@ -6,8 +6,8 @@
 #include "Components/SkeletalMeshComponent.h"
 
 UAnimInstance::~UAnimInstance() {
-    if (auto* Component{GetSkelMeshComponent()}; Component && Component->AnimScriptInstance == this) {
-        Component->AnimScriptInstance = nullptr;
+    if (auto* Component{GetSkelMeshComponent()}; Component && Component->mAnimScriptInstance == this) {
+        Component->mAnimScriptInstance = nullptr;
     }
 }
 
