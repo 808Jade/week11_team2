@@ -17,6 +17,10 @@ public:
 	void TickComponent(float DeltaTime) override;
 	bool PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping, float PlayRate, FString& OutError);
 
+	UAnimInstance* GetAnimInstance() const { return AnimScriptInstance; }
+	// PlayAnimation으로 재생 중일 때의 단일 노드 인스턴스. 재생 제어(정지·위치·배속)에 씁니다. 없으면 nullptr. (UE와 같은 이름)
+	class UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+
 	// UE의 Animation Mode = Use Animation Asset. 게임 시작 시 AnimToPlay를 자동 재생한다(스크립트 불필요).
 	// 메시와 같은 Skeleton의 애니메이션만 재생된다. Details 패널은 같은 Skeleton의 애니메이션만 보여 준다.
 	UPROPERTY(EditAnywhere)

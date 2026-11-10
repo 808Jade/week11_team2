@@ -36,6 +36,33 @@ public:
 	// 처음부터 다시 재생합니다.
 	void RestartAnimation();
 
+	////////////////////////////////////////////////////////////
+	// 재생 제어 (Timeline 버튼). 상태는 프리뷰 컴포넌트의 UAnimSingleNodeInstance에 있습니다.
+	////////////////////////////////////////////////////////////
+
+	// 재생합니다. bReverse면 역재생(음수 배속). 루프가 아니고 진행 방향의 끝에 있으면 반대쪽 끝에서 다시 시작합니다.
+	void Play(bool bReverse);
+	void Pause();
+	// 정지 후 처음/끝으로 이동합니다.
+	void JumpToStart();
+	void JumpToEnd();
+	// 정지 후 Delta 프레임만큼 이동합니다. 루프면 끝과 처음이 이어집니다.
+	void StepFrame(int32 Delta);
+	// 정지 후 Time(초)으로 이동합니다. (스크러빙)
+	void SetPlaybackTime(float Time);
+	void SetLooping(bool bInLooping);
+	// 배속 크기(양수). 방향은 Play(bReverse)가 정합니다.
+	void SetPlaySpeed(float InSpeed);
+
+	bool IsPlaying() const;
+	bool IsPlayingReverse() const;
+	bool IsLooping() const { return bLooping; }
+	float GetPlaySpeed() const { return PlaySpeed; }
+	float GetPlaybackTime() const;
+	float GetPlaybackLength() const;
+	float GetFrameRate() const;
+	int32 GetNumberOfFrames() const;
+
 	// Asset Browser 목록을 다시 만듭니다.
 	void RefreshCompatibleAnimations();
 
@@ -71,4 +98,10 @@ private:
 	TArray<FString> CompatibleAnimationPaths;
 	FString PreviewMeshPath;
 	FString LastPlayError;
+
+	// 프리뷰 메시나 애니메이션을 바꿔 인스턴스가 새로 생겨도 유지할 재생 설정
+	class UAnimSingleNodeInstance* GetPlayer() const;
+	float PlaySpeed = 1.0f;
+	bool bLooping = true;
+	bool bReverse = false;
 };

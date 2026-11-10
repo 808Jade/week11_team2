@@ -21,3 +21,9 @@ bool UAnimSingleNodeInstance::SetAnimationAsset(UAnimationAsset* NewAsset, bool 
 	CurrentAsset = NewAsset;
 	return true;
 }
+
+void UAnimSingleNodeInstance::PlayAnim()
+{
+	SingleNode.SetAccumulatedTime(SingleNode.GetPlayRate() < 0.0f ? SingleNode.GetCurrentAssetLength() : 0.0);
+	SingleNode.SetPlaying(true);
+}

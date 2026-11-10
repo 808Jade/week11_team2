@@ -2,6 +2,8 @@
 #include "Editor/AnimSequenceEditor/AnimSequenceEditor.h"
 #include "AnimSequenceEditorTab.h"
 #include "Animation/AnimSequenceBase.h"
+#include "Animation/AnimDataModel.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/Skeleton.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
@@ -12,6 +14,7 @@
 #include "UObject/UObjectIterator.h"
 
 #include <algorithm>
+#include <cmath>
 
 FAnimSequenceEditor::FAnimSequenceEditor(
 	UEditorEngine& InEditorEngine,
@@ -204,10 +207,137 @@ void FAnimSequenceEditor::RestartAnimation()
 	}
 
 	LastPlayError.clear();
-	if (!Component->PlayAnimation(Sequence, true, 1.0f, LastPlayError))
+	if (!Component->PlayAnimation(Sequence, bLooping, bReverse ? -PlaySpeed : PlaySpeed, LastPlayError))
 	{
 		HTR_LOG(Warning, "Animation preview failed for {}: {}", SequencePath, LastPlayError);
 	}
+}
+
+UAnimSingleNodeInstance* FAnimSequenceEditor::GetPlayer() const
+{
+	const USkeletalMeshComponent* Component = GetPreviewComponent();
+	return Component ? Component->GetSingleNodeInstance() : nullptr;
+}
+
+void FAnimSequenceEditor::Play(bool bInReverse)
+{
+	UAnimSingleNodeInstance* Player = GetPlayer();
+	if (!Player) return;
+
+	bReverse = bInReverse;
+	Player->SetPlayRate(bReverse ? -PlaySpeed : PlaySpeed);
+	Player->SetLooping(bLooping);
+
+	// 루프가 아닌데 이미 진행 방향의 끝에 있으면 반대쪽 끝에서 다시 시작합니다. (UE 재생 버튼과 같은 동작)
+	if (!bLooping)
+	{
+		const float Time = Player->GetCurrentTime();
+		const float Length = Player->GetLength();
+		if (!bReverse && Time >= Length) Player->SetPosition(0.0f);
+		if (bReverse && Time <= 0.0f) Player->SetPosition(Length);
+	}
+	Player->SetPlaying(true);
+}
+
+void FAnimSequenceEditor::Pause()
+{
+	if (UAnimSingleNodeInstance* Player = GetPlayer())
+	{
+		Player->SetPlaying(false);
+	}
+}
+
+void FAnimSequenceEditor::JumpToStart()
+{
+	SetPlaybackTime(0.0f);
+}
+
+void FAnimSequenceEditor::JumpToEnd()
+{
+	SetPlaybackTime(GetPlaybackLength());
+}
+
+void FAnimSequenceEditor::StepFrame(int32 Delta)
+{
+	const int32 Frames = GetNumberOfFrames();
+	const float Rate = GetFrameRate();
+	if (Frames <= 0 || Rate <= 0.0f) return;
+
+	// 현재 시간을 가장 가까운 프레임으로 맞춘 뒤 이동합니다. 프레임 번호는 0..Frames (키 개수 = Frames + 1)
+	int32 Frame = static_cast<int32>(std::lround(GetPlaybackTime() * Rate)) + Delta;
+	if (bLooping)
+	{
+		Frame %= Frames;
+		if (Frame < 0) Frame += Frames;
+	}
+	else
+	{
+		Frame = std::clamp(Frame, 0, Frames);
+	}
+	SetPlaybackTime(static_cast<float>(Frame) / Rate);
+}
+
+void FAnimSequenceEditor::SetPlaybackTime(float Time)
+{
+	if (UAnimSingleNodeInstance* Player = GetPlayer())
+	{
+		Player->SetPlaying(false);
+		Player->SetPosition(Time);
+	}
+}
+
+void FAnimSequenceEditor::SetLooping(bool bInLooping)
+{
+	bLooping = bInLooping;
+	if (UAnimSingleNodeInstance* Player = GetPlayer())
+	{
+		Player->SetLooping(bLooping);
+	}
+}
+
+void FAnimSequenceEditor::SetPlaySpeed(float InSpeed)
+{
+	if (!std::isfinite(InSpeed) || InSpeed <= 0.0f) return;
+	PlaySpeed = InSpeed;
+	if (UAnimSingleNodeInstance* Player = GetPlayer())
+	{
+		Player->SetPlayRate(bReverse ? -PlaySpeed : PlaySpeed);
+	}
+}
+
+bool FAnimSequenceEditor::IsPlaying() const
+{
+	const UAnimSingleNodeInstance* Player = GetPlayer();
+	return Player && Player->IsPlaying();
+}
+
+bool FAnimSequenceEditor::IsPlayingReverse() const
+{
+	const UAnimSingleNodeInstance* Player = GetPlayer();
+	return Player && Player->IsPlaying() && Player->GetPlayRate() < 0.0f;
+}
+
+float FAnimSequenceEditor::GetPlaybackTime() const
+{
+	const UAnimSingleNodeInstance* Player = GetPlayer();
+	return Player ? Player->GetCurrentTime() : 0.0f;
+}
+
+float FAnimSequenceEditor::GetPlaybackLength() const
+{
+	return Sequence ? Sequence->GetPlayLength() : 0.0f;
+}
+
+float FAnimSequenceEditor::GetFrameRate() const
+{
+	const UAnimDataModel* Model = Sequence ? Sequence->GetDataModel() : nullptr;
+	return Model ? Model->GetFrameRate() : 0.0f;
+}
+
+int32 FAnimSequenceEditor::GetNumberOfFrames() const
+{
+	const UAnimDataModel* Model = Sequence ? Sequence->GetDataModel() : nullptr;
+	return Model ? Model->GetNumberOfFrames() : 0;
 }
 
 void FAnimSequenceEditor::ShutdownResources()

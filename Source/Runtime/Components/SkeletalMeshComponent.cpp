@@ -64,6 +64,11 @@ bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
     return true;
 }
 
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
+{
+    return Cast<UAnimSingleNodeInstance>(AnimScriptInstance);
+}
+
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
 {
     static const TArray<FBoneInfo> Empty{};
