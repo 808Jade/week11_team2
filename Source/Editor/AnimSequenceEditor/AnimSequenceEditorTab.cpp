@@ -53,6 +53,11 @@ void FAnimSequenceEditorTab::DrawMenuBar()
 {
 	if (ImGui::BeginMenu("Viewer"))
 	{
+		if (ImGui::MenuItem("Save Notifies", "Ctrl+S", false, AnimEditor.HasUnsavedNotifies()))
+		{
+			AnimEditor.SaveNotifies();
+		}
+		ImGui::Separator();
 		if (ImGui::MenuItem("Close Viewer"))
 		{
 			AnimEditor.Close();
@@ -123,6 +128,13 @@ void FAnimSequenceEditorTab::OnRender(bool bActive)
 	if (AnimEditor.IsCloseRequested())
 	{
 		return;
+	}
+
+	// Ctrl+S: 이 탭이 보이는 동안 Notify를 저장합니다. 글자 입력 중에는 입력에 양보합니다.
+	const ImGuiIO& IO = ImGui::GetIO();
+	if (bActive && IO.KeyCtrl && !IO.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_S, false) && AnimEditor.HasUnsavedNotifies())
+	{
+		AnimEditor.SaveNotifies();
 	}
 
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)

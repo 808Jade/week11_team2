@@ -1,7 +1,9 @@
 #include "EnginePCH.h"
 #include "AnimTimelinePanel.h"
 #include "Editor/AnimSequenceEditor/AnimSequenceEditor.h"
+#include "Animation/AnimSequenceBase.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -138,7 +140,11 @@ void FAnimTimelinePanel::ResetViewIfSequenceChanged()
 	const float Margin = Frames * 0.02f;
 	ViewStartFrame = -Margin;
 	ViewEndFrame = Frames + Margin;
-	bScrubbing = false;
+	DragMode = EDragMode::None;
+	SelectedNotify = INDEX_NONE;
+	ContextNotify = INDEX_NONE;
+	RenameTarget = INDEX_NONE;
+	NumTrackRows = 1;
 }
 
 float FAnimTimelinePanel::FrameToX(float Frame) const
@@ -167,18 +173,22 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 	const ImVec2 Origin = ImGui::GetCursorScreenPos();
 	const ImVec2 Avail = ImGui::GetContentRegionAvail();
 	const float RulerHeight = ImGui::GetFrameHeight();
-	const float RowHeight = ImGui::GetFrameHeight();
 	const float LabelWidth = ImMin(180.0f, Avail.x * 0.3f);
+	RowHeight = ImGui::GetFrameHeight() + 4.0f;
 
 	TimeAreaMinX = Origin.x + LabelWidth;
 	TimeAreaMaxX = ImMax(TimeAreaMinX + 1.0f, Origin.x + Avail.x - 8.0f);
 	const float Top = Origin.y;
 	const float Bottom = Origin.y + Avail.y;
 	const float TrackTop = Top + RulerHeight;
+	TracksTop = TrackTop;
 
 	const int32 NumFrames = AnimEditor.GetNumberOfFrames();
 	const float Rate = AnimEditor.GetFrameRate();
 	const float CurrentFrame = Rate > 0.0f ? AnimEditor.GetPlaybackTime() * Rate : 0.0f;
+	UAnimSequenceBase* Sequence = AnimEditor.GetSequence();
+	const bool bCanEdit = Sequence && Rate > 0.0f && NumFrames > 0;
+	if (!IsValidNotify(SelectedNotify)) SelectedNotify = INDEX_NONE;
 
 	const ImU32 BgColor = IM_COL32(32, 32, 32, 255);
 	const ImU32 LabelBgColor = IM_COL32(40, 40, 40, 255);
@@ -194,21 +204,22 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 	DrawList->AddRectFilled(ImVec2(TimeAreaMinX, Top), ImVec2(Origin.x + Avail.x, Bottom), BgColor);
 	DrawList->AddRectFilled(ImVec2(TimeAreaMinX, Top), ImVec2(Origin.x + Avail.x, TrackTop), RulerBgColor);
 
-	// 트랙 행 (Notify 트랙 자리. 실제 Notify는 다음 단계)
-	const char* TrackNames[] = { "Notifies" };
-	for (int32 Row = 0; Row < IM_ARRAYSIZE(TrackNames); ++Row)
-	{
-		const float RowTop = TrackTop + Row * RowHeight;
-		DrawList->AddRectFilled(ImVec2(Origin.x, RowTop), ImVec2(Origin.x + Avail.x, RowTop + RowHeight),
-			IM_COL32(255, 255, 255, Row % 2 == 0 ? 8 : 0));
-		DrawList->AddText(ImVec2(Origin.x + 8.0f, RowTop + (RowHeight - ImGui::GetTextLineHeight()) * 0.5f),
-			ImGui::GetColorU32(ImGuiCol_Text), TrackNames[Row]);
-		DrawList->AddLine(ImVec2(Origin.x, RowTop + RowHeight), ImVec2(Origin.x + Avail.x, RowTop + RowHeight),
-			IM_COL32(0, 0, 0, 120));
-	}
+	DrawTrackRows(DrawList, Origin.x, Avail.x);
 	DrawList->AddText(ImVec2(Origin.x + 8.0f, Top + (RulerHeight - ImGui::GetTextLineHeight()) * 0.5f),
 		ImGui::GetColorU32(ImGuiCol_TextDisabled), "Tracks");
 	DrawList->AddLine(ImVec2(TimeAreaMinX, Top), ImVec2(TimeAreaMinX, Bottom), IM_COL32(0, 0, 0, 160));
+
+	// 트랙 추가 버튼 (트랙 이름 열 머리)
+	if (bCanEdit)
+	{
+		const float ButtonSize = RulerHeight - 4.0f;
+		ImGui::SetCursorScreenPos(ImVec2(TimeAreaMinX - ButtonSize - 4.0f, Top + 2.0f));
+		if (ImGui::Button("+##AddNotifyTrack", ImVec2(ButtonSize, ButtonSize)))
+		{
+			NumTrackRows = GetNumTrackRows() + 1;
+		}
+		ImGui::SetItemTooltip("Add Notify Track");
+	}
 
 	// 시간 영역 마우스 처리: 눈금·트랙 전체를 하나의 버튼으로 잡습니다.
 	ImGui::SetCursorScreenPos(ImVec2(TimeAreaMinX, Top));
@@ -216,6 +227,14 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 		ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
 	const bool bHovered = ImGui::IsItemHovered();
 	const ImGuiIO& IO = ImGui::GetIO();
+	const bool bMouseInTracks = IO.MousePos.y >= TrackTop;
+
+	bool bHoverResizeHandle = false;
+	const int32 HoveredNotify = bCanEdit && bHovered && bMouseInTracks ? HitTestNotify(IO.MousePos, bHoverResizeHandle) : INDEX_NONE;
+	if (HoveredNotify != INDEX_NONE && bHoverResizeHandle && DragMode == EDragMode::None)
+	{
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	}
 
 	// 휠: 마우스 위치를 기준으로 확대/축소 (그 지점의 프레임이 제자리에 남도록)
 	if (bHovered && IO.MouseWheel != 0.0f)
@@ -236,18 +255,55 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 		ViewEndFrame -= IO.MouseDelta.x * FramesPerPixel;
 	}
 
-	// 왼쪽 버튼: 스크러빙. 누르는 순간부터 놓을 때까지 재생 헤드가 마우스를 따라가고, 프레임 단위로 맞춥니다.
+	// 오른쪽 버튼을 거의 움직이지 않고 떼면 Notify 메뉴 (끌었다면 위의 화면 이동입니다)
+	const float ClickThreshold = IO.MouseDragThreshold;
+	if (bCanEdit && bHovered && bMouseInTracks && ImGui::IsMouseReleased(ImGuiMouseButton_Right)
+		&& IO.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < ClickThreshold * ClickThreshold)
+	{
+		bool bIgnored = false;
+		ContextNotify = HitTestNotify(IO.MousePos, bIgnored);
+		if (ContextNotify != INDEX_NONE) SelectedNotify = ContextNotify;
+		ContextTime = SnapTime(MouseTime(IO.MousePos.x), true);
+		ContextTrack = TrackAtY(IO.MousePos.y);
+		ImGui::OpenPopup("##NotifyContext");
+	}
+
+	// 왼쪽 버튼: Notify 위면 선택·이동·길이 조절, 빈 곳이면 스크러빙. 눈금 줄은 항상 스크러빙입니다.
 	if (ImGui::IsItemActivated() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 	{
-		bScrubbing = true;
-	}
-	if (bScrubbing)
-	{
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		bool bResizeHandle = false;
+		const int32 Hit = bCanEdit && bMouseInTracks ? HitTestNotify(IO.MousePos, bResizeHandle) : INDEX_NONE;
+		if (Hit != INDEX_NONE)
 		{
-			bScrubbing = false;
+			SelectedNotify = Hit;
+			const FAnimNotifyEvent& Notify = Sequence->Notifies[Hit];
+			DragStartMouseTime = MouseTime(IO.MousePos.x);
+			DragStartTrigger = Notify.TriggerTime;
+			DragStartDuration = Notify.Duration;
+			DragMode = bResizeHandle ? EDragMode::ResizeNotify : EDragMode::MoveNotify;
+			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				DragMode = EDragMode::None;
+				OpenNamePopup(ENamePopupMode::Rename, Hit);
+			}
 		}
-		else if (Rate > 0.0f && NumFrames > 0)
+		else
+		{
+			if (bMouseInTracks) SelectedNotify = INDEX_NONE;
+			DragMode = EDragMode::Scrub;
+		}
+	}
+	if (DragMode != EDragMode::None && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+	{
+		DragMode = EDragMode::None;
+	}
+
+	const float Length = AnimEditor.GetPlaybackLength();
+	const bool bSnap = !IO.KeyShift;
+	switch (DragMode)
+	{
+	case EDragMode::Scrub:
+		if (Rate > 0.0f && NumFrames > 0)
 		{
 			const float Frame = ImClamp(std::round(XToFrame(IO.MousePos.x)), 0.0f, static_cast<float>(NumFrames));
 			if (std::abs(Frame - CurrentFrame) > 1.e-3f || AnimEditor.IsPlaying())
@@ -255,6 +311,37 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 				AnimEditor.SetPlaybackTime(Frame / Rate);
 			}
 		}
+		break;
+	case EDragMode::MoveNotify:
+		// 클릭만 하면(선택) 위치를 바꾸지 않습니다. 끌기 시작한 뒤부터 따라갑니다.
+		if (IsValidNotify(SelectedNotify) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+		{
+			FAnimNotifyEvent& Notify = Sequence->Notifies[SelectedNotify];
+			const float Time = SnapTime(DragStartTrigger + MouseTime(IO.MousePos.x) - DragStartMouseTime, bSnap);
+			Notify.TriggerTime = ImClamp(Time, 0.0f, ImMax(0.0f, Length - Notify.Duration));
+			Notify.TrackIndex = TrackAtY(IO.MousePos.y);
+		}
+		break;
+	case EDragMode::ResizeNotify:
+		if (IsValidNotify(SelectedNotify) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+		{
+			FAnimNotifyEvent& Notify = Sequence->Notifies[SelectedNotify];
+			// 최소 1프레임. 0이 되면 NotifyState가 Notify로 바뀌므로 막습니다.
+			const float MinDuration = 1.0f / Rate;
+			const float End = ImClamp(SnapTime(MouseTime(IO.MousePos.x), bSnap), Notify.TriggerTime + MinDuration,
+				ImMax(Notify.TriggerTime + MinDuration, Length));
+			Notify.Duration = End - Notify.TriggerTime;
+		}
+		break;
+	case EDragMode::None:
+		break;
+	}
+
+	// Delete: 선택한 Notify 삭제 (이 패널에 포커스가 있고 글자 입력 중이 아닐 때)
+	if (bCanEdit && IsValidNotify(SelectedNotify) && !IO.WantTextInput
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+	{
+		DeleteNotify(SelectedNotify);
 	}
 
 	DrawList->PushClipRect(ImVec2(TimeAreaMinX, Top), ImVec2(Origin.x + Avail.x, Bottom), true);
@@ -298,6 +385,8 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 	}
 	DrawList->AddLine(ImVec2(TimeAreaMinX, TrackTop), ImVec2(Origin.x + Avail.x, TrackTop), IM_COL32(0, 0, 0, 160));
 
+	DrawNotifies(DrawList);
+
 	// 재생 헤드: 눈금 위 라벨 상자 + 아래로 이어지는 세로선 (UE의 빨간 재생 헤드)
 	const float HeadX = FrameToX(CurrentFrame);
 	DrawList->AddLine(ImVec2(HeadX, TrackTop), ImVec2(HeadX, Bottom), PlayheadColor, 1.5f);
@@ -317,13 +406,325 @@ void FAnimTimelinePanel::DrawTimeArea(float Height)
 
 	DrawList->PopClipRect();
 
-	// 마지막 아이템은 여전히 ##TimeInput 버튼입니다. 잠시 머무를 때만 조작법을 보여 줍니다.
-	if (!bScrubbing)
+	// 마지막 아이템은 여전히 ##TimeInput 버튼입니다. Notify 위면 그 정보를, 아니면 조작법을 잠시 머무를 때 보여 줍니다.
+	if (DragMode == EDragMode::None)
 	{
-		ImGui::SetItemTooltip("Drag: scrub   Wheel: zoom   Right/Middle drag: pan");
+		if (HoveredNotify != INDEX_NONE)
+		{
+			const FAnimNotifyEvent& Notify = Sequence->Notifies[HoveredNotify];
+			if (Notify.IsNotifyState())
+				ImGui::SetItemTooltip("%s\nFrame %.1f - %.1f  (%.3fs - %.3fs)", Notify.NotifyName.c_str(),
+					Notify.TriggerTime * Rate, Notify.GetEndTriggerTime() * Rate, Notify.TriggerTime, Notify.GetEndTriggerTime());
+			else
+				ImGui::SetItemTooltip("%s\nFrame %.1f  (%.3fs)", Notify.NotifyName.c_str(), Notify.TriggerTime * Rate, Notify.TriggerTime);
+		}
+		else
+		{
+			ImGui::SetItemTooltip("Drag: scrub   Wheel: zoom   Right/Middle drag: pan\nRight click track: add notify");
+		}
 	}
 
+	DrawContextMenu();
+	if (bOpenNamePopup)
+	{
+		bOpenNamePopup = false;
+		ImGui::OpenPopup("##NotifyName");
+	}
+	DrawNamePopup();
+
 	ImGui::EndChild();
+}
+
+////////////////////////////////////////////////////////////
+// Notify 편집
+////////////////////////////////////////////////////////////
+
+bool FAnimTimelinePanel::IsValidNotify(int32 Index) const
+{
+	const UAnimSequenceBase* Sequence = AnimEditor.GetSequence();
+	return Sequence && Index >= 0 && Index < Sequence->Notifies.Num();
+}
+
+int32 FAnimTimelinePanel::GetNumTrackRows() const
+{
+	int32 Rows = ImMax(1, NumTrackRows);
+	if (const UAnimSequenceBase* Sequence = AnimEditor.GetSequence())
+	{
+		for (const FAnimNotifyEvent& Notify : Sequence->Notifies)
+			Rows = ImMax(Rows, Notify.TrackIndex + 1);
+	}
+	return Rows;
+}
+
+int32 FAnimTimelinePanel::TrackAtY(float Y) const
+{
+	const int32 Row = static_cast<int32>(std::floor((Y - TracksTop) / ImMax(1.0f, RowHeight)));
+	return ImClamp(Row, 0, GetNumTrackRows() - 1);
+}
+
+float FAnimTimelinePanel::SnapTime(float Time, bool bSnap) const
+{
+	const float Rate = AnimEditor.GetFrameRate();
+	return bSnap && Rate > 0.0f ? std::round(Time * Rate) / Rate : Time;
+}
+
+float FAnimTimelinePanel::MouseTime(float X) const
+{
+	const float Rate = AnimEditor.GetFrameRate();
+	return Rate > 0.0f ? XToFrame(X) / Rate : 0.0f;
+}
+
+int32 FAnimTimelinePanel::HitTestNotify(const ImVec2& Mouse, bool& bOutResizeHandle) const
+{
+	bOutResizeHandle = false;
+	const UAnimSequenceBase* Sequence = AnimEditor.GetSequence();
+	const float Rate = AnimEditor.GetFrameRate();
+	if (!Sequence || Rate <= 0.0f) return INDEX_NONE;
+
+	// 나중에 그린 것이 위에 있으므로 뒤에서부터 찾습니다. 선택한 Notify는 맨 위에 그리므로 먼저 봅니다.
+	auto Test = [&](int32 Index, bool& bHandle)
+	{
+		const FAnimNotifyEvent& Notify = Sequence->Notifies[Index];
+		const float RowTop = GetRowTop(Notify.TrackIndex);
+		if (Mouse.y < RowTop || Mouse.y >= RowTop + RowHeight) return false;
+		const float X0 = FrameToX(Notify.TriggerTime * Rate);
+		if (!Notify.IsNotifyState()) return std::abs(Mouse.x - X0) <= 6.0f;
+		const float X1 = ImMax(FrameToX(Notify.GetEndTriggerTime() * Rate), X0 + 4.0f);
+		if (Mouse.x >= X1 - 5.0f && Mouse.x <= X1 + 3.0f) { bHandle = true; return true; }
+		return Mouse.x >= X0 - 3.0f && Mouse.x < X1;
+	};
+	if (IsValidNotify(SelectedNotify) && Test(SelectedNotify, bOutResizeHandle)) return SelectedNotify;
+	for (int32 Index = Sequence->Notifies.Num() - 1; Index >= 0; --Index)
+	{
+		bOutResizeHandle = false;
+		if (Index != SelectedNotify && Test(Index, bOutResizeHandle)) return Index;
+	}
+	bOutResizeHandle = false;
+	return INDEX_NONE;
+}
+
+void FAnimTimelinePanel::AddNotify(const FString& Name, float Time, int32 Track, bool bState)
+{
+	UAnimSequenceBase* Sequence = AnimEditor.GetSequence();
+	const float Rate = AnimEditor.GetFrameRate();
+	if (!Sequence || Rate <= 0.0f || Name.empty()) return;
+
+	const float Length = AnimEditor.GetPlaybackLength();
+	FAnimNotifyEvent Notify;
+	Notify.NotifyName = Name;
+	Notify.TrackIndex = ImMax(0, Track);
+	Notify.TriggerTime = ImClamp(Time, 0.0f, Length);
+	if (bState)
+	{
+		// 처음 길이는 10프레임. 끝을 넘으면 시작을 앞으로 당기고, 그래도 넘으면 길이를 줄입니다.
+		const float DefaultDuration = 10.0f / Rate;
+		Notify.TriggerTime = ImMax(0.0f, ImMin(Notify.TriggerTime, Length - DefaultDuration));
+		Notify.Duration = ImMax(1.0f / Rate, ImMin(DefaultDuration, Length - Notify.TriggerTime));
+	}
+	Sequence->Notifies.Add(Notify);
+	SelectedNotify = Sequence->Notifies.Num() - 1;
+	NumTrackRows = ImMax(NumTrackRows, Notify.TrackIndex + 1);
+}
+
+void FAnimTimelinePanel::DeleteNotify(int32 Index)
+{
+	if (!IsValidNotify(Index)) return;
+	AnimEditor.GetSequence()->Notifies.RemoveAt(static_cast<uint32>(Index));
+	SelectedNotify = INDEX_NONE;
+	ContextNotify = INDEX_NONE;
+	RenameTarget = INDEX_NONE;
+	DragMode = EDragMode::None;
+}
+
+void FAnimTimelinePanel::OpenNamePopup(ENamePopupMode Mode, int32 InRenameTarget)
+{
+	NamePopupMode = Mode;
+	RenameTarget = Mode == ENamePopupMode::Rename ? InRenameTarget : INDEX_NONE;
+	NameBuffer[0] = '\0';
+	if (Mode == ENamePopupMode::Rename && IsValidNotify(RenameTarget))
+	{
+		std::snprintf(NameBuffer, sizeof(NameBuffer), "%s", AnimEditor.GetSequence()->Notifies[RenameTarget].NotifyName.c_str());
+	}
+	bOpenNamePopup = true;
+}
+
+TArray<FString> FAnimTimelinePanel::CollectNotifyNames() const
+{
+	TArray<FString> Names;
+	if (const UAnimSequenceBase* Sequence = AnimEditor.GetSequence())
+	{
+		for (const FAnimNotifyEvent& Notify : Sequence->Notifies)
+		{
+			if (std::find(Names.begin(), Names.end(), Notify.NotifyName) == Names.end())
+				Names.Add(Notify.NotifyName);
+		}
+	}
+	std::sort(Names.begin(), Names.end());
+	return Names;
+}
+
+void FAnimTimelinePanel::DrawTrackRows(ImDrawList* DrawList, float OriginX, float Width)
+{
+	const int32 Rows = GetNumTrackRows();
+	for (int32 Row = 0; Row < Rows; ++Row)
+	{
+		const float RowTop = GetRowTop(Row);
+		DrawList->AddRectFilled(ImVec2(OriginX, RowTop), ImVec2(OriginX + Width, RowTop + RowHeight),
+			IM_COL32(255, 255, 255, Row % 2 == 0 ? 8 : 0));
+		char Label[32];
+		if (Row == 0) std::snprintf(Label, sizeof(Label), "Notifies");
+		else std::snprintf(Label, sizeof(Label), "Notifies %d", Row + 1);
+		DrawList->AddText(ImVec2(OriginX + 8.0f, RowTop + (RowHeight - ImGui::GetTextLineHeight()) * 0.5f),
+			ImGui::GetColorU32(ImGuiCol_Text), Label);
+		DrawList->AddLine(ImVec2(OriginX, RowTop + RowHeight), ImVec2(OriginX + Width, RowTop + RowHeight),
+			IM_COL32(0, 0, 0, 120));
+	}
+}
+
+void FAnimTimelinePanel::DrawNotifies(ImDrawList* DrawList)
+{
+	const UAnimSequenceBase* Sequence = AnimEditor.GetSequence();
+	const float Rate = AnimEditor.GetFrameRate();
+	if (!Sequence || Rate <= 0.0f) return;
+
+	const ImU32 NotifyColor = IM_COL32(240, 160, 60, 255);
+	const ImU32 StateColor = IM_COL32(70, 130, 210, 220);
+	const ImU32 SelectedOutline = IM_COL32(255, 255, 255, 255);
+	const ImU32 TextColor = IM_COL32(235, 235, 235, 255);
+	const float TextHeight = ImGui::GetTextLineHeight();
+
+	auto Draw = [&](int32 Index)
+	{
+		const FAnimNotifyEvent& Notify = Sequence->Notifies[Index];
+		const bool bSelected = Index == SelectedNotify;
+		const float RowTop = GetRowTop(Notify.TrackIndex);
+		const float CenterY = RowTop + RowHeight * 0.5f;
+		const float X0 = FrameToX(Notify.TriggerTime * Rate);
+		const char* Name = Notify.NotifyName.c_str();
+
+		if (Notify.IsNotifyState())
+		{
+			// NotifyState: 구간 막대 + 오른쪽 끝 손잡이, 이름은 막대 안에
+			const float X1 = ImMax(FrameToX(Notify.GetEndTriggerTime() * Rate), X0 + 4.0f);
+			const ImVec2 Min(X0, RowTop + 3.0f);
+			const ImVec2 Max(X1, RowTop + RowHeight - 3.0f);
+			DrawList->AddRectFilled(Min, Max, StateColor, 3.0f);
+			DrawList->AddRectFilled(ImVec2(X1 - 3.0f, Min.y), Max, IM_COL32(255, 255, 255, 60), 3.0f);
+			if (bSelected) DrawList->AddRect(Min, Max, SelectedOutline, 3.0f, 0, 1.5f);
+			DrawList->PushClipRect(Min, ImVec2(X1 - 4.0f, Max.y), true);
+			DrawList->AddText(ImVec2(X0 + 5.0f, CenterY - TextHeight * 0.5f), TextColor, Name);
+			DrawList->PopClipRect();
+		}
+		else
+		{
+			// Notify: 마름모 + 오른쪽에 이름
+			const float R = ImMin(6.0f, RowHeight * 0.35f);
+			const ImVec2 Top(X0, CenterY - R), Right(X0 + R, CenterY), Bottom(X0, CenterY + R), Left(X0 - R, CenterY);
+			DrawList->AddQuadFilled(Top, Right, Bottom, Left, NotifyColor);
+			if (bSelected) DrawList->AddQuad(Top, Right, Bottom, Left, SelectedOutline, 1.5f);
+			DrawList->AddText(ImVec2(X0 + R + 4.0f, CenterY - TextHeight * 0.5f), TextColor, Name);
+		}
+	};
+
+	for (int32 Index = 0; Index < Sequence->Notifies.Num(); ++Index)
+	{
+		if (Index != SelectedNotify) Draw(Index);
+	}
+	if (IsValidNotify(SelectedNotify)) Draw(SelectedNotify);
+}
+
+void FAnimTimelinePanel::DrawContextMenu()
+{
+	if (!ImGui::BeginPopup("##NotifyContext"))
+	{
+		return;
+	}
+
+	if (IsValidNotify(ContextNotify))
+	{
+		ImGui::TextDisabled("%s", AnimEditor.GetSequence()->Notifies[ContextNotify].NotifyName.c_str());
+		if (ImGui::MenuItem("Rename..."))
+		{
+			OpenNamePopup(ENamePopupMode::Rename, ContextNotify);
+		}
+		if (ImGui::MenuItem("Delete", "Del"))
+		{
+			DeleteNotify(ContextNotify);
+		}
+		ImGui::Separator();
+	}
+
+	// 이미 쓰인 이름을 다시 고르거나 New...로 새 이름을 입력합니다.
+	const TArray<FString> Names = CollectNotifyNames();
+	auto AddMenu = [&](const char* Label, bool bState)
+	{
+		if (!ImGui::BeginMenu(Label)) return;
+		for (const FString& Name : Names)
+		{
+			if (ImGui::MenuItem(Name.c_str()))
+			{
+				AddNotify(Name, ContextTime, ContextTrack, bState);
+			}
+		}
+		if (!Names.IsEmpty()) ImGui::Separator();
+		if (ImGui::MenuItem("New..."))
+		{
+			OpenNamePopup(bState ? ENamePopupMode::AddNotifyState : ENamePopupMode::AddNotify);
+		}
+		ImGui::EndMenu();
+	};
+	AddMenu("Add Notify", false);
+	AddMenu("Add Notify State", true);
+	ImGui::Separator();
+	if (ImGui::MenuItem("Add Track"))
+	{
+		NumTrackRows = GetNumTrackRows() + 1;
+	}
+	ImGui::EndPopup();
+}
+
+void FAnimTimelinePanel::DrawNamePopup()
+{
+	if (!ImGui::BeginPopup("##NotifyName"))
+	{
+		return;
+	}
+
+	const char* Title = NamePopupMode == ENamePopupMode::Rename ? "Rename Notify"
+		: NamePopupMode == ENamePopupMode::AddNotifyState ? "New Notify State" : "New Notify";
+	ImGui::TextUnformatted(Title);
+	if (ImGui::IsWindowAppearing())
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
+	ImGui::SetNextItemWidth(200.0f);
+	bool bConfirm = ImGui::InputText("##NotifyNameInput", NameBuffer, sizeof(NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+	bConfirm |= ImGui::Button("OK");
+	ImGui::SameLine();
+	const bool bCancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape, false);
+
+	// 앞뒤 공백은 지웁니다. 빈 이름은 받지 않습니다.
+	FString Name = NameBuffer;
+	const size_t First = Name.find_first_not_of(" \t");
+	Name = First == FString::npos ? FString() : Name.substr(First, Name.find_last_not_of(" \t") - First + 1);
+
+	if (bConfirm && !Name.empty())
+	{
+		if (NamePopupMode == ENamePopupMode::Rename)
+		{
+			if (IsValidNotify(RenameTarget)) AnimEditor.GetSequence()->Notifies[RenameTarget].NotifyName = Name;
+		}
+		else
+		{
+			AddNotify(Name, ContextTime, ContextTrack, NamePopupMode == ENamePopupMode::AddNotifyState);
+		}
+		ImGui::CloseCurrentPopup();
+	}
+	else if (bCancel)
+	{
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndPopup();
 }
 
 void FAnimTimelinePanel::DrawTransportBar()
@@ -348,6 +749,24 @@ void FAnimTimelinePanel::DrawTransportBar()
 		const int32 Frame = Rate > 0.0f ? static_cast<int32>(std::floor(Time * Rate + 1.e-4f)) : 0;
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextDisabled("%d / %d  (%.2fs)", Frame, AnimEditor.GetNumberOfFrames(), Time);
+	}
+
+	// 왼쪽: Notify 저장. 바뀐 것이 있을 때만 누를 수 있고 이름 끝에 *가 붙습니다.
+	{
+		const bool bDirty = AnimEditor.HasUnsavedNotifies();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!bDirty);
+		if (ImGui::SmallButton(bDirty ? "Save*###SaveNotifies" : "Save###SaveNotifies"))
+		{
+			AnimEditor.SaveNotifies();
+		}
+		ImGui::EndDisabled();
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			const FString& Error = AnimEditor.GetLastNotifySaveError();
+			if (!Error.empty()) ImGui::SetTooltip("Save Notifies (Ctrl+S)\nLast error: %s", Error.c_str());
+			else ImGui::SetTooltip("Save Notifies (Ctrl+S)");
+		}
 	}
 
 	// 가운데: 재생 버튼 7개

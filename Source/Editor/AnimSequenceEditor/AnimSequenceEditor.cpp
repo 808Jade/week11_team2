@@ -27,6 +27,38 @@ FAnimSequenceEditor::FAnimSequenceEditor(
 	, Sequence(&InSequence)
 	, SequencePath(FAssetUtils::GetAssetKey(InAssetPath))
 {
+	RememberSavedNotifies();
+}
+
+void FAnimSequenceEditor::RememberSavedNotifies()
+{
+	// 처음 보는 애니메이션만 기록합니다. 로드할 때 파일에서 읽었으므로 지금 값이 디스크 값입니다.
+	if (Sequence)
+		SavedNotifies.try_emplace(Sequence, Sequence->Notifies);
+}
+
+bool FAnimSequenceEditor::HasUnsavedNotifies() const
+{
+	if (!Sequence) return false;
+	const auto It = SavedNotifies.find(Sequence);
+	return It != SavedNotifies.end() && !(Sequence->Notifies == It->second);
+}
+
+bool FAnimSequenceEditor::SaveNotifies()
+{
+	if (!Sequence || SequencePath.empty())
+	{
+		LastNotifySaveError = "No animation to save";
+		return false;
+	}
+	if (!Sequence->SaveNotifiesToFile(SequencePath, LastNotifySaveError))
+	{
+		HTR_LOG(Error, "Failed to save notifies for {}: {}", SequencePath, LastNotifySaveError);
+		return false;
+	}
+	SavedNotifies[Sequence] = Sequence->Notifies;
+	HTR_LOG(Info, "Saved {} notifies: {}", Sequence->Notifies.Num(), UAnimSequenceBase::GetNotifiesFilePath(SequencePath));
+	return true;
 }
 
 TArray<FString> FAnimSequenceEditor::FindPreviewMeshPaths(const UAnimSequenceBase& Sequence)
@@ -156,8 +188,12 @@ bool FAnimSequenceEditor::ChangeAnimation(const FString& AnimationPath)
 		return false;
 	}
 
+	// 교체 전 애니메이션의 저장 안 된 Notify는 애셋(메모리)에 남아 있어서, 다시 돌아오면 이어서 저장할 수 있습니다.
+	if (HasUnsavedNotifies())
+		HTR_LOG(Warning, "Notifies of {} are not saved yet", SequencePath);
 	Sequence = NewSequence;
 	SequencePath = Key;
+	RememberSavedNotifies();
 	RestartAnimation();
 	return true;
 }
@@ -347,5 +383,6 @@ void FAnimSequenceEditor::ShutdownResources()
 	PreviewMeshPaths.Empty();
 	CompatibleAnimationPaths.Empty();
 	PreviewMeshPath.clear();
+	SavedNotifies.clear();
 	FSkeletalMeshEditor::ShutdownResources();
 }

@@ -1,0 +1,17 @@
+{
+  "Notifies": [
+    {
+      "Duration": 0.0,
+      "Name": "bounce",
+      "Time": 0.5,
+      "Track": 0
+    },
+    {
+      "Duration": 0.4000000059604645,
+      "Name": "bounce state",
+      "Time": 0.8833333253860474,
+      "Track": 1
+    }
+  ],
+  "Version": 1
+}

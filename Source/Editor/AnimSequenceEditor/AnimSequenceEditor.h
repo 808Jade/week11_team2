@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
+#include "Animation/AnimNotifyTypes.h"
+#include <unordered_map>
 
 class UAnimSequenceBase;
 
@@ -69,6 +71,16 @@ public:
 	// 같은 Skeleton의 다른 애니메이션으로 교체합니다. 탭은 그대로 두고 재생할 애니메이션만 바꿉니다. (UE Asset Browser)
 	bool ChangeAnimation(const FString& AnimationPath);
 
+	////////////////////////////////////////////////////////////
+	// Notify 저장 (애니메이션 옆 .notifies.json)
+	////////////////////////////////////////////////////////////
+
+	// 지금 보여주는 애니메이션의 Notifies를 사이드카 파일에 씁니다.
+	bool SaveNotifies();
+	// 마지막으로 읽거나 저장한 뒤 Notifies가 바뀌었는지.
+	bool HasUnsavedNotifies() const;
+	const FString& GetLastNotifySaveError() const { return LastNotifySaveError; }
+
 	// 처음 연 애셋 경로 또는 지금 보여주는 애니메이션 경로면 이 에디터가 담당합니다.
 	bool IsEditingAsset(const FString& Path) const override;
 	void OnReopenAsset(const FString& Path) override;
@@ -98,6 +110,12 @@ private:
 	TArray<FString> CompatibleAnimationPaths;
 	FString PreviewMeshPath;
 	FString LastPlayError;
+
+	// 애니메이션마다 디스크에 있는 것으로 아는 Notifies. 지금 Notifies와 다르면 저장 안 된 변경이 있습니다.
+	// Asset Browser로 다른 애니메이션에 갔다가 돌아와도 저장 안 된 상태가 유지되도록 애니메이션별로 둡니다.
+	void RememberSavedNotifies();
+	std::unordered_map<const UAnimSequenceBase*, TArray<FAnimNotifyEvent>> SavedNotifies;
+	FString LastNotifySaveError;
 
 	// 프리뷰 메시나 애니메이션을 바꿔 인스턴스가 새로 생겨도 유지할 재생 설정
 	class UAnimSingleNodeInstance* GetPlayer() const;

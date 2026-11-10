@@ -34,6 +34,16 @@ public:
 	// 애니메이션에 붙은 Notify 목록. (UE와 같이 public. 에디터 Timeline이 직접 편집합니다)
 	TArray<FAnimNotifyEvent> Notifies;
 
+	// Notify는 애니메이션 에셋 옆의 사이드카 파일에 저장합니다. .fbxbin은 FBX를 다시 임포트하면 새로 써지므로 따로 둡니다.
+	//   Assets/Imported/X/AS_Run.fbxbin  →  Assets/Imported/X/AS_Run.notifies.json
+	// AssetPath는 애셋 키("Imported/X/AS_Run.fbxbin")나 파일 경로입니다. 해석할 수 없으면 빈 문자열입니다.
+	static FString GetNotifiesFilePath(const FString& AssetPath);
+	// 사이드카 파일을 읽어 Notifies를 바꿉니다. 파일이 없으면 Notifies를 비우고 true입니다.
+	// 형식이 틀리면 Notifies를 건드리지 않고 false입니다. 잘못된 항목 하나는 건너뛰고 OutError에 남깁니다.
+	bool LoadNotifiesFromFile(const FString& AssetPath, FString& OutError);
+	// Notifies를 사이드카 파일에 씁니다. Notify가 하나도 없으면 파일을 지웁니다.
+	bool SaveNotifiesToFile(const FString& AssetPath, FString& OutError) const;
+
 protected:
 	void SetDataModel(UAnimDataModel* InDataModel) { DataModel = InDataModel; }
 
