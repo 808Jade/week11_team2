@@ -5,10 +5,16 @@
 #include "Editor/EditorUI/EditorTabContainer.h"
 #include "Editor/LevelEditor/LevelEditorTab.h"
 
+class FAnimGraphEditor;
+class FBlendSpaceEditor;
+
 class FEditorManager
 {
 public:
 	explicit FEditorManager(class UEditorEngine& InEditorEngine);
+	~FEditorManager();
+
+public:
 
 	// 애셋을 살펴볼 수 있는 새로운 에디터를 요청합니다. 
 	void OpenEditor(const FString& AssetPath);
@@ -54,4 +60,6 @@ private:
 	TArray<TUniquePtr<FAssetEditor>> Editors;
 	TArray<FString> PendingOpens;
 	bool bShuttingDown = false;
+	TUniquePtr<FAnimGraphEditor> mAnimGraphEditor{};
+	TUniquePtr<FBlendSpaceEditor> mBlendSpaceEditor{};
 };

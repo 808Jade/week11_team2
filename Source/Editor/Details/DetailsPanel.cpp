@@ -1,4 +1,6 @@
 #include "EnginePCH.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Editor/AnimationEditor/FAnimationAssetPicker.h"
 #include "Editor/Details/DetailsPanel.h"
 #include "Editor/Details/PropertyEditor.h"
 
@@ -1411,6 +1413,9 @@ void FDetailsPanel::OnRender()
 			{
 				ImGui::TextUnformatted("Skeletal Mesh");
 				DrawSkeletalMeshSlot(Component);
+				if (auto* SkeletalMesh{Cast<USkeletalMeshComponent>(Component)}) {
+					DrawAnimGraphSlot(SkeletalMesh);
+				}
 			}
 			DrawShadowPreview();
 
@@ -1754,4 +1759,14 @@ void FDetailsPanel::HandleComponentDrop(AActor* Actor, UActorComponent*& Selecti
 FDetailsPanel::~FDetailsPanel()
 {
 	//delete transform;
+}
+
+void FDetailsPanel::DrawAnimGraphSlot(USkeletalMeshComponent* Component) {
+    FString Path{Component->GetAnimGraph()};
+    if (DrawAnimationAssetPicker("Anim Graph", Path, EAssetType::AnimGraph)) {
+        Component->SetAnimGraph(Path, mAnimGraphError);
+    }
+    if (!mAnimGraphError.empty()) {
+        ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", mAnimGraphError.c_str());
+    }
 }

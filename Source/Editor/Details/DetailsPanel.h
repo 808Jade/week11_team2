@@ -46,7 +46,9 @@ public:
 
 private:
 	void DrawShadowPreview();
+	void DrawAnimGraphSlot(class USkeletalMeshComponent* Component);
 	FShadowPreviewQuery QueryShadowPreview;
+	FString mAnimGraphError{};
 	FImGuiRenderer* ImGuiRenderer = nullptr;
 	float ShadowPreviewContrast = 32.0f;
 	void DrawSceneComponentNode(USceneComponent* Component, USceneComponent* Root, UActorComponent*& OutSelectedComponent);
@@ -70,4 +72,3 @@ private:
 	uint32 PendingDroppedComponentId = 0;
 	USceneComponent* PendingDragComponent = nullptr;
 };
-

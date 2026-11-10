@@ -27,7 +27,7 @@ public:
 private:
 	void RenderFolderPane();
 	void RenderAssetPane();
-	void RenderCreateWidgetPopup();
+	void RenderCreateAssetPopup();
 	void RenderAssetGrid();
 	bool RenderAssetTile(const fs::path& Path, const FString& FilenameString,
 		bool bIsDirectory, float TileSize, float FramePadding, bool& bTriedThumbnailLoad);
@@ -49,6 +49,8 @@ private:
 	std::function<void(const FString&)> OnCreateWidget;
 	std::function<void(const FString&)> OnOpenMesh;
 	char NewAssetName[64] = "NewWidget";
+	FString mCreateAssetExtension{".widget"};
+	FString mCreateAssetError{};
 	char SearchText[128] = {};
 	bool bResetGridScroll = false;
 	bool bRevealCurrentFolder = true;

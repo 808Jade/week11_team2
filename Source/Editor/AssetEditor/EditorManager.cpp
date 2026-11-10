@@ -1,5 +1,8 @@
 #include "EnginePCH.h"
 #include "Editor/AssetEditor/EditorManager.h"
+#include "Editor/AnimationEditor/FAnimGraphEditor.h"
+#include "Editor/AnimationEditor/FBlendSpaceEditor.h"
+#include "Asset/FbxImporter/FbxPath.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Editor/AnimSequenceEditor/AnimSequenceEditor.h"
@@ -18,6 +21,8 @@ FEditorManager::FEditorManager(UEditorEngine& InEditorEngine)
 {
 	TabContainer.AddTab(LevelEditorTab.get());
 }
+
+FEditorManager::~FEditorManager() = default;
 
 void FEditorManager::OpenEditor(const FString& AssetPath)
 {
@@ -49,8 +54,29 @@ FAssetEditor* FEditorManager::FindEditor(const FString& Path) const
 	return nullptr;
 }
 
-void FEditorManager::CreateEditor(const FString& AssetPath)
-{
+void FEditorManager::CreateEditor(const FString& AssetPath) {
+    const FString FilePathForAnimation{FAssetUtils::ResolveAssetFilePath(AssetPath)};
+    const auto AnimationPath{FbxPath::FromString(FilePathForAnimation)};
+    const auto Extension{AnimationPath.extension()};
+    if (Extension == L".animgraph" || Extension == L".blendspace") {
+        FString Error{};
+        if (Extension == L".animgraph") {
+            if (!mAnimGraphEditor) {
+                mAnimGraphEditor = MakeUnique<FAnimGraphEditor>();
+            }
+            mAnimGraphEditor->Open(AnimationPath, Error);
+        } else {
+            if (!mBlendSpaceEditor) {
+                mBlendSpaceEditor = MakeUnique<FBlendSpaceEditor>();
+            }
+            mBlendSpaceEditor->Open(AnimationPath, Error);
+        }
+        if (!Error.empty()) {
+            HTR_LOG(Error, "{}", Error);
+        }
+        return;
+    }
+
 	// 이미 열려 있는 에디터가 있으면 활성화
 	if (FAssetEditor* Existing = FindEditor(AssetPath))
 	{
@@ -213,6 +239,8 @@ void FEditorManager::Shutdown()
 	}
 
 	bShuttingDown = true;
+	mAnimGraphEditor.reset();
+	mBlendSpaceEditor.reset();
 	
 	PendingOpens.Empty();
 
@@ -226,7 +254,12 @@ void FEditorManager::Shutdown()
 	LevelEditorTab.reset();
 }
 
-void FEditorManager::DrawEditorUI()
-{
-	TabContainer.OnRender();
+void FEditorManager::DrawEditorUI() {
+    TabContainer.OnRender();
+    if (mAnimGraphEditor) {
+        mAnimGraphEditor->Draw();
+    }
+    if (mBlendSpaceEditor) {
+        mBlendSpaceEditor->Draw();
+    }
 }
