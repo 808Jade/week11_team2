@@ -9,13 +9,19 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 {
 	bool SetSequence(const UAnimSequenceBase* InSequence, bool bInLoopAnimation, float InPlayRate, FString& OutError);
 	void SetAccumulatedTime(double NewTime);
+
 	double GetCurrentAssetTime() const { return InternalTimeAccumulator; }
 	float GetCurrentAssetLength() const;
+
+	FVector GetRootMotionDelta() const override { return RootMotionDelta; }
+
 	void Update(const FAnimationUpdateContext& Context) override;
 	void Evaluate(FPoseContext& Output) override;
 
 private:
 	const UAnimSequenceBase* Sequence = nullptr;
+	FVector RootMotionDelta = FVector(0, 0, 0);
+
 	double InternalTimeAccumulator = 0.0;
 	float PlayRate = 1.0f;
 	bool bLoopAnimation = true;

@@ -13,10 +13,11 @@ class UAnimSequenceBase : public UAnimationAsset
 
 public:
 	~UAnimSequenceBase() override;
+
 	const UAnimDataModel* GetDataModel() const { return DataModel; }
 	float GetPlayLength() const override;
-	virtual void GetAnimationPose(FAnimationPoseData& OutPoseData,
-		const FAnimExtractContext& ExtractionContext) const = 0;
+	virtual void GetAnimationPose(FAnimationPoseData& OutPoseData, const FAnimExtractContext& ExtractionContext) const = 0;
+	virtual FVector GetRootLocationAtTime(double Time) const { return FVector(0, 0, 0); }
 
 protected:
 	void SetDataModel(UAnimDataModel* InDataModel) { DataModel = InDataModel; }

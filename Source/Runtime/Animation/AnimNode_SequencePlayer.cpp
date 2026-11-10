@@ -40,11 +40,25 @@ float FAnimNode_SequencePlayer::GetCurrentAssetLength() const
 
 void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
 {
+	RootMotionDelta = FVector(0, 0, 0);
 	const float DeltaTime = Context.GetDeltaTime();
 	const double Length = GetCurrentAssetLength();
 	if (Length <= 0.0 || !std::isfinite(DeltaTime) || DeltaTime <= 0.0f) return;
+	const double Prev = InternalTimeAccumulator;
 	const double Next = InternalTimeAccumulator + static_cast<double>(DeltaTime) * PlayRate;
 	InternalTimeAccumulator = bLoopAnimation ? std::fmod(Next, Length) : std::min(Next, Length);
+
+	const FVector PrevRoot = Sequence->GetRootLocationAtTime(Prev);
+	const FVector CurrRoot = Sequence->GetRootLocationAtTime(InternalTimeAccumulator);
+	if (bLoopAnimation && Next >= Length)
+	{
+		// 루프 경계를 넘은 프레임: (끝 - 이전) + (현재 - 시작)으로 나눠서 더한다
+		const FVector StartRoot = Sequence->GetRootLocationAtTime(0.0);
+		const FVector EndRoot = Sequence->GetRootLocationAtTime(Length);
+		RootMotionDelta = (EndRoot - PrevRoot) + (CurrRoot - StartRoot);
+	}
+	else
+		RootMotionDelta = CurrRoot - PrevRoot;
 }
 
 void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)
