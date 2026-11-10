@@ -189,7 +189,7 @@ namespace
 			Constants.View = View.ViewMatrix;
 			Constants.Projection = View.ProjectionMatrix;
 			Constants.NormalMatrix = World.Inverse().GetTransposed();
-			Constants.ShadowFlags.X = static_cast<float>(bReceiveShadow);
+			Constants.ObjectFlags.X = static_cast<float>(bReceiveShadow);
 			std::memcpy(Item.ObjectData.data(), &Constants, sizeof(Constants));
 			Item.ObjectDataSize = sizeof(Constants);
 		}

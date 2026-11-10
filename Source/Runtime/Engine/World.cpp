@@ -50,7 +50,7 @@ namespace
 		FPerObjectConstants Constants{};
 		Constants.World = LocalToWorld;
 		Constants.NormalMatrix = WorldToLocal.GetTransposed();
-		Constants.ShadowFlags.X = bReceiveShadow ? 1.0f : 0.0f;   // GBuffer가 NormalRoughness.w 부호로 넘긴다
+		Constants.ObjectFlags.X = bReceiveShadow ? 1.0f : 0.0f;   // GBuffer가 NormalRoughness.w 부호로 넘긴다
 		std::memcpy(Dest, &Constants, sizeof(Constants));
 	}
 }

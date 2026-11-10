@@ -27,7 +27,7 @@ cbuffer PerObject : register(b0)
     matrix View;
     matrix Projection;
     matrix NormalMatrix; // World 행렬의 역행렬을 전치한 법선 변환 행렬
-    float4 ShadowFlags;
+    float4 ObjectFlags;
 };
 
 cbuffer Lighting : register(b1)
@@ -102,7 +102,7 @@ float GetLightShadow(FLightRenderParameters Light, float3 PixelPosition)
 #if LIGHTING_MODEL_GOURAUD
     return 1.0f;
 #else
-    if (Light.ShadowMapChannel == INVALID_SHADOW_CHANNEL || ShadowFlags.x < 0.5f) return 1.0f;
+    if (Light.ShadowMapChannel == INVALID_SHADOW_CHANNEL || ObjectFlags.x < 0.5f) return 1.0f;
     return ScreenShadowMask.Load(int3(int2(PixelPosition.xy), 0))[Light.ShadowMapChannel];
 #endif
 }

@@ -11,7 +11,7 @@ cbuffer WorldConstants : register(b2)
 {
     matrix World;
     matrix NormalMatrix;
-    float4 ShadowFlags; // x: bReceiveShadow
+    float4 ObjectFlags; // x: bReceiveShadow
 };
 
 cbuffer MaterialParams : register(b1)
@@ -85,7 +85,7 @@ PS_INPUT mainVS(VS_INPUT Input)
     float Handedness = Input.Tangent.w * (determinant((float3x3)World) < 0.0f ? -1.0f : 1.0f);
     Output.WorldTangent = float4(T, Handedness);
     Output.UV = Input.UV;
-    Output.ReceiveShadow = ShadowFlags.x;
+    Output.ReceiveShadow = ObjectFlags.x;
     return Output;
 }
 
