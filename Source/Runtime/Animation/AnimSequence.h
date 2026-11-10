@@ -16,6 +16,7 @@ public:
 		const FAnimExtractContext& ExtractionContext) const override;
 
 	FVector GetRootLocationAtTime(double Time) const override;
+	FQuat GetRootRotationAtTime(double Time) const override;
 
 private:
 	// 시간을 앞뒤 키 인덱스와 보간 비율로 바꾼다 (GetAnimationPose와 같은 규칙)

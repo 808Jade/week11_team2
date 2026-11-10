@@ -160,3 +160,14 @@ FVector UAnimSequence::GetRootLocationAtTime(double Time) const
 	GetKeyFrame(Time, First, Second, Alpha);
 	return FMath::Lerp(Root->PosKeys[First], Root->PosKeys[Second], Alpha);
 }
+
+FQuat UAnimSequence::GetRootRotationAtTime(double Time) const
+{
+	const FRawAnimSequenceTrack* Root = FindRootTrack();
+	if (!Root || Root->RotKeys.IsEmpty()) return FQuat::Identity();
+	if (Root->RotKeys.Num() == 1) return Root->RotKeys[0];
+	int32 First, Second;
+	float Alpha;
+	GetKeyFrame(Time, First, Second, Alpha);
+	return FMath::Slerp(Root->RotKeys[First], Root->RotKeys[Second], Alpha);
+}
