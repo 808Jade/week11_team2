@@ -13,14 +13,14 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 	double GetCurrentAssetTime() const { return InternalTimeAccumulator; }
 	float GetCurrentAssetLength() const;
 
-	FVector GetRootMotionDelta() const override { return RootMotionDelta; }
+	FRootMotionDelta GetRootMotionDelta() const override { return RootMotionDelta; }
 
 	void Update(const FAnimationUpdateContext& Context) override;
 	void Evaluate(FPoseContext& Output) override;
 
 private:
 	const UAnimSequenceBase* Sequence = nullptr;
-	FVector RootMotionDelta = FVector(0, 0, 0);
+	FRootMotionDelta RootMotionDelta;
 
 	double InternalTimeAccumulator = 0.0;
 	float PlayRate = 1.0f;

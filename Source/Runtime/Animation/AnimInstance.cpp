@@ -47,7 +47,7 @@ bool UAnimInstance::EvaluateAnimation(TArray<FTransform>& OutPose)
 	return true;
 }
 
-FVector UAnimInstance::GetRootMotionDelta() const
+FRootMotionDelta UAnimInstance::GetRootMotionDelta() const
 {
-	return RootNode ? RootNode->GetRootMotionDelta() : FVector(0, 0, 0);
+	return RootNode ? RootNode->GetRootMotionDelta() : FRootMotionDelta{};
 }

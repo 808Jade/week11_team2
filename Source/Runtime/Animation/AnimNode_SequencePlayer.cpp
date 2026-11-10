@@ -40,7 +40,7 @@ float FAnimNode_SequencePlayer::GetCurrentAssetLength() const
 
 void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
 {
-	RootMotionDelta = FVector(0, 0, 0);
+	RootMotionDelta = FRootMotionDelta{};
 	const float DeltaTime = Context.GetDeltaTime();
 	const double Length = GetCurrentAssetLength();
 	if (Length <= 0.0 || !std::isfinite(DeltaTime) || DeltaTime <= 0.0f) return;
@@ -48,17 +48,33 @@ void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
 	const double Next = InternalTimeAccumulator + static_cast<double>(DeltaTime) * PlayRate;
 	InternalTimeAccumulator = bLoopAnimation ? std::fmod(Next, Length) : std::min(Next, Length);
 
-	const FVector PrevRoot = Sequence->GetRootLocationAtTime(Prev);
-	const FVector CurrRoot = Sequence->GetRootLocationAtTime(InternalTimeAccumulator);
+	// From → To 구간의 root 이동과 회전을 From 시점 root가 바라보던 방향 기준으로 구한다
+	const auto Extract = [this](double From, double To, FVector& OutTranslation, FQuat& OutRotation)
+	{
+		const FQuat InvFromRot = Sequence->GetRootRotationAtTime(From).UnitInverse();
+		OutTranslation = InvFromRot.RotateVector(Sequence->GetRootLocationAtTime(To) - Sequence->GetRootLocationAtTime(From));
+		OutRotation = InvFromRot * Sequence->GetRootRotationAtTime(To);
+	};
+
+	FVector LocalTranslation;
+	FQuat LocalRotation;
 	if (bLoopAnimation && Next >= Length)
 	{
-		// 루프 경계를 넘은 프레임: (끝 - 이전) + (현재 - 시작)으로 나눠서 더한다
-		const FVector StartRoot = Sequence->GetRootLocationAtTime(0.0);
-		const FVector EndRoot = Sequence->GetRootLocationAtTime(Length);
-		RootMotionDelta = (EndRoot - PrevRoot) + (CurrRoot - StartRoot);
+		// 루프 경계: (이전 → 끝) 뒤에 (시작 → 현재)를 이어 붙인다. 두 번째 구간은 첫 구간에서 돈 만큼 회전된 방향 기준이다
+		FVector Translation1, Translation2;
+		FQuat Rotation1, Rotation2;
+		Extract(Prev, Length, Translation1, Rotation1);
+		Extract(0.0, InternalTimeAccumulator, Translation2, Rotation2);
+		LocalTranslation = Translation1 + Rotation1.RotateVector(Translation2);
+		LocalRotation = Rotation1 * Rotation2;
 	}
 	else
-		RootMotionDelta = CurrRoot - PrevRoot;
+		Extract(Prev, InternalTimeAccumulator, LocalTranslation, LocalRotation);
+
+	// Pose의 root는 첫 프레임 회전(LockRot)에 고정되므로, root 기준 값을 컴포넌트 공간 값으로 바꾼다
+	const FQuat LockRot = Sequence->GetRootRotationAtTime(0.0);
+	RootMotionDelta.Translation = LockRot.RotateVector(LocalTranslation);
+	RootMotionDelta.Rotation = LockRot * LocalRotation * LockRot.UnitInverse();
 }
 
 void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)

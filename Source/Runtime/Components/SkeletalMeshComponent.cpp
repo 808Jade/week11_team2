@@ -155,15 +155,32 @@ void USkeletalMeshComponent::OnSkeletalMeshChanged()
         BoneSpaceTransforms.Add(Bone.LocalBindPose);
 }
 
-void USkeletalMeshComponent::ApplyRootMotion(const FVector& ComponentDelta)
+void USkeletalMeshComponent::ApplyRootMotion(const FRootMotionDelta& Delta)
 {
-    if (ComponentDelta.X == 0.0f && ComponentDelta.Y == 0.0f && ComponentDelta.Z == 0.0f) return;
+    const FVector& T = Delta.Translation;
+    const FQuat& R = Delta.Rotation;
+    const bool bHasTranslation = T.X != 0.0f || T.Y != 0.0f || T.Z != 0.0f;
+    // 단위 쿼터니언의 XYZ 길이는 sin(각도/2)이다. 1e-10 기준이면 약 0.001도 미만의 회전은 무시한다
+    const bool bHasRotation = R.X * R.X + R.Y * R.Y + R.Z * R.Z > 1.e-10f;
+    if (!bHasTranslation && !bHasRotation) return;
 
     AActor* Owner = GetOwner();
     USceneComponent* Root = Owner ? Owner->GetRootComponent() : nullptr;
     if (!Root) return;
 
-    // Delta는 컴포넌트 공간 값이므로 회전·스케일만 적용해 월드 이동량으로 바꾼다 (TransformVector는 w=0이라 이동 성분 제외)
-    const FVector WorldDelta = GetWorldMatrix().TransformVector(ComponentDelta);
-    Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
+    // 이동 먼저: 이동량은 이번 프레임에 돌기 전의 방향 기준이다 (TransformVector는 w=0이라 이동 성분 제외)
+    if (bHasTranslation)
+    {
+        const FVector WorldDelta = GetWorldMatrix().TransformVector(T);
+        Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
+    }
+
+    // 컴포넌트 공간 회전을 월드 공간 회전으로 바꾼 뒤(C * R * C⁻¹) Actor 회전 앞에 곱한다
+    if (bHasRotation)
+    {
+        const FQuat ComponentRot = GetWorldRotation().Quaternion();
+        const FQuat WorldDeltaRot = ComponentRot * R * ComponentRot.UnitInverse();
+        const FQuat NewRootRot = WorldDeltaRot * Root->GetWorldRotation().Quaternion();
+        Root->SetWorldRotation(NewRootRot.ToFRotator(), false);
+    }
 }

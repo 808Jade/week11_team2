@@ -2,6 +2,7 @@
 
 #include "UObject/Object.h"
 #include "Animation/BoneContainer.h"
+#include "Animation/AnimNode_Base.h"
 #include "AnimInstance.generated.h"
 
 class USkeletalMeshComponent;
@@ -17,7 +18,7 @@ public:
 	void UpdateAnimation(float DeltaSeconds);
 	bool EvaluateAnimation(TArray<FTransform>& OutPose);
 
-	FVector GetRootMotionDelta() const;
+	FRootMotionDelta GetRootMotionDelta() const;
 
 protected:
 	virtual void NativeInitializeAnimation() {}

@@ -5,6 +5,7 @@
 
 class UAnimInstance;
 class UAnimationAsset;
+struct FRootMotionDelta;
 
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
@@ -39,5 +40,5 @@ private:
 	UAnimInstance* AnimScriptInstance = nullptr;
 	TArray<FTransform> BoneSpaceTransforms;
 
-	void ApplyRootMotion(const FVector& ComponentDelta);
+	void ApplyRootMotion(const FRootMotionDelta& Delta);
 };
