@@ -708,6 +708,28 @@ void FSkeletalMeshEditor::ShutdownResources()
 	FAssetEditor::ShutdownResources();
 }
 
+bool FSkeletalMeshEditor::SetPreviewMesh(USkeletalMesh& NewMesh)
+{
+	const auto& LODs = NewMesh.GetRenderData().LODRenderData;
+	if (!MeshComponent || LODs.IsEmpty() || LODs[0].BindVertices.IsEmpty() || LODs[0].Indices.IsEmpty())
+	{
+		return false;
+	}
+
+	BoneGizmo.EndDrag();
+	Mesh = &NewMesh;
+	MeshComponent->SetSkeletalMesh(Mesh);
+	MeshComponent->RefreshBoneTransformsNow();
+
+	MeshBox = LODs[0].BindAABB;
+	const FVector Extent = MeshBox.Max - MeshBox.Min;
+	BoneSphereSize = FMath::Max(Extent.Size() * 0.0025f, 0.001f);
+
+	BuildBoneItems();
+	FocusMesh();
+	return true;
+}
+
 void FSkeletalMeshEditor::BuildBoneItems()
 {
 	if (!Mesh)

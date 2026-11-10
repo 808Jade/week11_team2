@@ -17,6 +17,43 @@ namespace
 		const auto Utf8 = Path.generic_u8string();
 		return FString(Utf8.begin(), Utf8.end());
 	}
+
+	// UE Content Browser처럼 에셋 타입을 썸네일 아래 색 띠로 구분한다.
+	struct FAssetTypeStyle
+	{
+		const char* Label;
+		ImU32 Color;
+	};
+
+	bool GetAssetTypeStyle(EFbxAssetType Type, FAssetTypeStyle& Out)
+	{
+		switch (Type)
+		{
+		case EFbxAssetType::SkeletalMesh: Out = { "Skeletal Mesh", IM_COL32(236, 105, 199, 255) }; return true; // 핑크
+		case EFbxAssetType::Skeleton:     Out = { "Skeleton", IM_COL32(105, 200, 245, 255) }; return true;      // 하늘색
+		case EFbxAssetType::AnimSequence: Out = { "Animation", IM_COL32(130, 220, 80, 255) }; return true;      // 연두색
+		default: return false;
+		}
+	}
+}
+
+bool FContentDrawerPanel::GetBakedAssetType(const fs::path& Path, const FString& PathString, EFbxAssetType& OutType)
+{
+	if (!FFbxAssetBake::IsBakedPath(PathString)) return false;
+
+	std::error_code Ec;
+	const fs::file_time_type WriteTime = fs::last_write_time(Path, Ec);
+	if (Ec) return false;
+
+	FBakedTypeEntry& Entry = BakedTypeCache[PathString];
+	if (Entry.WriteTime != WriteTime)
+	{
+		// 새로 만들어졌거나 다시 임포트된 파일만 헤더를 읽는다.
+		Entry.WriteTime = WriteTime;
+		Entry.bValid = FFbxAssetBake::ReadAssetType(PathString, Entry.Type);
+	}
+	OutType = Entry.Type;
+	return Entry.bValid;
 }
 
 bool FContentDrawerPanel::Init()
@@ -312,6 +349,30 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 		}
 	}
 
+	// 베이크된 FBX 에셋은 타입별 색 띠와 타입 이름을 썸네일 아래쪽에 겹쳐 그린다.
+	EFbxAssetType BakedType;
+	FAssetTypeStyle TypeStyle;
+	if (!bIsDirectory && ImGui::IsItemVisible() && GetBakedAssetType(Path, PathString, BakedType)
+		&& GetAssetTypeStyle(BakedType, TypeStyle))
+	{
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImVec2 ButtonMin = ImGui::GetItemRectMin();
+		const ImVec2 ButtonMax = ImGui::GetItemRectMax();
+		constexpr float StripHeight = 4.0f;
+		const float LabelHeight = ImGui::GetTextLineHeight();
+
+		const ImVec2 StripMin(ButtonMin.x, ButtonMax.y - StripHeight);
+		const ImVec2 LabelMin(ButtonMin.x, StripMin.y - LabelHeight);
+		DrawList->AddRectFilled(LabelMin, ImVec2(ButtonMax.x, StripMin.y), IM_COL32(20, 20, 20, 190));
+		DrawList->AddRectFilled(StripMin, ButtonMax, TypeStyle.Color);
+
+		const ImVec2 TextSize = ImGui::CalcTextSize(TypeStyle.Label);
+		const ImVec2 TextPos(ButtonMin.x + ImMax(2.0f, (ButtonMax.x - ButtonMin.x - TextSize.x) * 0.5f), LabelMin.y);
+		DrawList->PushClipRect(LabelMin, ImVec2(ButtonMax.x, StripMin.y), true);
+		DrawList->AddText(TextPos, TypeStyle.Color, TypeStyle.Label);
+		DrawList->PopClipRect();
+	}
+
 	// 페이로드에 포인터를 그대로 실어서 받는 쪽이 AssetMap을 다시 뒤지지 않게 한다.
 	if (TextureAsset && ImGui::BeginDragDropSource())
 	{
@@ -345,10 +406,11 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 		}
 		else if (OnOpenMesh)
 		{
+			// 메시 Viewer와 Animation 에디터 모두 같은 콜백(EditorManager::OpenEditor)으로 엽니다.
 			EFbxAssetType Type;
-			const bool bFbxMesh = FFbxAssetBake::IsBakedPath(PathString) && FFbxAssetBake::ReadAssetType(PathString, Type)
-				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh);
-			if (Path.extension() == ".obj" || bFbxMesh) OnOpenMesh(PathString);
+			const bool bFbxOpenable = GetBakedAssetType(Path, PathString, Type)
+				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh || Type == EFbxAssetType::AnimSequence);
+			if (Path.extension() == ".obj" || bFbxOpenable) OnOpenMesh(PathString);
 		}
 	}
 
