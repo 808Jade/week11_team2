@@ -1,0 +1,14 @@
+{
+  "name": "imgui-node-editor",
+  "version-date": "2026-10-14",
+  "description": "Node editor widgets for Dear ImGui",
+  "homepage": "https://github.com/thedmd/imgui-node-editor",
+  "license": "MIT",
+  "dependencies": [
+    "imgui",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    }
+  ]
+}
