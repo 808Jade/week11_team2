@@ -17,6 +17,8 @@ public:
 	void UpdateAnimation(float DeltaSeconds);
 	bool EvaluateAnimation(TArray<FTransform>& OutPose);
 
+	FVector GetRootMotionDelta() const;
+
 protected:
 	virtual void NativeInitializeAnimation() {}
 	virtual void NativeUpdateAnimation(float DeltaSeconds) {}

@@ -1,7 +1,10 @@
 #include "EnginePCH.h"
 #include "SkeletalMeshComponent.h"
+
 #include "Animation/AnimSingleNodeInstance.h"
+#include "GameFramework/Actor.h"
 #include "Serialization/MathSerialization.h"
+
 #include <memory>
 #include <utility>
 
@@ -15,6 +18,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
     if (AnimScriptInstance)
     {
         AnimScriptInstance->UpdateAnimation(DeltaTime);
+        ApplyRootMotion(AnimScriptInstance->GetRootMotionDelta());
         if (AnimScriptInstance->EvaluateAnimation(BoneSpaceTransforms))
             MarkBoneTransformsDirty();
     }
@@ -149,4 +153,17 @@ void USkeletalMeshComponent::OnSkeletalMeshChanged()
     BoneSpaceTransforms.Reset();
     for (const FBoneInfo& Bone : GetBones())
         BoneSpaceTransforms.Add(Bone.LocalBindPose);
+}
+
+void USkeletalMeshComponent::ApplyRootMotion(const FVector& ComponentDelta)
+{
+    if (ComponentDelta.X == 0.0f && ComponentDelta.Y == 0.0f && ComponentDelta.Z == 0.0f) return;
+
+    AActor* Owner = GetOwner();
+    USceneComponent* Root = Owner ? Owner->GetRootComponent() : nullptr;
+    if (!Root) return;
+
+    // Delta는 컴포넌트 공간 값이므로 회전·스케일만 적용해 월드 이동량으로 바꾼다 (TransformVector는 w=0이라 이동 성분 제외)
+    const FVector WorldDelta = GetWorldMatrix().TransformVector(ComponentDelta);
+    Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
 }
