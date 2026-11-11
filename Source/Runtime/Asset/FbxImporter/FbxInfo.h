@@ -28,6 +28,7 @@ struct FFbxImportOptions
 	bool bBakeSkeletalMeshes = true;
 	bool bCombineSkeletalMeshes = true;
 	bool bConvertStaticsInBoneHierarchyToSkeletals = true;
+	bool bConvertStaticsWithAnimatedTransformToSkeletals = true;
 	bool bImportAnimations = true;
 	bool bImportOnlyAnimations = false;
 	FString SkeletalMeshSkeletonKey;

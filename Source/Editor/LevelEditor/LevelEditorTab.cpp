@@ -143,6 +143,9 @@ void FLevelEditorTab::DrawFbxImportDialog()
 	ImGui::Checkbox("Convert Static Meshes in Bone Hierarchy", &FbxOptions.bConvertStaticsInBoneHierarchyToSkeletals);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Off: unskinned meshes under bones use the Static Meshes settings.");
+	ImGui::Checkbox("Convert Static Meshes with Animated Transforms", &FbxOptions.bConvertStaticsWithAnimatedTransformToSkeletals);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Import unskinned meshes moved by their own or a parent node's transform keys as skeletal meshes.");
 	ImGui::EndDisabled();
 
 	ImGui::SeparatorText("Animations");

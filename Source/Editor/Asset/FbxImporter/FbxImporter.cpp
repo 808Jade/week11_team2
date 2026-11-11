@@ -173,6 +173,21 @@ int32 RepairDetachedCurveNodes(FbxScene* Scene)
 	return Repaired;
 }
 
+std::vector<FbxAnimLayer*> GetActiveAnimationLayers(FbxAnimStack& Stack)
+{
+	std::vector<FbxAnimLayer*> Layers;
+	for (int Index = 0; Index < Stack.GetMemberCount<FbxAnimLayer>(); ++Index)
+	{
+		auto* Layer = Stack.GetMember<FbxAnimLayer>(Index);
+		if (Layer && !Layer->Mute.Get()) Layers.push_back(Layer);
+	}
+	if (std::any_of(Layers.begin(), Layers.end(), [](auto* Layer) { return Layer->Solo.Get(); }))
+		std::erase_if(Layers, [](auto* Layer) { return !Layer->Solo.Get(); });
+	return Layers;
+}
+
+bool HasAnimatedTransform(FbxNode* Node, const std::vector<FbxAnimLayer*>& Layers);
+
 // 기존 Week11 에셋의 이름은 보존하고, 다른 DCC namespace에서 온 본은 고유한 짧은 이름으로도 찾는다.
 class FTargetBoneNames
 {
@@ -322,6 +337,7 @@ struct FMeshItem
 	FbxNode* Node = nullptr;
 	FbxMesh* Mesh = nullptr;
 	FbxNode* Rig = nullptr;
+	FbxNode* RigidBone = nullptr;
 	FbxNode* LODGroupNode = nullptr;
 	FString UnitKey;
 	FString Label;
@@ -333,6 +349,7 @@ struct FRig
 	FbxNode* Root = nullptr;
 	std::set<FbxNode*> Needed;
 	bool bHasTransformAnimation = false;
+	bool bIsTransformOnly = false;
 	std::vector<FbxNode*> Bones;
 	std::unordered_map<FbxNode*, uint16> Indices;
 	FReferenceSkeleton Reference;
@@ -412,6 +429,8 @@ public:
 	}
 	void Gather(FbxNode* Node, bool bParentVisible, FbxNode* LODGroup = nullptr, int LOD = -1);
 	void FindRigs();
+	void AddAnimatedRigidMeshRigs(const std::unordered_set<FbxNode*>& AnimatedNodes,
+		std::unordered_map<FbxNode*, FRig*>& RigsByRoot);
 	void PreparePoses();
 	bool PoseMatrix(FbxPose* Pose, FbxNode* Node, FbxAMatrix& Out);
 	FbxAMatrix Bind(FbxNode* Node);
@@ -513,6 +532,18 @@ void FImport::Gather(FbxNode* Node, bool ParentVisible, FbxNode* Group, int LOD)
 
 void FImport::FindRigs()
 {
+	std::vector<FbxAnimLayer*> AnimationLayers;
+	for (int I = 0; I < Scene->GetSrcObjectCount<FbxAnimStack>(); ++I)
+	{
+		const auto Layers = GetActiveAnimationLayers(*Scene->GetSrcObject<FbxAnimStack>(I));
+		AnimationLayers.insert(AnimationLayers.end(), Layers.begin(), Layers.end());
+	}
+	std::unordered_set<FbxNode*> AnimatedNodes;
+	if (!AnimationLayers.empty())
+		for (int I = 0; I < Scene->GetNodeCount(); ++I)
+			if (FbxNode* Node = Scene->GetNode(I); HasAnimatedTransform(Node, AnimationLayers))
+				AnimatedNodes.insert(Node);
+
 	std::set<FbxNode*> Links;
 	// Skeleton 속성이 없는 본(예: NodeAttribute 없이 LimbNode만 있는 Sketchfab 변환본)은
 	// 선택한 Skeleton의 루트 이름으로 찾는다. 표기 차이("mixamorig:Hips" vs "mixamorig_Hips_01")도 허용한다.
@@ -591,6 +622,8 @@ void FImport::FindRigs()
 		Item.Rig = Rig->Root;
 		if (!bSkinned) Rig->IncludeBoneAndParents(Item.Node);
 	}
+	if (Options.bConvertStaticsWithAnimatedTransformToSkeletals && !AnimatedNodes.empty())
+		AddAnimatedRigidMeshRigs(AnimatedNodes, RigsByRoot);
 	for (const auto& Item : Meshes)
 		if (Item.Rig) Rigs.at(NodePath(Item.Rig)).bHasMesh = true;
 
@@ -615,41 +648,75 @@ void FImport::FindRigs()
 		}
 	}
 
-	// As in Interchange, transform animation contributes to an established joint hierarchy.
-	// A curve on an unrelated scene object does not establish a new skeleton root.
-	std::vector<FbxAnimLayer*> AnimationLayers;
-	for (int I = 0; I < Scene->GetSrcObjectCount<FbxAnimStack>(); ++I)
+	for (FbxNode* Node : AnimatedNodes)
 	{
-		FbxAnimStack* Stack = Scene->GetSrcObject<FbxAnimStack>(I);
-		for (int L = 0; L < Stack->GetMemberCount<FbxAnimLayer>(); ++L)
-			AnimationLayers.push_back(Stack->GetMember<FbxAnimLayer>(L));
-	}
-	if (!AnimationLayers.empty())
-	{
-		for (int I = 0; I < Scene->GetNodeCount(); ++I)
+		FRig* Rig = FindContainingRig(Node);
+		if (!Rig) continue;
+		if (!Rig->Needed.contains(Node))
 		{
-			FbxNode* Node = Scene->GetNode(I);
-			FRig* Rig = FindContainingRig(Node);
-			if (!Rig) continue;
-			if (!Rig->Needed.contains(Node))
-			{
-				const auto* Attribute = Node->GetNodeAttribute();
-				const auto* Mesh = Node->GetMesh();
-				if (Attribute && Attribute->GetAttributeType() != FbxNodeAttribute::eNull &&
-					(!Options.bConvertStaticsInBoneHierarchyToSkeletals ||
-					 !Mesh || Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0)) continue;
-			}
-			const bool bAnimated = std::any_of(AnimationLayers.begin(), AnimationLayers.end(), [Node](FbxAnimLayer* Layer)
-			{
-				return Node->LclTranslation.IsAnimated(Layer) || Node->LclRotation.IsAnimated(Layer) ||
-					Node->LclScaling.IsAnimated(Layer);
-			});
-			if (bAnimated)
-			{
-				Rig->IncludeBoneAndParents(Node);
-				Rig->bHasTransformAnimation = true;
-			}
+			if (Rig->bIsTransformOnly) continue;
+			const auto* Attribute = Node->GetNodeAttribute();
+			const auto* Mesh = Node->GetMesh();
+			if (Attribute && Attribute->GetAttributeType() != FbxNodeAttribute::eNull &&
+				(!Options.bConvertStaticsInBoneHierarchyToSkeletals ||
+				 !Mesh || Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0)) continue;
 		}
+		Rig->IncludeBoneAndParents(Node);
+		Rig->bHasTransformAnimation = true;
+	}
+}
+
+void FImport::AddAnimatedRigidMeshRigs(const std::unordered_set<FbxNode*>& AnimatedNodes,
+	std::unordered_map<FbxNode*, FRig*>& RigsByRoot)
+{
+	struct FRigidSource
+	{
+		FbxNode* Root = nullptr;
+		FbxNode* Bone = nullptr;
+		int LOD = 0;
+	};
+	std::unordered_map<FString, FRigidSource> SourcesByUnit;
+	std::unordered_map<FbxNode*, FbxNode*> RootsByNode;
+	for (const auto& Item : Meshes)
+	{
+		if (Item.Rig || Item.Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0) continue;
+		FbxNode* Root = Item.Node;
+		FbxNode* ExistingRoot = nullptr;
+		bool bAnimated = false;
+		// Interchange includes the mesh's scene hierarchy below the FBX scene root.
+		for (FbxNode* Node = Item.Node; Node && Node != Scene->GetRootNode(); Node = Node->GetParent())
+		{
+			Root = Node;
+			bAnimated |= AnimatedNodes.contains(Node);
+			if (!ExistingRoot && RigsByRoot.contains(Node)) ExistingRoot = Node;
+		}
+		if (!bAnimated) continue;
+		if (ExistingRoot) Root = ExistingRoot;
+		RootsByNode.emplace(Item.Node, Root);
+		auto& Source = SourcesByUnit[Item.UnitKey];
+		if (!Source.Root || Item.LOD < Source.LOD) Source = { Root, Item.Node, Item.LOD };
+	}
+
+	for (auto& Item : Meshes)
+	{
+		if (Item.Rig || Item.Mesh->GetDeformerCount(FbxDeformer::eSkin) != 0) continue;
+		const auto Source = SourcesByUnit.find(Item.UnitKey);
+		if (Source == SourcesByUnit.end()) continue;
+		FbxNode* Root = Source->second.Root;
+		const auto ItemRoot = RootsByNode.find(Item.Node);
+		// Unanimated LODs follow the animated LOD's bone while keeping their own bind geometry.
+		Item.RigidBone = ItemRoot != RootsByNode.end() && ItemRoot->second == Root ? Item.Node : Source->second.Bone;
+		Item.Rig = Root;
+		auto [It, bAdded] = Rigs.try_emplace(NodePath(Root));
+		auto& Rig = It->second;
+		if (bAdded)
+		{
+			Rig.Root = Root;
+			Rig.bIsTransformOnly = true;
+			RigsByRoot.emplace(Root, &Rig);
+		}
+		Rig.IncludeBoneAndParents(Item.RigidBone);
+		Rig.bHasTransformAnimation = true;
 	}
 }
 
@@ -661,7 +728,8 @@ void FImport::PreparePoses()
 		FbxPose* Pose = Scene->GetPose(I);
 		if (Pose && Pose->IsBindPose()) Poses.push_back(Pose);
 	}
-	if (Poses.empty() && !Rigs.empty()) Warn("No usable BindPose; Cluster bind matrices and evaluated reference transforms are used");
+	if (Poses.empty() && std::any_of(Rigs.begin(), Rigs.end(), [](const auto& Entry) { return !Entry.second.bIsTransformOnly; }))
+		Warn("No usable BindPose; Cluster bind matrices and evaluated reference transforms are used");
 }
 
 bool FImport::PoseMatrix(FbxPose* Pose, FbxNode* Node, FbxAMatrix& Out)
@@ -849,6 +917,11 @@ FAnimatedTime FindTransformKeyTimes(FbxNode* Node, const std::vector<FbxAnimLaye
 	return Result;
 }
 
+bool HasAnimatedTransform(FbxNode* Node, const std::vector<FbxAnimLayer*>& Layers)
+{
+	return FindTransformKeyTimes(Node, Layers).IsValid();
+}
+
 bool BuildAnimationBoneMap(const FRig& Rig, const FReferenceSkeleton& Target,
 	std::vector<int32>& SourceToTarget, int32& SourceRoot, FString& Reason)
 {
@@ -988,14 +1061,7 @@ bool FImport::CookAnimations(FRig& Rig)
 		auto* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
 		const FString StackName = Stack->GetName();
 		const int32 Occurrence = Occurrences[StackName]++;
-		std::vector<FbxAnimLayer*> Layers;
-		for (int LayerIndex = 0; LayerIndex < Stack->GetMemberCount<FbxAnimLayer>(); ++LayerIndex)
-		{
-			auto* Layer = Stack->GetMember<FbxAnimLayer>(LayerIndex);
-			if (Layer && !Layer->Mute.Get()) Layers.push_back(Layer);
-		}
-		if (std::any_of(Layers.begin(), Layers.end(), [](auto* Layer) { return Layer->Solo.Get(); }))
-			std::erase_if(Layers, [](auto* Layer) { return !Layer->Solo.Get(); });
+		const auto Layers = GetActiveAnimationLayers(*Stack);
 
 		std::vector<int32> TrackIndices;
 		FAnimatedTime Animated;
@@ -1158,14 +1224,7 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 		auto* Stack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
 		const FString StackName = Stack->GetName();
 		const int32 Occurrence = Occurrences[StackName]++;
-		std::vector<FbxAnimLayer*> Layers;
-		for (int LayerIndex = 0; LayerIndex < Stack->GetMemberCount<FbxAnimLayer>(); ++LayerIndex)
-		{
-			auto* Layer = Stack->GetMember<FbxAnimLayer>(LayerIndex);
-			if (Layer && !Layer->Mute.Get()) Layers.push_back(Layer);
-		}
-		if (std::any_of(Layers.begin(), Layers.end(), [](auto* Layer) { return Layer->Solo.Get(); }))
-			std::erase_if(Layers, [](auto* Layer) { return !Layer->Solo.Get(); });
+		const auto Layers = GetActiveAnimationLayers(*Stack);
 
 		FAnimatedTime Animated;
 		for (FbxNode* Bone : Rig.Bones) Animated.Include(FindTransformKeyTimes(Bone, Layers));
@@ -1579,7 +1638,7 @@ bool FImport::AppendMesh(const FMeshItem& Item, FFbxAssetData& Asset, int LODInd
 		}
 		else
 		{
-			const uint16 Bone = Rig->Indices.at(Item.Node);
+			const uint16 Bone = Rig->Indices.at(Item.RigidBone ? Item.RigidBone : Item.Node);
 			for (auto& Vertex : Influences) Vertex[Bone] = 1;
 		}
 	}

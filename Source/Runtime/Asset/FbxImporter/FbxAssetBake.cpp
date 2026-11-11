@@ -132,10 +132,12 @@ void Serialize(FBinary& Ar, FFbxAssetData& Data)
 	Ar.String(Data.SourcePath); Ar.String(Data.SourceObject);
 	uint8 Flags = (Data.Options.bBakeStaticMeshes ? 1 : 0) | (Data.Options.bCombineStaticMeshes ? 2 : 0) |
 		(Data.Options.bBakeSkeletalMeshes ? 4 : 0) | (Data.Options.bCombineSkeletalMeshes ? 8 : 0) |
-		(Data.Options.bConvertStaticsInBoneHierarchyToSkeletals ? 0 : 16);
+		(Data.Options.bConvertStaticsInBoneHierarchyToSkeletals ? 0 : 16) |
+		(Data.Options.bConvertStaticsWithAnimatedTransformToSkeletals ? 0 : 32);
 	Ar.Pod(Flags);
-	// Older files have bit 16 clear and always converted these meshes.
-	if (Ar.In) Data.Options = { (Flags & 1) != 0, (Flags & 2) != 0, (Flags & 4) != 0, (Flags & 8) != 0, (Flags & 16) == 0 };
+	// Older files leave bits 16 and 32 clear, so both options use the current import defaults.
+	if (Ar.In) Data.Options = { (Flags & 1) != 0, (Flags & 2) != 0, (Flags & 4) != 0, (Flags & 8) != 0,
+		(Flags & 16) == 0, (Flags & 32) == 0 };
 	if (Data.Type == EFbxAssetType::StaticMesh || Data.Type == EFbxAssetType::SkeletalMesh)
 	{
 		Ar.Pod(Data.ScreenThresholds);
