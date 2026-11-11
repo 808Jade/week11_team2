@@ -126,6 +126,7 @@ void FAnimNode_SequencePlayer::ExtractRootMotion(double Prev, double Current, do
 	const FQuat LockRot = Sequence->GetRootRotationAtTime(0.0);
 	RootMotionDelta.Translation = LockRot.RotateVector(LocalTranslation);
 	RootMotionDelta.Rotation = LockRot * LocalRotation * LockRot.UnitInverse();
+	RootMotionDelta.RotationPivot = Sequence->GetRootLocationAtTime(0.0);
 }
 
 void FAnimNode_SequencePlayer::CollectNotifies(FAnimNotifyQueue& Queue, double From, double To, double Length) const

@@ -29,11 +29,12 @@ struct FPoseContext
 	TArray<FTransform> Pose;
 };
 
-// 한 프레임 동안의 root 이동량. 둘 다 컴포넌트 공간 기준이다.
+// 한 프레임의 root 이동과 회전 중심은 컴포넌트 공간 기준이다.
 struct FRootMotionDelta
 {
 	FVector Translation = FVector(0, 0, 0);
 	FQuat Rotation = FQuat::Identity();
+	FVector RotationPivot = FVector(0, 0, 0); // 포즈에서 고정된 루트 본 위치
 };
 
 struct FAnimNode_Base
