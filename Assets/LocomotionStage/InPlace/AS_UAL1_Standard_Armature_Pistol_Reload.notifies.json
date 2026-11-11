@@ -1,0 +1,17 @@
+{
+    "Version": 1,
+    "Notifies": [
+        {
+            "Name": "MagazineOut",
+            "Time": 0.46667,
+            "Duration": 0,
+            "Track": 0
+        },
+        {
+            "Name": "MagazineIn",
+            "Time": 1.16667,
+            "Duration": 0,
+            "Track": 0
+        }
+    ]
+}

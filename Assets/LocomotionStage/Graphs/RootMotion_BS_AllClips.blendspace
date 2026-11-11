@@ -1,0 +1,271 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Clip Index",
+            "Min": 0,
+            "Max": 42
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_A_TPose.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Crouch_Fwd_Loop.fbxbin",
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Crouch_Idle_Loop.fbxbin",
+            "X": 2,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Dance_Loop.fbxbin",
+            "X": 3,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Death01.fbxbin",
+            "X": 4,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Driving_Loop.fbxbin",
+            "X": 5,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Fixing_Kneeling.fbxbin",
+            "X": 6,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Hit_Chest.fbxbin",
+            "X": 7,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Hit_Head.fbxbin",
+            "X": 8,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Loop.fbxbin",
+            "X": 9,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Talking_Loop.fbxbin",
+            "X": 10,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Torch_Loop.fbxbin",
+            "X": 11,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Interact.fbxbin",
+            "X": 12,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jog_Fwd_Loop.fbxbin",
+            "X": 13,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Land.fbxbin",
+            "X": 14,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Loop.fbxbin",
+            "X": 15,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Start.fbxbin",
+            "X": 16,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_PickUp_Table.fbxbin",
+            "X": 17,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Down.fbxbin",
+            "X": 18,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Neutral.fbxbin",
+            "X": 19,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Up.fbxbin",
+            "X": 20,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Idle_Loop.fbxbin",
+            "X": 21,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Reload.fbxbin",
+            "X": 22,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Shoot.fbxbin",
+            "X": 23,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Punch_Cross.fbxbin",
+            "X": 24,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Punch_Jab.fbxbin",
+            "X": 25,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Push_Loop.fbxbin",
+            "X": 26,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Roll.fbxbin",
+            "X": 27,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Enter.fbxbin",
+            "X": 28,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Exit.fbxbin",
+            "X": 29,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Idle_Loop.fbxbin",
+            "X": 30,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Talking_Loop.fbxbin",
+            "X": 31,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Enter.fbxbin",
+            "X": 32,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Exit.fbxbin",
+            "X": 33,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Idle_Loop.fbxbin",
+            "X": 34,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Shoot.fbxbin",
+            "X": 35,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sprint_Loop.fbxbin",
+            "X": 36,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Fwd_Loop.fbxbin",
+            "X": 37,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Idle_Loop.fbxbin",
+            "X": 38,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sword_Attack.fbxbin",
+            "X": 39,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sword_Idle.fbxbin",
+            "X": 40,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Walk_Formal_Loop.fbxbin",
+            "X": 41,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Walk_Loop.fbxbin",
+            "X": 42,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

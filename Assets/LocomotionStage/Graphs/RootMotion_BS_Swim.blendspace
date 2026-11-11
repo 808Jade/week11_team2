@@ -1,0 +1,25 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Speed (m/s)",
+            "Min": 0,
+            "Max": 2.2
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Idle_Loop.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Fwd_Loop.fbxbin",
+            "X": 2.2,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

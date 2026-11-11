@@ -329,3 +329,11 @@ void USkeletalMeshComponent::ApplyRootMotion(const FRootMotionDelta& Delta) {
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const {
     return Cast<UAnimSingleNodeInstance>(mAnimScriptInstance);
 }
+
+void USkeletalMeshComponent::SetRootMotionEnabled(bool Enabled) {
+    bEnableRootMotion = Enabled;
+
+    if (mAnimScriptInstance != nullptr) {
+        mAnimScriptInstance->SetRootMotionEnabled(Enabled);
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "Version": 1,
+    "Notifies": [
+        {
+            "Name": "Foot_L",
+            "Time": 0.112,
+            "Duration": 0,
+            "Track": 0
+        },
+        {
+            "Name": "Foot_R",
+            "Time": 0.57867,
+            "Duration": 0,
+            "Track": 0
+        }
+    ]
+}

@@ -40,6 +40,7 @@ public:
 	// 현재 컴포넌트가 소유한 애니메이션 인스턴스의 비소유 포인터를 반환한다.
 	UAnimInstance* GetAnimInstance() const;
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    void SetRootMotionEnabled(bool Enabled);
 	// Lua와 디버그 UI에서 인스턴스 변수 및 이름이 유일한 재생 노드를 제어하는 진입점이다.
 	bool SetAnimGraphFloat(const FString& Name, float Value);
 	// 현재 그래프 인스턴스에서 지정 Bool 변수의 값을 변경한다.

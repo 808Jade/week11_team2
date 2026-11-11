@@ -1,0 +1,37 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Speed (m/s)",
+            "Min": 0,
+            "Max": 9
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Loop.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Walk_Loop.fbxbin",
+            "X": 0.9749999351799508,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jog_Fwd_Loop.fbxbin",
+            "X": 5.357142834334957,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sprint_Loop.fbxbin",
+            "X": 8.249999754130847,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}
