@@ -1,0 +1,37 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Speed (m/s)",
+            "Min": 0,
+            "Max": 6
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "StateMachineLab/Rig/Idle_Loop.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Walk_Loop.fbxbin",
+            "X": 1.5,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Jog_Fwd_Loop.fbxbin",
+            "X": 3.5,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sprint_Loop.fbxbin",
+            "X": 6,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

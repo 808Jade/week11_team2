@@ -1,5 +1,9 @@
 #include "EnginePCH.h"
 #include "AssetManager.h"
+#include "Animation/AnimAssetArchive.h"
+#include "Animation/AnimGraph.h"
+#include "Animation/AnimSequenceBase.h"
+#include "Animation/BlendSpace1D.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
 
@@ -23,6 +27,7 @@
 #include "Render/ImageLoader.h"
 #include "Asset/AssetLoadProfiler.h"
 #include <cctype>
+#include <set>
 
 
 namespace
@@ -46,6 +51,12 @@ namespace
 		}
 		if (Extension == ".obj") {
 			return EAssetType::StaticMesh;
+		}
+		if (Extension == ".animgraph") {
+			return EAssetType::AnimGraph;
+		}
+		if (Extension == ".blendspace") {
+			return EAssetType::BlendSpace;
 		}
 		if (Extension == ".fbxbin") {
 			EFbxAssetType Type;
@@ -241,9 +252,42 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	case EAssetType::StaticMesh:
 		LoadObjStaticMesh(Path);
 		break;
+	case EAssetType::AnimGraph:
+		LoadAnimationEditorAsset(Key, Path, EAssetType::AnimGraph);
+		break;
+	case EAssetType::BlendSpace:
+		LoadAnimationEditorAsset(Key, Path, EAssetType::BlendSpace);
+		break;
 	default:
 		break;
 	}
+}
+
+const UAssetManager::FAssetFile* UAssetManager::FindOrDiscoverAssetFile(const FString& Key) {
+    // 시작 시 스캔 이후 추가된 애니메이션 파일도 경로를 직접 확인해 지연 로딩할 수 있게 한다.
+    if (const auto* File{AssetPathMap.Find(Key)}) {
+        return File;
+    }
+
+    const FString Extension{GetAssetExtension(Key)};
+    if (Extension != ".animgraph" && Extension != ".blendspace" && Extension != ".fbxbin") {
+        return nullptr;
+    }
+
+    FString SourcePath{};
+    FString Error{};
+    std::error_code FileError{};
+    if (!FbxPath::ResolveKey(Key, SourcePath, Error) || !fs::is_regular_file(FbxPath::FromString(SourcePath), FileError)) {
+        return nullptr;
+    }
+
+    const EAssetType Type{GetAssetTypeFromPath(SourcePath)};
+    if (Type == EAssetType::None) {
+        return nullptr;
+    }
+
+    AssetPathMap.Add(Key, {std::move(SourcePath), Type});
+    return AssetPathMap.Find(Key);
 }
 
 URenderAsset* UAssetManager::FindOrLoadAsset(const FString& Path)
@@ -260,12 +304,12 @@ URenderAsset* UAssetManager::FindOrLoadAsset(const FString& Path)
 		return *Found;
 	}
 
-	const FAssetFile* FoundSource = AssetPathMap.Find(Key);
+	const FAssetFile* FoundSource{FindOrDiscoverAssetFile(Key)};
 	if (FoundSource == nullptr)
 	{
 		return nullptr;
 	}
-	const FString SourcePath = FoundSource->Path;
+	const FString SourcePath{FoundSource->mPath};
 
 	const uint64 LoadStart = FPlatformTime::GetCycles64();
 	LoadAsset(Key, SourcePath);
@@ -276,7 +320,6 @@ URenderAsset* UAssetManager::FindOrLoadAsset(const FString& Path)
 	URenderAsset** Loaded = AssetMap.Find(Key);
 	if (Loaded == nullptr)
 	{
-		// 찾을 때마다 파일을 다시 읽지 않도록 등록을 지운다
 		HTR_LOG(Warning, "Asset load failed: {}", SourcePath);
 		AssetPathMap.Remove(Key);
 		return nullptr;
@@ -292,9 +335,14 @@ URenderAsset* UAssetManager::FindLoadedAsset(const FString& Path)
 
 EAssetType UAssetManager::GetUnloadedAssetType(const FString& Path)
 {
-	const FString Key = MakeLookupKey(Path);
-	const FAssetFile* File = Get().AssetPathMap.Find(Key);
-	return File && !Get().AssetMap.Contains(Key) ? File->Type : EAssetType::None;
+    const FString Key{MakeLookupKey(Path)};
+    UAssetManager& Manager{Get()};
+    if (Manager.AssetMap.Contains(Key)) {
+        return EAssetType::None;
+    }
+
+    const FAssetFile* File{Manager.FindOrDiscoverAssetFile(Key)};
+    return File ? File->mType : EAssetType::None;
 }
 
 TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
@@ -302,9 +350,9 @@ TArray<FString> UAssetManager::GetUnloadedAssetPaths(EAssetType Type)
 	TArray<FString> Paths;
 	for (const auto& [Key, File] : Get().AssetPathMap)
 	{
-		if (File.Type == Type && !Get().AssetMap.Contains(Key))
+		if (File.mType == Type && !Get().AssetMap.Contains(Key))
 		{
-			Paths.Add(File.Path);
+			Paths.Add(File.mPath);
 		}
 	}
 	return Paths;
@@ -751,4 +799,101 @@ bool UAssetManager::BuildMaterialsFromSlots(const TArray<FStaticMaterialSlot>& S
 bool UAssetManager::BuildMaterialsFromSlots(const TArray<FSkeletalMaterialSlot>& Slots, TArray<UMaterial*>& OutMaterials)
 {
 	return BuildMaterialsFromSlotsImpl(Slots, OutMaterials);
+}
+
+void UAssetManager::LoadAnimationEditorAsset(const FString& Key, const FString& Path, EAssetType Type) {
+    // 임시 소유 객체로 역직렬화하고 검증에 성공한 에셋만 매니저에 등록한다.
+    FAnimAssetArchive Archive{true};
+    if (!Archive.Load(Path)) {
+        HTR_LOG(Error, "{}", Archive.GetError());
+        return;
+    }
+
+    if (Type == EAssetType::AnimGraph) {
+        std::unique_ptr<UAnimGraph> Graph{NewObject<UAnimGraph>()};
+        Graph->Serialize(Archive);
+        if (!Archive.HasError()) {
+            RegisterAsset(Key, Graph.release());
+        }
+    } else {
+        std::unique_ptr<UBlendSpace1D> BlendSpace{NewObject<UBlendSpace1D>()};
+
+        BlendSpace->Serialize(Archive);
+
+        if (!Archive.HasError()) {
+            RegisterAsset(Key, BlendSpace.release());
+        }
+    }
+
+    if (Archive.HasError()) {
+        HTR_LOG(Error, "Cannot load {}. {}", Path, Archive.GetError());
+    }
+}
+
+std::vector<FString> UAssetManager::GetAnimationAssetPaths(EAssetType Type) {
+    // 파일 인덱스와 로드 캐시를 합치고 중복 키를 제거하되 목록 조회만으로 에셋을 로드하지 않는다.
+    const auto& Manager{Get()};
+    std::set<FString> Keys{};
+    for (const auto& [Key, File] : Manager.AssetPathMap) {
+        if (File.mType == Type) {
+            Keys.insert(Key);
+        }
+    }
+
+    for (const auto& [Key, Asset] : Manager.AssetMap) {
+        if ((Type == EAssetType::AnimSequence && Asset->IsA<UAnimSequenceBase>()) || (Type == EAssetType::BlendSpace && Asset->IsA<UBlendSpace>()) || (Type == EAssetType::AnimGraph && Asset->IsA<UAnimGraph>())) {
+            Keys.insert(Key);
+        }
+    }
+    return std::vector<FString>{Keys.begin(), Keys.end()};
+}
+
+bool UAssetManager::SaveAnimGraph(const FString& Path, UAnimGraph& Graph, FString& OutError) {
+    FString Key{};
+    if (!FbxPath::GetAssetKey(Path, Key, OutError, false) || GetAssetTypeFromPath(Path) != EAssetType::AnimGraph) {
+        if (OutError.empty()) {
+            OutError = "Expected an .animgraph path inside Assets";
+        }
+        return false;
+    }
+
+    FAnimAssetArchive Archive{false};
+    Graph.Serialize(Archive);
+    if (Archive.HasError() || !Archive.Save(Path)) {
+        OutError = Archive.GetError();
+        return false;
+    }
+
+    // 디스크 저장이 끝난 뒤 기존 객체의 내용을 교체해 참조를 유지하고 그래프 리비전을 갱신한다.
+    Get().AssetPathMap.Add(Key, {Path, EAssetType::AnimGraph});
+    if (auto* Cached{Cast<UAnimGraph>(FindLoadedAsset(Key))}) {
+        Cached->CopyFrom(Graph);
+    }
+    OutError.clear();
+    return true;
+}
+
+bool UAssetManager::SaveBlendSpace(const FString& Path, UBlendSpace& BlendSpace, FString& OutError) {
+    FString Key{};
+    if (!FbxPath::GetAssetKey(Path, Key, OutError, false) || GetAssetTypeFromPath(Path) != EAssetType::BlendSpace) {
+        if (OutError.empty()) {
+            OutError = "Expected a .blendspace path inside Assets";
+        }
+        return false;
+    }
+
+    FAnimAssetArchive Archive{false};
+    BlendSpace.Serialize(Archive);
+    if (Archive.HasError() || !Archive.Save(Path)) {
+        OutError = Archive.GetError();
+        return false;
+    }
+
+    // 실행 플레이어가 보관한 에셋 포인터는 유지한 채 축과 샘플 설정을 갱신한다.
+    Get().AssetPathMap.Add(Key, {Path, EAssetType::BlendSpace});
+    if (auto* Cached{Cast<UBlendSpace>(FindLoadedAsset(Key))}) {
+        Cached->CopyFrom(BlendSpace);
+    }
+    OutError.clear();
+    return true;
 }

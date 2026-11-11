@@ -1,0 +1,99 @@
+{
+    "FormatVersion": 1,
+    "OutputX": 845,
+    "OutputY": 115,
+    "Variables": [
+        {
+            "Name": "Speed",
+            "Default": 0,
+            "Source": 0
+        },
+        {
+            "Name": "ActionAlpha",
+            "Default": 0,
+            "Source": 0
+        }
+    ],
+    "VariableGetters": [
+        {
+            "Id": 0,
+            "Variable": "Speed",
+            "X": -400,
+            "Y": 35
+        },
+        {
+            "Id": 1,
+            "Variable": "ActionAlpha",
+            "X": -400,
+            "Y": 465
+        }
+    ],
+    "Nodes": [
+        {
+            "Id": 0,
+            "Type": "BlendSpacePlayer",
+            "Name": "Idle / Walk / Run",
+            "X": -140,
+            "Y": 0,
+            "Parameters": [
+                {
+                    "Name": "BlendSpace",
+                    "Value": "AnimationLab/Locomotion.blendspace"
+                },
+                {
+                    "Name": "X.Binding",
+                    "Value": "Speed",
+                    "Getter": 0
+                }
+            ]
+        },
+        {
+            "Id": 1,
+            "Type": "SequencePlayer",
+            "Name": "Punch (One Shot)",
+            "X": -140,
+            "Y": 350,
+            "Parameters": [
+                {
+                    "Name": "Sequence",
+                    "Value": "AnimationLab/Rig/Punch.fbxbin"
+                },
+                {
+                    "Name": "Loop",
+                    "Value": "false"
+                }
+            ]
+        },
+        {
+            "Id": 2,
+            "Type": "TwoWayBlend",
+            "Name": "Locomotion / Action",
+            "X": 475,
+            "Y": 88,
+            "Parameters": [
+                {
+                    "Name": "Alpha.Binding",
+                    "Value": "ActionAlpha",
+                    "Getter": 1
+                }
+            ]
+        }
+    ],
+    "Links": [
+        {
+            "From": 0,
+            "To": 2,
+            "Pin": 0
+        },
+        {
+            "From": 1,
+            "To": 2,
+            "Pin": 1
+        },
+        {
+            "From": 2,
+            "To": -1,
+            "Pin": 0
+        }
+    ]
+}

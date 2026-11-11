@@ -226,6 +226,8 @@ private:
 	void CreatePIESession();
 	void StopPIESession();
 	void DrawPIEWindows();
+	// 에디터 선택을 실제 재생 중인 PIE 컴포넌트로 대응시켜 디버그 패널에 전달한다.
+	class USkeletalMeshComponent* FindAnimGraphDebugTarget() const;
 
 
 	void UpdateInputOwner();

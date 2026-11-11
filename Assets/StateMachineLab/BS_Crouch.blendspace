@@ -1,0 +1,25 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Speed (m/s)",
+            "Min": 0,
+            "Max": 1.5
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "StateMachineLab/Rig/Crouch_Idle_Loop.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Crouch_Fwd_Loop.fbxbin",
+            "X": 1.5,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

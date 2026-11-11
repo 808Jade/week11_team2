@@ -4,59 +4,44 @@
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "AnimSingleNodeInstance.generated.h"
 
-// Windows.h의 GetCurrentTime 매크로가 UE와 같은 함수 이름을 바꿔 버리지 않게
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
 
 class UAnimationAsset;
 
+// 기존 단일 애니메이션 재생도 공통 포즈 평가 경로에 Sequence Player 하나를 연결해 처리한다.
 UCLASS()
 class UAnimSingleNodeInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
 public:
-	bool SetAnimationAsset(UAnimationAsset* NewAsset, bool bLooping, float PlayRate, FString& OutError);
-	UAnimationAsset* GetAnimationAsset() const { return CurrentAsset; }
-
-	// 처음부터 재생합니다. 역재생이면 끝에서 시작합니다.
+	// 메시와 스켈레톤을 공유하는 시퀀스를 단일 플레이어에 지정한다.
+	bool SetAnimationAsset(UAnimationAsset* NewAsset, bool Looping, float PlayRate, FString& OutError);
+	// 현재 단일 재생기에 지정한 애니메이션 에셋을 반환한다.
+	UAnimationAsset* GetAnimationAsset() const;
+	// 단일 시퀀스의 재생 시각을 0으로 되돌린다.
 	void PlayAnim();
-
-	////////////////////////////////////////////////////////////
-	// 재생 제어 (UE UAnimSingleNodeInstance와 같은 이름)
-	////////////////////////////////////////////////////////////
-
-	void SetPlaying(bool bIsPlaying) { SingleNode.SetPlaying(bIsPlaying); }
-	bool IsPlaying() const { return SingleNode.IsPlaying(); }
-
-	// 현재 시간(초)을 옮깁니다. [0, Length]로 제한합니다. 건너뛴 구간의 Notify는 발동하지 않고, 활성 NotifyState는 끝냅니다.
-	void SetPosition(float InPosition)
-	{
-		EndAllNotifyStates();
-		SingleNode.SetAccumulatedTime(InPosition);
-	}
-	float GetCurrentTime() const { return static_cast<float>(SingleNode.GetCurrentAssetTime()); }
-	float GetPreviousTime() const { return static_cast<float>(SingleNode.GetPreviousAssetTime()); }
-	float GetLength() const { return SingleNode.GetCurrentAssetLength(); }
-
-	// 음수면 역재생입니다. (UE도 PlayRate 부호로 역재생합니다)
-	bool SetPlayRate(float InPlayRate) { return SingleNode.SetPlayRate(InPlayRate); }
-	float GetPlayRate() const { return SingleNode.GetPlayRate(); }
-
-	void SetLooping(bool bIsLooping) { SingleNode.SetLooping(bIsLooping); }
-	bool IsLooping() const { return SingleNode.IsLooping(); }
-
-	bool DidWrapThisUpdate() const { return SingleNode.DidWrapThisUpdate(); }
-
-	// root 본의 이동을 Pose에서 빼서 Actor 이동으로 넘길지. (USkeletalMeshComponent::bEnableRootMotion이 매 Tick 넘깁니다)
-	void SetRootMotionEnabled(bool bEnabled) { SingleNode.SetRootMotionEnabled(bEnabled); }
-	bool IsRootMotionEnabled() const { return SingleNode.IsRootMotionEnabled(); }
+    void SetPlaying(bool Playing);
+    bool IsPlaying() const;
+    void SetPosition(float Position);
+    float GetCurrentTime() const;
+    float GetPreviousTime() const;
+    float GetLength() const;
+    bool SetPlayRate(float PlayRate);
+    float GetPlayRate() const;
+    void SetLooping(bool Looping);
+    bool IsLooping() const;
+    bool DidWrapThisUpdate() const;
 
 protected:
-	void NativeInitializeAnimation() override { RootNode = &SingleNode; }
+	// 멤버 Sequence Player를 공통 포즈 평가의 루트로 지정한다.
+	void NativeInitializeAnimation() override;
 
 private:
-	UAnimationAsset* CurrentAsset = nullptr;
-	FAnimNode_SequencePlayer SingleNode;
+	// 현재 재생 설정에 사용한 공유 애니메이션 에셋의 비소유 포인터이다.
+	UAnimationAsset* mCurrentAsset{};
+	// 이 인스턴스가 직접 소유하는 단일 시퀀스 실행 노드이다.
+	FAnimNode_SequencePlayer mSingleNode{};
 };

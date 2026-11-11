@@ -1,0 +1,371 @@
+{
+    "DesignSize": [
+        1920,
+        1080
+    ],
+    "ParentClass": "UUserWidget",
+    "Root": {
+        "Children": [
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "Header",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 178
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 0,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.024,
+                        "G": 0.042,
+                        "B": 0.075,
+                        "A": 0.96
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Kicker",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 12,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "WEEK11 / MOTION YARD",
+                    "FontSize": 21,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Title",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 38,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "State Machine Lab",
+                    "FontSize": 42,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Mode",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 800,
+                        "Y": 42,
+                        "Z": 1000,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "MANUAL / B: GUIDED DEMO",
+                    "FontSize": 26,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Status",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 99,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "INPUT VARIABLES",
+                    "FontSize": 23,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Detail",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 133,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "Speed 0.00 / VerticalSpeed 0.00",
+                    "FontSize": 21,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Browser",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 850,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "TAB : 43-CLIP BROWSER",
+                    "FontSize": 24,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Controls",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 925,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "WASD move / SHIFT sprint / SPACE jump / C crouch / T aim / F dance / V swim",
+                    "FontSize": 23,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Actions",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 963,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "LMB punch / Q roll / E interact / R reload / X sword / K spell / H hit / Y death",
+                    "FontSize": 23,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Hint",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 28,
+                        "Y": 1001,
+                        "Z": 1772,
+                        "W": 48
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.34,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Text": "ARROWS orbit / B guided demo / G gallery / BACKSPACE reset / Anim Graph panel: live state and blend",
+                    "FontSize": 21,
+                    "Justification": 0,
+                    "FontPath": "Assets/Fonts/Pretendard.json"
+                }
+            }
+        ],
+        "Class": "UCanvasPanel",
+        "Properties": {
+            "AlignmentX": 0,
+            "AlignmentY": 0,
+            "Anchors": {
+                "W": 1,
+                "X": 0,
+                "Y": 0,
+                "Z": 1
+            },
+            "Offsets": {
+                "W": 0,
+                "X": 0,
+                "Y": 0,
+                "Z": 0
+            },
+            "RenderOpacity": 1,
+            "Visibility": 3,
+            "WidgetName": "Root",
+            "ZOrder": 0,
+            "bAutoSize": false
+        }
+    },
+    "Version": 2
+}

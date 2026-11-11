@@ -1,0 +1,31 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Aim Pitch",
+            "Min": -1,
+            "Max": 1
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Down.fbxbin",
+            "X": -1,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Neutral.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Up.fbxbin",
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

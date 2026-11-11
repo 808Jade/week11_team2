@@ -47,6 +47,11 @@ UObject::UObject(bool bRegister)
 
 UObject::~UObject()
 {
+	DetachFromObjectRegistry();
+}
+
+void UObject::DetachFromObjectRegistry() {
+	// 명시적으로 분리한 객체가 소멸할 때 같은 등록 정보를 다시 제거하지 않도록 상태도 갱신한다.
 	if (bIsRegistered)
 	{
 		if (GetClass())
@@ -61,6 +66,7 @@ UObject::~UObject()
 			MovedObject->InternalIndex = InternalIndex; // 옮겨간 오브젝트 인덱스 갱신
 		}
 		GUObjectArray.RemoveLast();
+		bIsRegistered = false;
 	}
 }
 
