@@ -120,4 +120,57 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 		Bone.Scale = Raw.ScaleKeys.Num() == 1 ? Raw.ScaleKeys[0]
 			: FMath::Lerp(Raw.ScaleKeys[First], Raw.ScaleKeys[Second], Alpha);
 	}
+
+	if (ExtractionContext.bExtractRootMotion)
+	{
+		// root 이동·회전은 Actor로 넘기므로, Pose 안의 root는 첫 프레임 위치·회전에 고정한다
+		const int32 RootIndex = OutPoseData.RequiredBones.GetMeshPoseIndexFromSkeletonPoseIndex(0);
+		if (RootIndex != INDEX_NONE)
+		{
+			OutPoseData.Pose[RootIndex].Location = GetRootLocationAtTime(0.0);
+			OutPoseData.Pose[RootIndex].Rotation = GetRootRotationAtTime(0.0).ToFRotator();
+		}
+	}
+}
+
+void UAnimSequence::GetKeyFrame(double Time, int32& OutFirst, int32& OutSecond, float& OutAlpha) const
+{
+	const UAnimDataModel* Model = GetDataModel();
+	const int32 LastKey = Model->GetNumberOfKeys() - 1;
+	const double Frame = Time >= GetPlayLength() ? LastKey : std::clamp(Time * Model->GetFrameRate(), 0.0, static_cast<double>(LastKey));
+	OutFirst = static_cast<int32>(Frame);
+	OutSecond = std::min(OutFirst + 1, LastKey);
+	OutAlpha = static_cast<float>(Frame - OutFirst);
+}
+
+const FRawAnimSequenceTrack* UAnimSequence::FindRootTrack() const
+{
+	const UAnimDataModel* Model = GetDataModel();
+	if (!Model) return nullptr;
+	for (const FBoneAnimationTrack& Track : Model->GetBoneAnimationTracks())
+		if (Track.BoneTreeIndex == 0)
+			return &Track.InternalTrackData;
+	return nullptr;
+}
+
+FVector UAnimSequence::GetRootLocationAtTime(double Time) const
+{
+	const FRawAnimSequenceTrack* Root = FindRootTrack();
+	if (!Root || Root->PosKeys.IsEmpty()) return FVector(0, 0, 0);
+	if (Root->PosKeys.Num() == 1) return Root->PosKeys[0];
+	int32 First, Second;
+	float Alpha;
+	GetKeyFrame(Time, First, Second, Alpha);
+	return FMath::Lerp(Root->PosKeys[First], Root->PosKeys[Second], Alpha);
+}
+
+FQuat UAnimSequence::GetRootRotationAtTime(double Time) const
+{
+	const FRawAnimSequenceTrack* Root = FindRootTrack();
+	if (!Root || Root->RotKeys.IsEmpty()) return FQuat::Identity();
+	if (Root->RotKeys.Num() == 1) return Root->RotKeys[0];
+	int32 First, Second;
+	float Alpha;
+	GetKeyFrame(Time, First, Second, Alpha);
+	return FMath::Slerp(Root->RotKeys[First], Root->RotKeys[Second], Alpha);
 }

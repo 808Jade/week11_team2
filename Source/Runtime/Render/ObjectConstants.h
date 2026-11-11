@@ -9,7 +9,7 @@ struct FPerObjectConstants
 {
 	FMatrix World;
 	FMatrix NormalMatrix;
-	FVector4 ShadowFlags; // x: bReceiveShadow (GBuffer가 NormalRoughness.w 부호로 넘긴다)
+	FVector4 ObjectFlags; // x: bReceiveShadow (GBuffer가 NormalRoughness.w 부호로 넘긴다), y: bBoneWeightHeatmap
 };
 
 inline FPerObjectConstants MakePerObjectConstants(const FMatrix& World, bool bReceiveShadow = true)
@@ -17,7 +17,7 @@ inline FPerObjectConstants MakePerObjectConstants(const FMatrix& World, bool bRe
 	FPerObjectConstants Result{};
 	Result.World = World;
 	Result.NormalMatrix = World.Inverse().GetTransposed();
-	Result.ShadowFlags.X = bReceiveShadow ? 1.0f : 0.0f;
+	Result.ObjectFlags.X = bReceiveShadow ? 1.0f : 0.0f;
 	return Result;
 }
 
@@ -31,7 +31,7 @@ struct FForwardObjectConstants
 	FMatrix View;
 	FMatrix Projection;
 	FMatrix NormalMatrix;
-	FVector4 ShadowFlags;
+	FVector4 ObjectFlags; // x: bReceiveShadow, y: bBoneWeightHeatmap
 };
 
 struct FForwardMaterialConstants

@@ -46,3 +46,8 @@ bool UAnimInstance::EvaluateAnimation(TArray<FTransform>& OutPose)
 	OutPose = std::move(Context.Pose);
 	return true;
 }
+
+FRootMotionDelta UAnimInstance::GetRootMotionDelta() const
+{
+	return RootNode ? RootNode->GetRootMotionDelta() : FRootMotionDelta{};
+}

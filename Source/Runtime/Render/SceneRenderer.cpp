@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "Tasks/Tasks.h"
 #include "Core/Stats/LightweightStats.h"
+#include "Core/StatOverlay.h"
 #include "Components/StaticMeshComponent.h"
 #include "Asset/LOD/StaticMeshLODSelector.h"
 #include "Render/SkyLightEnvironment.h"
@@ -38,6 +39,22 @@ namespace
 {
 	std::atomic<uint32> GCascadeCount{ 4 };
 	std::atomic<float> GCascadeLogRatio{ 0.8f };
+
+	void DrawOpaqueMeshes(FRenderer& Renderer, std::span<const FMeshDrawBatch> Batches, FSceneRenderData& Data)
+	{
+		if (!FStatOverlay::IsEnabled(EStatFlags::Profile))
+		{
+			Renderer.DrawMeshes(Batches);
+			return;
+		}
+
+		FGPUTimer& Timer = Data.SkeletalDrawGPUTimer;
+		Timer.BeginFrame();
+		Renderer.DrawMeshes(Batches, &Timer);
+		Timer.EndFrame();
+		if (Timer.HasSample())
+			Data.RenderStats.SkeletalDrawGPUMs = Timer.GetLastMs();
+	}
 
 	struct FDecalItemRef {
 		const FPrimitiveSceneProxy* Proxy;
@@ -410,7 +427,7 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 					if (bCorePassSucceeded)
 					{
 						Renderer->UploadViewMatrix(View.ViewProjectionMatrix);
-						Renderer->DrawMeshes(Batches);
+						DrawOpaqueMeshes(*Renderer, Batches, RenderData);
 					}
 				})) return false;
 
@@ -624,7 +641,7 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 					Batch.Pipeline.DepthStencilState = EDepthStencilState::PrepassReadOnly;
 				}
 			}
-			Renderer->DrawMeshes(ForwardBatches);
+			DrawOpaqueMeshes(*Renderer, ForwardBatches, RenderData);
 			UnbindForwardLighting(Renderer);
 		})) return false;
 
@@ -1246,6 +1263,7 @@ void FSceneRenderer::GatherRenderPackets(FScene& Scene, FSceneRenderData& Data,
 					FRenderPacket& Packet = RenderQueue[p];
 					const FMatrix& Model = Packet.Proxy ? Packet.Proxy->GetLocalToWorld() : Packet.Model ? *Packet.Model : FMatrix::Identity;
 					Data.ObjectConstants[NextExtraSlot] = MakePerObjectConstants(Model);
+					Data.ObjectConstants[NextExtraSlot].ObjectFlags.Y = static_cast<float>(Packet.bBoneWeightHeatmap);
 					Packet.Slot = NextExtraSlot++;
 				}
 			}

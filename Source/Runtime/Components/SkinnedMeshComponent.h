@@ -30,12 +30,15 @@ public:
 
 	virtual bool LineTraceComponentLocal(const FRay& LocalRay, float& Out) override;
 
-	// 엔진 전체에 적용한다. 값을 바꾸면 RefreshSkinningMode로 기존 컴포넌트에 반영한다
-	inline static bool bUseGPUSkinning = false;
+	static bool IsGPUSkinningEnabled() { return bUseGPUSkinning; }
+	static void SetUseGPUSkinning(bool bEnabled);
 	void RefreshSkinningMode();
 
 	void MarkBoneTransformsDirty() { bBoneTransformsDirty = true; }
 	void UpdateBoneTransformsNow();
+
+	// BoneIndex가 0 이상이면 그 본의 Skin Weight를 Heatmap으로 표시하고, -1이면 끈다.
+	void SetBoneWeightHeatmapIndex(int32 BoneIndex);
 
 	const TArray<FMatrix>& GetComponentSpaceTransform() const { return ComponentSpaceTransforms; }
 
@@ -49,10 +52,12 @@ protected:
 
 	TArray<FMatrix> ComponentSpaceTransforms;
 private:
+	inline static bool bUseGPUSkinning = false;
 	void RecreateMeshObject();
 
 	UPROPERTY()
 	USkeletalMesh* SkeletalMesh = nullptr;
 	TUniquePtr<FSkeletalMeshObject> MeshObject;
 	bool bBoneTransformsDirty = true;
+	bool bForceCPUSkinning = false;
 };

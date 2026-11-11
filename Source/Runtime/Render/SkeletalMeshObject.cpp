@@ -69,6 +69,18 @@ void FSkeletalMeshObject::SkinVerticesCPU(uint32 LODIndex, TArray<FVertex>& OutV
 				const FVector Tangent = M.TransformVector(FVector(Bind.Tangent.X, Bind.Tangent.Y, Bind.Tangent.Z)).Normalized();
 				Out.Tangent = FVector4(Tangent.X, Tangent.Y, Tangent.Z, Bind.Tangent.W);
 
+				// 셰이더가 Color.r을 선택한 본의 Weight로 읽는다
+				if (BoneWeightHeatmapIndex >= 0)
+				{
+					float HeatmapWeight = 0.0f;
+					for (int32 k = 0; k < MaxBoneInfluences; ++k)
+					{
+						if (static_cast<int32>(W.BoneIndex[k]) == BoneWeightHeatmapIndex)
+							HeatmapWeight += W.Weight[k];
+					}
+					Out.Color = FVector4(HeatmapWeight, HeatmapWeight, HeatmapWeight, 1.0f);
+				}
+
 				for (int Axis = 0; Axis < 3; ++Axis)
 				{
 					ChunkBox.Min[Axis] = FMath::Min(ChunkBox.Min[Axis], Out.Position[Axis]);

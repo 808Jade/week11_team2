@@ -80,6 +80,9 @@ public:
 	// 본 시각화의 기본 색상을 설정합니다.
 	void SetBoneVisualizerColor(const FVector4& Color) { BoneVisualizerColor = Color; }
 
+	// 선택한 본의 Bone Weight Heatmap을 표시할지 설정합니다.
+	void SetBoneWeightHeatmapVisible(bool bVisible) { bShowBoneWeightHeatmap = bVisible; }
+
 	// 뷰포트 상태를 설정합니다. (뷰포트가 보이지 않으면 입력을 무시합니다)
 	void SetViewportState(uint32 Width, uint32 Height, const FViewportCameraInput& Input,
 		const FBoneGizmoInput& InGizmoInput = {});
@@ -105,6 +108,7 @@ public:
 	int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
 	bool IsBoneVisualizerVisible() const { return bShowBoneVisualizer; }
 	const FVector4& GetBoneVisualizerColor() const { return BoneVisualizerColor; }
+	bool IsBoneWeightHeatmapVisible() const { return bShowBoneWeightHeatmap; }
 
 protected:
 	// 이 에디터에 연결된 탭을 생성합니다.
@@ -156,6 +160,7 @@ private:
 	FVector4 BoneVisualizerColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	bool bShowBoneVisualizer = true;
+	bool bShowBoneWeightHeatmap = false;
 	bool bViewportVisible = false;
 	bool bInitialFocusPending = true;
 };

@@ -8,11 +8,36 @@
 #include "Editor/Viewports/ViewportsPanel.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "GameFramework/DefaultPawn.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/UObjectIterator.h"
 
 namespace
 {
+	bool BeginSettingsTable(const char* Id)
+	{
+		if (!ImGui::BeginTable(Id, 2, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoSavedSettings))
+			return false;
+		ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 0.56f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.44f);
+		return true;
+	}
+
+	void SettingRow(const char* Label, const char* Tooltip = nullptr)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::PushTextWrapPos();
+		ImGui::TextUnformatted(Label);
+		ImGui::PopTextWrapPos();
+		if (Tooltip)
+			ImGui::SetItemTooltip("%s", Tooltip);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+	}
+
 	const char* GetShadingModelOverrideName(const TOptional<ELightingModel>& Override)
 	{
 		return Override ? LightingModelNames[static_cast<int>(*Override)] : "None";
@@ -45,160 +70,168 @@ void FSettingsPanel::OnRender()
 	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Settings");
 
-	//////////////////////////////////////////////////////////
-
-	// 렌더링 옵션 (Toggles)
-	ImGui::SeparatorText("Rendering");
-
-	ImGui::TextDisabled("Fill mode is configured per viewport.");
-	ImGui::Checkbox("Draw Primitives", &Settings.bDrawPrimitives);
-	ImGui::Checkbox("Cache Shadows", &Settings.bCacheShadows);
-	ImGui::Checkbox("Draw Bounding Box", &Settings.bDrawBoundingBox);
-	ImGui::Checkbox("Show Object UUID", &Settings.bShowUUID);
-	ImGui::Checkbox("Draw Decals", &Settings.bDrawDecals);
-	const char* DecalBroadPhases[] = { "Off", "Linear AABB", "BVH" };
-	int DecalBroadPhaseIndex = Settings.bDecalBVHCulling ? 2 : (Settings.bDecalCulling ? 1 : 0);
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::Combo("Decal Broad Phase", &DecalBroadPhaseIndex,
-		DecalBroadPhases, IM_ARRAYSIZE(DecalBroadPhases)))
+	if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen) && BeginSettingsTable("RenderingValues"))
 	{
-		Settings.bDecalCulling = DecalBroadPhaseIndex != 0;
-		Settings.bDecalBVHCulling = DecalBroadPhaseIndex == 2;
-	}
-	ImGui::Checkbox("Decal Narrow Phase (SAT)", &Settings.bDecalNarrowCulling);
-	ImGui::Indent();
-	ImGui::Checkbox("Use OBBTree", &Settings.bDecalOBBTree);
-	ImGui::Unindent();
+		const char* RenderingPaths[] = { "Forward", "Deferred" };
+		int RenderingPathIndex = static_cast<int>(Settings.RenderingPath);
+		SettingRow("Rendering Path");
+		if (ImGui::Combo("##RenderingPath", &RenderingPathIndex, RenderingPaths, IM_ARRAYSIZE(RenderingPaths)))
+			Settings.RenderingPath = static_cast<ERenderingPath>(RenderingPathIndex);
 
-	const char* RenderingPaths[] = { "Forward", "Deferred" };
-	int RenderingPathIndex = static_cast<int>(Settings.RenderingPath);
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::Combo("Rendering Path", &RenderingPathIndex, RenderingPaths, IM_ARRAYSIZE(RenderingPaths)))
-		Settings.RenderingPath = static_cast<ERenderingPath>(RenderingPathIndex);
+		bool bUseGPUSkinning = USkinnedMeshComponent::IsGPUSkinningEnabled();
+		SettingRow("GPU Skinning");
+		if (ImGui::Checkbox("##GPUSkinning", &bUseGPUSkinning))
+			USkinnedMeshComponent::SetUseGPUSkinning(bUseGPUSkinning);
 
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::BeginCombo("Shading Model Override", GetShadingModelOverrideName(Settings.ShadingModelOverride)))
-	{
-		if (ImGui::Selectable("None", !Settings.ShadingModelOverride))
-			Settings.ShadingModelOverride.Reset();
-		for (int Index = 0; Index < IM_ARRAYSIZE(LightingModelNames); ++Index)
+		SettingRow("Shading Model Override", "None uses each material's shading model in Forward.");
+		if (ImGui::BeginCombo("##ShadingModelOverride", GetShadingModelOverrideName(Settings.ShadingModelOverride)))
 		{
-			const auto Choice = static_cast<ELightingModel>(Index);
-			if (ImGui::Selectable(LightingModelNames[Index], Settings.ShadingModelOverride == Choice))
-				Settings.ShadingModelOverride = Choice;
+			if (ImGui::Selectable("None", !Settings.ShadingModelOverride))
+				Settings.ShadingModelOverride.Reset();
+			for (int Index = 0; Index < IM_ARRAYSIZE(LightingModelNames); ++Index)
+			{
+				const auto Choice = static_cast<ELightingModel>(Index);
+				if (ImGui::Selectable(LightingModelNames[Index], Settings.ShadingModelOverride == Choice))
+					Settings.ShadingModelOverride = Choice;
+			}
+			ImGui::EndCombo();
 		}
-		ImGui::EndCombo();
+
+		const char* LightCullingModes[] = { "Off", "Tiled", "Clustered", "Tiled 2.5D" };
+		int LightCullingModeIndex = static_cast<int>(Settings.LightCullingMode);
+		SettingRow("Light Culling", "Applies to Forward Lambert/Blinn-Phong. Off evaluates all uploaded local lights.");
+		if (ImGui::Combo("##LightCulling", &LightCullingModeIndex, LightCullingModes, IM_ARRAYSIZE(LightCullingModes)))
+			Settings.LightCullingMode = static_cast<ELightCullingMode>(LightCullingModeIndex);
+		ImGui::EndTable();
 	}
-	if (!Settings.ShadingModelOverride)
-		ImGui::TextDisabled("None uses each material's shading model in Forward.");
-	const char* LightCullingModes[] = { "Off", "Tiled", "Clustered", "Tiled 2.5D" };
-	int LightCullingModeIndex = static_cast<int>(Settings.LightCullingMode);
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::Combo("Light Culling", &LightCullingModeIndex,
-		LightCullingModes, IM_ARRAYSIZE(LightCullingModes)))
+
+	DrawShadowMapSettings();
+
+	if (ImGui::CollapsingHeader("Decals", ImGuiTreeNodeFlags_DefaultOpen) && BeginSettingsTable("DecalValues"))
 	{
-		Settings.LightCullingMode = static_cast<ELightCullingMode>(LightCullingModeIndex);
+		SettingRow("Draw Decals");
+		ImGui::Checkbox("##DrawDecals", &Settings.bDrawDecals);
+
+		const char* DecalBroadPhases[] = { "Off", "Linear AABB", "BVH" };
+		int DecalBroadPhaseIndex = Settings.bDecalBVHCulling ? 2 : (Settings.bDecalCulling ? 1 : 0);
+		SettingRow("Broad Phase");
+		if (ImGui::Combo("##DecalBroadPhase", &DecalBroadPhaseIndex, DecalBroadPhases, IM_ARRAYSIZE(DecalBroadPhases)))
+		{
+			Settings.bDecalCulling = DecalBroadPhaseIndex != 0;
+			Settings.bDecalBVHCulling = DecalBroadPhaseIndex == 2;
+		}
+
+		SettingRow("Narrow Phase (SAT)");
+		ImGui::Checkbox("##DecalNarrowPhase", &Settings.bDecalNarrowCulling);
+		SettingRow("Use OBBTree");
+		ImGui::Checkbox("##DecalOBBTree", &Settings.bDecalOBBTree);
+		ImGui::EndTable();
 	}
-	ImGui::TextDisabled("Forward Lambert/Blinn-Phong only; Off evaluates all uploaded local lights.");
-	ImGui::TextDisabled("Forward Lambert/Blinn-Phong only; off evaluates all visible local lights.");
 
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Scene Depth");
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::DragFloat("Max Distance", &Settings.SceneDepthMaxRange, 0.5f,
-		0.1f, 10000.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp))
-		ApplySceneDepthRange();
-	ImGui::TextDisabled("White represents this distance from the camera.");
-
-	//////////////////////////////////////////////////////////
-
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Anti-Aliasing");
-
-	ImGui::Checkbox("Enable FXAA", &Settings.bEnableFXAA);
-
-	//////////////////////////////////////////////////////////
-
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Post Process");
-
-	ImGui::Checkbox("Gamma Correction", &Settings.bGammaCorrection);
-	ImGui::BeginDisabled(!Settings.bGammaCorrection);
-	ImGui::SetNextItemWidth(200.0f);
-	ImGui::SliderFloat("Display Gamma", &Settings.DisplayGamma, 1.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-	ImGui::EndDisabled();
-	ImGui::Checkbox("Vignette", &Settings.bShowVignette);
-	ImGui::Checkbox("Camera Fade / Letterbox", &Settings.bShowCameraOverlay);
-	ImGui::Checkbox("Skeletal Mesh", &Settings.bShowSkeletalMesh);
-
-	if (ImGui::TreeNode("Camera Overlay Debug"))
+	if (ImGui::CollapsingHeader("Post Process", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		FCameraOverlayDebug& D = GCameraOverlayDebug;
-		ImGui::Checkbox("Override (PIE)", &D.bOverride);
-		ImGui::ColorEdit3("Fade Color", D.FadeColor);
-		ImGui::SliderFloat("Fade Amount", &D.FadeAmount, 0.0f, 1.0f);
-		ImGui::SliderFloat("Letterbox", &D.LetterboxAmount, 0.0f, 1.0f);
-		ImGui::SliderFloat("Letterbox Aspect", &D.LetterboxAspect, 1.0f, 3.0f, "%.2f");
-		ImGui::SliderFloat("Vignette", &D.VignetteIntensity, 0.0f, 2.0f);
-		ImGui::TreePop();
+		if (BeginSettingsTable("PostProcessValues"))
+		{
+			SettingRow("FXAA");
+			ImGui::Checkbox("##FXAA", &Settings.bEnableFXAA);
+			SettingRow("Gamma Correction");
+			ImGui::Checkbox("##GammaCorrection", &Settings.bGammaCorrection);
+			SettingRow("Display Gamma");
+			ImGui::BeginDisabled(!Settings.bGammaCorrection);
+			ImGui::SliderFloat("##DisplayGamma", &Settings.DisplayGamma, 1.0f, 3.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+			ImGui::EndDisabled();
+			SettingRow("Vignette");
+			ImGui::Checkbox("##Vignette", &Settings.bShowVignette);
+			SettingRow("Camera Fade / Letterbox");
+			ImGui::Checkbox("##CameraOverlay", &Settings.bShowCameraOverlay);
+			ImGui::EndTable();
+		}
+
+		if (ImGui::TreeNode("Camera Overlay Debug"))
+		{
+			if (BeginSettingsTable("CameraOverlayDebugValues"))
+			{
+				FCameraOverlayDebug& D = GCameraOverlayDebug;
+				SettingRow("Override (PIE)");
+				ImGui::Checkbox("##Override", &D.bOverride);
+				SettingRow("Fade Color");
+				ImGui::ColorEdit3("##FadeColor", D.FadeColor);
+				SettingRow("Fade Amount");
+				ImGui::SliderFloat("##FadeAmount", &D.FadeAmount, 0.0f, 1.0f);
+				SettingRow("Letterbox");
+				ImGui::SliderFloat("##Letterbox", &D.LetterboxAmount, 0.0f, 1.0f);
+				SettingRow("Letterbox Aspect");
+				ImGui::SliderFloat("##LetterboxAspect", &D.LetterboxAspect, 1.0f, 2.5f);
+				SettingRow("Vignette");
+				ImGui::SliderFloat("##DebugVignette", &D.VignetteIntensity, 0.0f, 2.0f);
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
 	}
 
-	//////////////////////////////////////////////////////////
-	
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Grid");
+	if (ImGui::CollapsingHeader("Viewport", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		if (BeginSettingsTable("ViewportValues"))
+		{
+			SettingRow("Draw Primitives", "Fill mode is configured per viewport.");
+			ImGui::Checkbox("##DrawPrimitives", &Settings.bDrawPrimitives);
+			SettingRow("Show Skeletal Mesh");
+			ImGui::Checkbox("##ShowSkeletalMesh", &Settings.bShowSkeletalMesh);
+			SettingRow("Draw Bounding Box");
+			ImGui::Checkbox("##DrawBoundingBox", &Settings.bDrawBoundingBox);
+			SettingRow("Show Object UUID");
+			ImGui::Checkbox("##ShowUUID", &Settings.bShowUUID);
+			ImGui::EndTable();
+		}
 
-	ImGui::Checkbox("Draw Batch Line / Grid", &Settings.bDrawBatchLine);
-	ImGui::Checkbox("Draw PS Grid", &Settings.bDrawPSGrid);
+		ImGui::SeparatorText("Grid");
+		if (BeginSettingsTable("ViewportGridValues"))
+		{
+			SettingRow("Draw Batch Line / Grid");
+			ImGui::Checkbox("##DrawBatchLine", &Settings.bDrawBatchLine);
+			SettingRow("Draw PS Grid");
+			ImGui::Checkbox("##DrawPSGrid", &Settings.bDrawPSGrid);
+			SettingRow("Grid Spacing");
+			ImGui::SliderInt("##GridSpacing", &Settings.GridSpacing, 1, 100);
+			ImGui::EndTable();
+		}
 
-	ImGui::SetNextItemWidth(200.0f);
-	ImGui::SliderInt("Grid Spacing", &Settings.GridSpacing, 1, 100);
+		ImGui::SeparatorText("Scene Depth");
+		if (BeginSettingsTable("ViewportDepthValues"))
+		{
+			SettingRow("Max Distance", "White represents this distance from the camera.");
+			if (ImGui::DragFloat("##SceneDepthRange", &Settings.SceneDepthMaxRange, 0.5f,
+				0.1f, 10000.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp))
+				ApplySceneDepthRange();
+			ImGui::EndTable();
+		}
+	}
 
-	//////////////////////////////////////////////////////////
-
-	// 에디터 수치 설정 (Values)
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Editor Settings");
+	if (ImGui::CollapsingHeader("Editor & PIE", ImGuiTreeNodeFlags_DefaultOpen) && BeginSettingsTable("EditorValues"))
+	{
+		SettingRow("Camera Rotate Sensitivity");
+		ImGui::SliderFloat("##CameraRotateSensitivity", &Settings.MouseSensitivity, 0.01f, 1.0f, "%.2f");
+		SettingRow("Camera Speed");
+		ImGui::SliderFloat("##CameraSpeed", &Settings.CameraSpeed, 0.1f, 10.0f, "%.2f");
+		DrawDefaultPawnSettings();
+		ImGui::EndTable();
+	}
 
 	UCameraComponent* CamCom = World->GetMainCamera()->GetCameraComponent();
-
-	ImGui::SetNextItemWidth(200.0f);
-	ImGui::SliderFloat("Camera Rotate Sensitivity", &Settings.MouseSensitivity, 0.01f, 1.0f, "%.2f");
 	CamCom->SetMouseSensitivity(Settings.MouseSensitivity);
-
-	ImGui::SetNextItemWidth(200.0f);
-	ImGui::SliderFloat("Camera Speed", &Settings.CameraSpeed, 0.1f, 10.0f, "%.2f");
 	CamCom->SetMoveSpeed(Settings.CameraSpeed);
 
-	//////////////////////////////////////////////////////////
-	DrawShadowMapSettings();
-	//////////////////////////////////////////////////////////
-
-	//////////////////////////////////////////////////////////
-	DrawDefaultPawnSettings();
-
-	//////////////////////////////////////////////////////////
 	ImGui::Dummy(ImVec2(0.0f, SectionGap));
-	ImGui::SeparatorText("Load Settings");
-
-	if (ImGui::Button("Load Settings"))
-	{
+	ImGui::SeparatorText("Settings File");
+	const float ButtonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+	if (ImGui::Button("Load Settings", ImVec2(ButtonWidth, 0.0f)))
 		LoadSettings();
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Load settings from editor.ini");
-	}
-
+	ImGui::SetItemTooltip("Load settings from editor.ini");
 	ImGui::SameLine();
-
-	if (ImGui::Button("Save Settings"))
-	{
+	if (ImGui::Button("Save Settings", ImVec2(ButtonWidth, 0.0f)))
 		SaveSettings();
-	}
-
-	//////////////////////////////////////////////////////////
+	ImGui::SetItemTooltip("Save settings to editor.ini");
 
 	ImGui::End();
 }
@@ -530,12 +563,11 @@ void FSettingsPanel::ApplySceneDepthRange()
 
 void FSettingsPanel::DrawDefaultPawnSettings()
 {
-    ImGui::Dummy(ImVec2(0.0f, SectionGap));
-    ImGui::SeparatorText("DefaultPawn Settings");
+    SettingRow("DefaultPawn Mesh", "Start PIE with a DefaultPawn to edit its mesh.");
     ADefaultPawn* Pawn = World ? Cast<ADefaultPawn>(World->GetPlayerPawn()) : nullptr;
     if (!Pawn)
     {
-        ImGui::TextDisabled("Start PIE with a DefaultPawn to edit these settings.");
+        ImGui::TextDisabled("PIE only");
         return;
     }
 
@@ -602,40 +634,44 @@ void FSettingsPanel::DrawDefaultPawnSettings()
     if (PawnMesh)
     {
         UStaticMesh* Mesh = PawnMesh->GetStaticMesh();
-        if (DrawMeshPicker("Pawn Mesh", Mesh)) PawnMesh->SetStaticMesh(Mesh);
+        if (DrawMeshPicker("##PawnMesh", Mesh)) PawnMesh->SetStaticMesh(Mesh);
     }
 }
 
 void FSettingsPanel::DrawShadowMapSettings()
 {
-	ImGui::Dummy(ImVec2(0.0f, SectionGap));
+	if (!ImGui::CollapsingHeader("Shadows", ImGuiTreeNodeFlags_DefaultOpen) || !BeginSettingsTable("ShadowValues"))
+		return;
 
-	ImGui::SeparatorText("ShadowMap Settings");
-	ImGui::Checkbox("Draw Cascade Bounds", &Settings.bDrawCascadeBounds);
-	if (Settings.bDrawCascadeBounds)
-		ImGui::TextDisabled("Cascade 0-3: red, yellow, green, blue");
+	SettingRow("Cache Shadows");
+	ImGui::Checkbox("##CacheShadows", &Settings.bCacheShadows);
 
-	const char* QualityLevelStr[] = { "Very Low", "Low", "Middle", "Hight", "Very High" };
-	
-	if (ImGui::Combo("Directional", &Settings.DirectionalShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
+	const char* QualityLevelStr[] = { "Very Low", "Low", "Middle", "High", "Very High" };
+	SettingRow("Directional Quality");
+	if (ImGui::Combo("##DirectionalShadowQuality", &Settings.DirectionalShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
 	{
 		Settings.DirectionalShadowMapSizeLevel = FMath::Clamp(Settings.DirectionalShadowMapSizeLevel, 0, IM_ARRAYSIZE(QualityLevelStr) - 1);
 	}
 
-	if (ImGui::Combo("Point", &Settings.PointShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
+	SettingRow("Point Quality");
+	if (ImGui::Combo("##PointShadowQuality", &Settings.PointShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
 	{
 		Settings.PointShadowMapSizeLevel = FMath::Clamp(Settings.PointShadowMapSizeLevel, 0, IM_ARRAYSIZE(QualityLevelStr) - 1);
 	}
 
-	if (ImGui::Combo("Spot", &Settings.SpotShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
+	SettingRow("Spot Quality");
+	if (ImGui::Combo("##SpotShadowQuality", &Settings.SpotShadowMapSizeLevel, QualityLevelStr, IM_ARRAYSIZE(QualityLevelStr)))
 	{
 		Settings.SpotShadowMapSizeLevel = FMath::Clamp(Settings.SpotShadowMapSizeLevel, 0, IM_ARRAYSIZE(QualityLevelStr) - 1);
 	}
 
 	const char* PcfModes[] = { "Off", "8 (Samples)", "16 (Samples)", "32 (Samples)", "PCSS" };
 	int PcfModeIndex = static_cast<int>(Settings.PcfMode);
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::Combo("Shadow Filter", &PcfModeIndex, PcfModes, IM_ARRAYSIZE(PcfModes)))
+	SettingRow("Shadow Filter");
+	if (ImGui::Combo("##ShadowFilter", &PcfModeIndex, PcfModes, IM_ARRAYSIZE(PcfModes)))
 		Settings.PcfMode = static_cast<EPcfMode>(PcfModeIndex);
-}
 
+	SettingRow("Draw Cascade Bounds", "Cascade 0-3: red, yellow, green, blue.");
+	ImGui::Checkbox("##DrawCascadeBounds", &Settings.bDrawCascadeBounds);
+	ImGui::EndTable();
+}
