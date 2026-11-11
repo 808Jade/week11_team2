@@ -16,6 +16,18 @@ class FProperty;
 
 #define INVALID_OBJECT ((UObject*)-1)
 
+// The current constructor can change when it creates another UObject.
+class FObjectConstructionScope
+{
+public:
+	explicit FObjectConstructionScope(const void* Object);
+	~FObjectConstructionScope();
+	static bool IsConstructing(const void* Object);
+
+private:
+	const void* Previous;
+};
+
 // 추상 클래스는 생성자를 등록하지 않는다.
 // 템플릿이어야 버려진 if constexpr 분기의 new T()가 컴파일되지 않고,
 // 멤버여야 private 생성자(싱글턴 등)에 접근할 수 있다.
@@ -27,7 +39,7 @@ public:                                                                 \
 	static UObject* InternalConstructInstance(void* Memory)				\
 	{																	\
 		if constexpr (std::is_abstract_v<T>) { return nullptr; }		\
-		else { return new (Memory) T; }									\
+		else { FObjectConstructionScope Scope(Memory); return new (Memory) T; } \
 	}																	\
     static UClass* StaticClass()                                        \
     {                                                                   \
@@ -146,14 +158,18 @@ public:
 	template <typename T>
 	T* CreateDefaultSubobject(FName SubobjectName)
 	{
-		T* Subobject = NewObject<T>(this, SubobjectName, EObjectFlags::RF_DefaultSubObject);
-		OnDefaultSubobjectCreated(Subobject);
-		return Subobject;
+		if (!FObjectConstructionScope::IsConstructing(this) || SubobjectName.IsNone()
+			|| StaticFindObjectFast(nullptr, this, SubobjectName))
+		{
+			assert(false && "CreateDefaultSubobject requires the current constructor and a unique name");
+			return nullptr;
+		}
+		return NewObject<T>(this, SubobjectName, EObjectFlags::RF_DefaultSubObject);
 	}
 
+	virtual void PostInitProperties() {}
+	virtual void PostLoad() {}
 	virtual void PostDuplicate(bool bDuplicateForPIE) {}
-protected:
-	virtual void OnDefaultSubobjectCreated(UObject* Subobject) {}
 private:
 	void SerializeScriptProperties(FStructuredArchive::FSlot Slot);
 

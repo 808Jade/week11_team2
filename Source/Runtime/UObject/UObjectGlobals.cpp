@@ -67,6 +67,17 @@ namespace
 //    return Object;
 //}
 
+UObject* NewObject_Internal(const FStaticConstructObjectParameters& Params)
+{
+	if (Params.Outer && Params.Name.IsNone() && FObjectConstructionScope::IsConstructing(Params.Outer))
+	{
+		HTR_LOG(Error, "NewObject requires an explicit name when its Outer is the object currently being constructed");
+		return nullptr;
+	}
+
+	return StaticConstructObject_Internal(Params);
+}
+
 UObject* StaticConstructObject_Internal(const FStaticConstructObjectParameters& Params)
 {
 	bool bRecycled = false;
@@ -87,6 +98,7 @@ UObject* StaticConstructObject_Internal(const FStaticConstructObjectParameters& 
 	{
 		Class->Constructor(Object);
 		HashObject(Object, Class);
+		Object->PostInitProperties();
 	}
 
 	return Object;

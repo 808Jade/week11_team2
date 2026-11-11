@@ -25,6 +25,7 @@ public:
 
     void AddActor(AActor* Actor);
     void ClearActors();
+    void AdoptLoadedActors(ULevel& LoadedLevel);
 
     using Super::Serialize;
     virtual void Serialize(FStructuredArchive::FRecord Record) override;

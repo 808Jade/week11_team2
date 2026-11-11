@@ -7,42 +7,15 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.5139675140380859,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 10.0,
-                                        "Y": 10.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": -0.08179759979248047,
+                                        "X": -0.30400848388671875,
                                         "Y": 0.0,
                                         "Z": -8.081612586975098
                                     },
@@ -52,8 +25,8 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 50.0,
-                                        "Y": 50.0,
+                                        "X": 500,
+                                        "Y": 500,
                                         "Z": 0.20000000298023224
                                     }
                                 },
@@ -232,44 +205,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/Hitori/Hitori.obj",
                                 "Transform": {
                                     "Location": {
                                         "X": -7.461419105529785,
                                         "Y": 0.0,
                                         "Z": -7.772026538848877
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/Hitori/Hitori.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -299,43 +245,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": -15.461606979370117,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/Shiba/Shiba.obj",
                                 "Transform": {
                                     "Location": {
                                         "X": -0.8874893188476563,
-                                        "Y": -7.198150634765625,
+                                        "Y": -22.659757614135742,
                                         "Z": 1.8884391784667969
                                     },
                                     "Rotation": {

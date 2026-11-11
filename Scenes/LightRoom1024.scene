@@ -8,43 +8,19 @@
                                                              "Name":  "Floor",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  -0.25
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
                                                                                                                                           "X":  0,
                                                                                                                                           "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Z":  -0.25
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -70,43 +46,19 @@
                                                              "Name":  "Ceiling",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  12.25
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
                                                                                                                                           "X":  0,
                                                                                                                                           "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Z":  12.25
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -132,43 +84,19 @@
                                                              "Name":  "Wall_PX",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  32.25,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
+                                                                                                                                          "X":  32.25,
                                                                                                                                           "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -194,43 +122,19 @@
                                                              "Name":  "Wall_NX",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -32.25,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
+                                                                                                                                          "X":  -32.25,
                                                                                                                                           "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -256,43 +160,19 @@
                                                              "Name":  "Wall_PY",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  32.25,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
                                                                                                                                           "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Y":  32.25,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -318,43 +198,19 @@
                                                              "Name":  "Wall_NY",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  -32.25,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
                                                                                                                                           "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Y":  -32.25,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -380,43 +236,19 @@
                                                              "Name":  "Pillar_00",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -24,
-                                                                                                                                          "Y":  -24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -24,
+                                                                                                                                          "Y":  -24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -442,43 +274,19 @@
                                                              "Name":  "Pillar_01",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -24,
-                                                                                                                                          "Y":  -8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -24,
+                                                                                                                                          "Y":  -8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -504,43 +312,19 @@
                                                              "Name":  "Pillar_02",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -24,
-                                                                                                                                          "Y":  8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -24,
+                                                                                                                                          "Y":  8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -566,43 +350,19 @@
                                                              "Name":  "Pillar_03",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -24,
-                                                                                                                                          "Y":  24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -24,
+                                                                                                                                          "Y":  24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -628,43 +388,19 @@
                                                              "Name":  "Pillar_10",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -8,
-                                                                                                                                          "Y":  -24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -8,
+                                                                                                                                          "Y":  -24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -690,43 +426,19 @@
                                                              "Name":  "Pillar_11",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -8,
-                                                                                                                                          "Y":  -8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -8,
+                                                                                                                                          "Y":  -8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -752,43 +464,19 @@
                                                              "Name":  "Pillar_12",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -8,
-                                                                                                                                          "Y":  8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -8,
+                                                                                                                                          "Y":  8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -814,43 +502,19 @@
                                                              "Name":  "Pillar_13",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -8,
-                                                                                                                                          "Y":  24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -8,
+                                                                                                                                          "Y":  24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -876,43 +540,19 @@
                                                              "Name":  "Pillar_20",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  8,
-                                                                                                                                          "Y":  -24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  8,
+                                                                                                                                          "Y":  -24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -938,43 +578,19 @@
                                                              "Name":  "Pillar_21",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  8,
-                                                                                                                                          "Y":  -8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  8,
+                                                                                                                                          "Y":  -8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1000,43 +616,19 @@
                                                              "Name":  "Pillar_22",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  8,
-                                                                                                                                          "Y":  8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  8,
+                                                                                                                                          "Y":  8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1062,43 +654,19 @@
                                                              "Name":  "Pillar_23",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  8,
-                                                                                                                                          "Y":  24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  8,
+                                                                                                                                          "Y":  24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1124,43 +692,19 @@
                                                              "Name":  "Pillar_30",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  24,
-                                                                                                                                          "Y":  -24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  24,
+                                                                                                                                          "Y":  -24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1186,43 +730,19 @@
                                                              "Name":  "Pillar_31",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  24,
-                                                                                                                                          "Y":  -8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  24,
+                                                                                                                                          "Y":  -8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1248,43 +768,19 @@
                                                              "Name":  "Pillar_32",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  24,
-                                                                                                                                          "Y":  8,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  24,
+                                                                                                                                          "Y":  8,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1310,43 +806,19 @@
                                                              "Name":  "Pillar_33",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  24,
-                                                                                                                                          "Y":  24,
-                                                                                                                                          "Z":  6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  24,
+                                                                                                                                          "Y":  24,
+                                                                                                                                          "Z":  6
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1372,43 +844,19 @@
                                                              "Name":  "Box_0",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -16,
-                                                                                                                                          "Y":  -16,
-                                                                                                                                          "Z":  1
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -16,
+                                                                                                                                          "Y":  -16,
+                                                                                                                                          "Z":  1
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1434,43 +882,19 @@
                                                              "Name":  "Box_1",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  16,
-                                                                                                                                          "Y":  16,
-                                                                                                                                          "Z":  1
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  16,
+                                                                                                                                          "Y":  16,
+                                                                                                                                          "Z":  1
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1496,43 +920,19 @@
                                                              "Name":  "Box_2",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -16,
-                                                                                                                                          "Y":  16,
-                                                                                                                                          "Z":  1
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  -16,
+                                                                                                                                          "Y":  16,
+                                                                                                                                          "Z":  1
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1558,43 +958,19 @@
                                                              "Name":  "Box_3",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  16,
-                                                                                                                                          "Y":  -16,
-                                                                                                                                          "Z":  1
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "X":  16,
+                                                                                                                                          "Y":  -16,
+                                                                                                                                          "Z":  1
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,
@@ -1620,43 +996,19 @@
                                                              "Name":  "Box_4",
                                                              "Components":  [
                                                                                 {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  1
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
                                                                                     "Class":  "UStaticMeshComponent",
                                                                                     "Name":  "UStaticMeshComponent",
                                                                                     "OverrideMaterials":  [
 
                                                                                                           ],
-                                                                                    "Parent":  "DefaultSceneRoot",
+                                                                                    "Parent":  "",
                                                                                     "Properties":  {
                                                                                                        "StaticMesh":  "Cube",
                                                                                                        "Transform":  {
                                                                                                                          "Location":  {
                                                                                                                                           "X":  0,
                                                                                                                                           "Y":  0,
-                                                                                                                                          "Z":  0
+                                                                                                                                          "Z":  1
                                                                                                                                       },
                                                                                                                          "Rotation":  {
                                                                                                                                           "Pitch":  0,

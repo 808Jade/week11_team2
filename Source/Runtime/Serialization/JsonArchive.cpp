@@ -1,4 +1,4 @@
-﻿#include "EnginePCH.h"
+#include "EnginePCH.h"
 #include "JsonArchive.h"
 
 #include "Engine/World.h"
@@ -19,9 +19,243 @@
 #include "Serialization/Formatter/JsonArchiveOutputFormatter.h"
 #include "Serialization/Formatter/JsonArchiveInputFormatter.h"
 
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 namespace
 {
-	constexpr int32 SceneVersion = 4;   // 포맷이 바뀌었으므로 올린다
+	constexpr int32 SceneVersion = 5;
+
+	void RequireSceneData(bool bValid, const char* Message)
+	{
+		if (!bValid)
+			throw std::runtime_error(Message);
+	}
+
+	// Version 4 scoped component names to their actor and omitted the root reference.
+	void UpgradeSceneV4(FJsonValue& Document)
+	{
+		uint32 NextId = 1;
+		auto& Actors = Document.at("World").at("PersistentLevel").at("Actors");
+		RequireSceneData(Actors.is_array(), "expected an actor array");
+		for (auto& Actor : Actors)
+		{
+			auto& Components = Actor.at("Components");
+			RequireSceneData(Components.is_array(), "expected a component array");
+			std::unordered_map<FString, uint32> IdsByName;
+			for (auto& Component : Components)
+			{
+				const FString Name = Component.at("Name").get<FString>();
+				Component["Id"] = NextId;
+				Component["Outer"] = 0u;
+				IdsByName.try_emplace(Name, NextId++);
+			}
+			for (auto& Component : Components)
+			{
+				const auto Parent = IdsByName.find(Component.value("Parent", FString{}));
+				Component["Parent"] = Parent == IdsByName.end() ? 0u : Parent->second;
+			}
+			Actor["RootComponent"] = nullptr; // Recovered after constructing the actor.
+		}
+	}
+
+	void ReadSceneObject(UObject& Object, FArchive& Reader, const FJsonValue& Record)
+	{
+		FJsonArchiveInputFormatter Formatter(Reader, Record);
+		FStructuredArchive Archive(Formatter);
+		Object.Serialize(Archive.Open().EnterRecord());
+		Archive.Close();
+	}
+
+	uint32 ReadSceneId(const FJsonValue& Record, const char* Field)
+	{
+		const auto& Value = Record.at(Field);
+		RequireSceneData(Value.is_number_unsigned() && Value.get<uint64>() <= UINT32_MAX, "invalid object reference");
+		return Value.get<uint32>();
+	}
+
+	struct FSceneActorRecord
+	{
+		const FJsonValue* Data;
+		AActor* Actor;
+	};
+
+	struct FSceneComponentRecord
+	{
+		const FJsonValue* Data;
+		AActor* Actor;
+		uint32 OuterId;
+		uint32 ParentId;
+		UActorComponent* Component = nullptr;
+		bool bResolving = false;
+	};
+
+	using FSceneComponentRecords = std::unordered_map<uint32, FSceneComponentRecord>;
+
+	UActorComponent* ResolveSceneComponent(FSceneComponentRecords& Records, uint32 Id,
+		std::unordered_set<UActorComponent*>& ResolvedComponents)
+	{
+		auto& Record = Records.at(Id);
+		if (Record.Component)
+			return Record.Component;
+		RequireSceneData(!Record.bResolving, "circular component Outer");
+		Record.bResolving = true;
+
+		UObject* Outer = Record.Actor;
+		if (Record.OuterId)
+		{
+			auto& OuterRecord = Records.at(Record.OuterId);
+			RequireSceneData(OuterRecord.Actor == Record.Actor, "component Outer belongs to another actor");
+			Outer = ResolveSceneComponent(Records, Record.OuterId, ResolvedComponents);
+		}
+
+		const FName Name(Record.Data->at("Name").get<FString>());
+		UClass* Class = FindClass(Record.Data->at("Class").get<FString>());
+		RequireSceneData(!Name.IsNone() && Class && Class->IsChildOf(UActorComponent::StaticClass()),
+			"invalid component name or class");
+
+		if (UObject* Existing = StaticFindObjectFast(nullptr, Outer, Name))
+		{
+			RequireSceneData(Existing->GetClass() == Class, "saved component class differs from the constructed object");
+			Record.Component = static_cast<UActorComponent*>(Existing);
+		}
+		else
+		{
+			Record.Component = NewObject<UActorComponent>(Outer, Class, Name);
+		}
+
+		RequireSceneData(Record.Component && Record.Component->GetOwner() == Record.Actor, "invalid component owner");
+		RequireSceneData(ResolvedComponents.insert(Record.Component).second, "duplicate component identity");
+		return Record.Component;
+	}
+
+	USceneComponent* GetSavedSceneComponent(const FSceneComponentRecords& Records, uint32 Id)
+	{
+		if (!Id)
+			return nullptr;
+		auto* Component = Cast<USceneComponent>(Records.at(Id).Component);
+		RequireSceneData(Component != nullptr, "attachment or root refers to a non-scene component");
+		return Component;
+	}
+
+	void RestoreActorRoot(const FSceneActorRecord& Record, const FSceneComponentRecords& Components)
+	{
+		const auto& Root = Record.Data->at("RootComponent");
+		if (Root.is_null())
+		{
+			if (!Record.Actor->GetRootComponent())
+			{
+				auto* LegacyRoot = Cast<USceneComponent>(Record.Actor->FindComponentByName(FName("DefaultSceneRoot")));
+				Record.Actor->SetRootComponent(LegacyRoot);
+			}
+			return;
+		}
+
+		auto* SceneRoot = GetSavedSceneComponent(Components, ReadSceneId(*Record.Data, "RootComponent"));
+		RequireSceneData(!SceneRoot || SceneRoot->GetOwner() == Record.Actor, "root belongs to another actor");
+		Record.Actor->SetRootComponent(SceneRoot);
+	}
+
+	void RestoreSceneAttachments(const FSceneComponentRecords& Components, const std::vector<uint32>& Order)
+	{
+		for (uint32 Id : Order)
+		{
+			const auto& Record = Components.at(Id);
+			if (Record.ParentId)
+			{
+				RequireSceneData(Cast<USceneComponent>(Record.Component) != nullptr, "non-scene component has an attachment");
+				std::unordered_set<uint32> Ancestors;
+				Ancestors.insert(Id);
+				for (uint32 Parent = Record.ParentId; Parent; Parent = Components.at(Parent).ParentId)
+				{
+					RequireSceneData(Ancestors.insert(Parent).second, "circular attachment");
+					GetSavedSceneComponent(Components, Parent);
+				}
+			}
+			if (auto* Scene = Cast<USceneComponent>(Record.Component))
+				Scene->DetachFromParent(EAttachmentRule::KeepRelative);
+		}
+
+		for (uint32 Id : Order)
+		{
+			const auto& Record = Components.at(Id);
+			if (Record.ParentId)
+				static_cast<USceneComponent*>(Record.Component)->SetupAttachment(
+					GetSavedSceneComponent(Components, Record.ParentId), EAttachmentRule::KeepRelative);
+			if (auto* Scene = Cast<USceneComponent>(Record.Component))
+				Scene->MarkTransformDirty();
+		}
+	}
+
+	void RestoreSceneActors(ULevel& Level, FArchive& Reader, const FJsonValue& LevelData)
+	{
+		const auto& ActorArray = LevelData.at("Actors");
+		RequireSceneData(ActorArray.is_array(), "expected an actor array");
+		std::vector<FSceneActorRecord> Actors;
+		FSceneComponentRecords Components;
+		std::vector<uint32> ComponentOrder;
+
+		for (const auto& Data : ActorArray)
+		{
+			UClass* Class = FindClass(Data.at("Class").get<FString>());
+			RequireSceneData(Class && Class->IsChildOf(AActor::StaticClass()), "invalid actor class");
+			FName Name(Data.value("Name", FString{}));
+			if (!Name.IsNone() && StaticFindObjectFast(nullptr, &Level, Name))
+			{
+				HTR_LOG(Warning, "Load: duplicate actor name '{}', renamed", Name.ToString());
+				Name = NAME_None;
+			}
+			AActor* Actor = NewObject<AActor>(&Level, Class, Name);
+			RequireSceneData(Actor != nullptr, "could not create actor");
+			Level.AddActor(Actor);
+			Actors.push_back({ &Data, Actor });
+
+			const auto& ComponentArray = Data.at("Components");
+			RequireSceneData(ComponentArray.is_array(), "expected a component array");
+			for (const auto& Component : ComponentArray)
+			{
+				const uint32 Id = ReadSceneId(Component, "Id");
+				const FSceneComponentRecord Record{ &Component, Actor, ReadSceneId(Component, "Outer"), ReadSceneId(Component, "Parent") };
+				RequireSceneData(Id && Components.emplace(Id, Record).second, "duplicate or null component ID");
+				ComponentOrder.push_back(Id);
+			}
+		}
+
+		std::unordered_set<UActorComponent*> ResolvedComponents;
+		for (uint32 Id : ComponentOrder)
+			ResolveSceneComponent(Components, Id, ResolvedComponents);
+
+		for (const auto& Record : Actors)
+			ReadSceneObject(*Record.Actor, Reader, *Record.Data);
+		for (uint32 Id : ComponentOrder)
+		{
+			const auto& Record = Components.at(Id);
+			ReadSceneObject(*Record.Component, Reader, *Record.Data);
+		}
+
+		for (const auto& Record : Actors)
+			RestoreActorRoot(Record, Components);
+		RestoreSceneAttachments(Components, ComponentOrder);
+	}
+
+	void FinishSceneLoad(ULevel& Level)
+	{
+		const TArray<AActor*> Actors = Level.GetActors();
+		for (AActor* Actor : Actors)
+		{
+			Actor->PostLoad();
+			const TArray<UActorComponent*> Components = Actor->GetComponents();
+			for (UActorComponent* Component : Components)
+				if (Actor->GetComponents().Find(Component) != INDEX_NONE)
+					Component->PostLoad();
+		}
+
+		for (AActor* Actor : Actors)
+			Actor->RegisterAllComponents();
+	}
 }
 
 bool FJsonArchive::SaveWorldToBytes(UWorld* World, TArray<uint8>& OutBytes)
@@ -60,21 +294,49 @@ bool FJsonArchive::LoadWorldFromBytes(UWorld* World, const TArray<uint8>& Bytes)
 		return false;                               
 	}
 
-	FStructuredArchive Ar(Formatter);
-	FStructuredArchive::FRecord Root = Ar.Open().EnterRecord();
+	ULevel* PersistentLevel = World->GetPersistentLevel();
+	if (!PersistentLevel)
+		return false;
 
-	int32 Version = 0;
-	Root << SA_VALUE("Version", Version);
-	if (Version != SceneVersion)
+	const auto DeleteStagedLevel = [](ULevel* Level)
 	{
-		HTR_LOG(Error, "Load: scene version {} is not supported (expected {})", Version, SceneVersion);
-		return false;                               
+		Level->ClearActors();
+		delete Level;
+	};
+	std::unique_ptr<ULevel, decltype(DeleteStagedLevel)> StagedLevel(NewObject<ULevel>(World), DeleteStagedLevel);
+	if (!StagedLevel)
+		return false;
+	StagedLevel->SetWorld(World);
+
+	FJsonValue& Document = Formatter.GetDocument();
+	try
+	{
+		const int32 Version = Document.at("Version").get<int32>();
+		switch (Version)
+		{
+		case 4:
+			UpgradeSceneV4(Document);
+			break;
+		case SceneVersion:
+			break;
+		default:
+			HTR_LOG(Warning, "Load: scene version {} is not supported", Version);
+			return false;
+		}
+		RestoreSceneActors(*StagedLevel, Reader, Document.at("World").at("PersistentLevel"));
 	}
+	catch (const std::exception& Error)
+	{
+		HTR_LOG(Error, "Load: invalid scene data ({})", Error.what());
+		return false;
+	}
+	if (Reader.IsError())
+		return false;
 
 	World->ClearWorld();
-	World->Serialize(Root.EnterRecord("World"));
-	Ar.Close();
-
+	PersistentLevel->AdoptLoadedActors(*StagedLevel);
+	ReadSceneObject(*World, Reader, Document.at("World"));
+	FinishSceneLoad(*PersistentLevel);
 	World->GetScene().BuildBVH();
 	return !Reader.IsError();
 }

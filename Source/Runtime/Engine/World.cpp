@@ -113,6 +113,9 @@ AActor* UWorld::SpawnActor(UClass* Class, FName InName, const FTransform* Transf
 	NewActor->World = this;
 	NewActor->Level = PersistentLevel;
 
+	if (!NewActor->GetRootComponent())
+		NewActor->SetRootComponent(NewObject<USceneComponent>(NewActor, FName("DefaultSceneRoot")));
+
 	// 3. Transform 적용
 	const FTransform SpawnTransform = Transform ? *Transform : FTransform::Identity;
 

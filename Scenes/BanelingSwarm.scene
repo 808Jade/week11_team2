@@ -446,13 +446,15 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 4.0,
+                                        "X": 4,
                                         "Y": 0.0,
                                         "Z": -0.5
                                     },
@@ -462,37 +464,8 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 80.0,
-                                        "Y": 60.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
+                                        "X": 80,
+                                        "Y": 60,
                                         "Z": 1.0
                                     }
                                 },
@@ -516,44 +489,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.8500000238418579
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 3.0,
-                                        "Y": 3.0,
-                                        "Z": 3.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
+                                        "X": 0.30000000447034836,
                                         "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "Z": -0.00499996542930603
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -561,9 +507,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 3,
+                                        "Y": 3,
+                                        "Z": 3
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -586,44 +532,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -3.0,
-                                        "Y": 2.200000047683716,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -2.759999986886978,
+                                        "Y": 2.200000047683716,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -631,9 +550,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -656,44 +575,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -3.5,
-                                        "Y": -2.0,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -3.259999986886978,
+                                        "Y": -2,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -701,9 +593,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -726,44 +618,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -6.0,
-                                        "Y": 0.6000000238418579,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -5.759999986886978,
+                                        "Y": 0.6000000238418579,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -771,9 +636,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -796,44 +661,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -6.5,
-                                        "Y": 3.5999999046325684,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -6.259999986886978,
+                                        "Y": 3.5999999046325684,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -841,9 +679,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -866,44 +704,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -7.0,
-                                        "Y": -3.4000000953674316,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -6.759999986886978,
+                                        "Y": -3.4000000953674316,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -911,9 +722,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -936,44 +747,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -9.5,
-                                        "Y": -0.800000011920929,
-                                        "Z": 0.699999988079071
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.4000000953674316,
-                                        "Y": 2.4000000953674316,
-                                        "Z": 2.4000000953674316
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/baneling/baneling.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": 0.10000000149011612,
-                                        "Y": 0.0,
-                                        "Z": -0.2849999964237213
+                                        "X": -9.259999986886978,
+                                        "Y": -0.800000011920929,
+                                        "Z": 0.015999969482422216
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -981,9 +765,9 @@
                                         "Yaw": 180.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.4000000953674316,
+                                        "Y": 2.4000000953674316,
+                                        "Z": 2.4000000953674316
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1006,14 +790,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 16.0,
-                                        "Y": -3.0,
+                                        "X": 16,
+                                        "Y": -3,
                                         "Z": 1.25
                                     },
                                     "Rotation": {
@@ -1023,37 +809,8 @@
                                     },
                                     "Scale": {
                                         "X": 1.2000000476837158,
-                                        "Y": 2.0,
+                                        "Y": 2,
                                         "Z": 2.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1076,14 +833,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 16.0,
-                                        "Y": -1.0,
+                                        "X": 16,
+                                        "Y": -1,
                                         "Z": 1.25
                                     },
                                     "Rotation": {
@@ -1093,37 +852,8 @@
                                     },
                                     "Scale": {
                                         "X": 1.2000000476837158,
-                                        "Y": 2.0,
+                                        "Y": 2,
                                         "Z": 2.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1146,14 +876,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 16.0,
-                                        "Y": 1.0,
+                                        "X": 16,
+                                        "Y": 1,
                                         "Z": 1.25
                                     },
                                     "Rotation": {
@@ -1163,37 +895,8 @@
                                     },
                                     "Scale": {
                                         "X": 1.2000000476837158,
-                                        "Y": 2.0,
+                                        "Y": 2,
                                         "Z": 2.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1216,14 +919,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 16.0,
-                                        "Y": 3.0,
+                                        "X": 16,
+                                        "Y": 3,
                                         "Z": 1.25
                                     },
                                     "Rotation": {
@@ -1233,37 +938,8 @@
                                     },
                                     "Scale": {
                                         "X": 1.2000000476837158,
-                                        "Y": 2.0,
+                                        "Y": 2,
                                         "Z": 2.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1286,14 +962,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cylinder",
                                 "Transform": {
                                     "Location": {
-                                        "X": 9.0,
-                                        "Y": -7.0,
+                                        "X": 9,
+                                        "Y": -7,
                                         "Z": 1.5
                                     },
                                     "Rotation": {
@@ -1304,36 +982,7 @@
                                     "Scale": {
                                         "X": 1.2000000476837158,
                                         "Y": 1.2000000476837158,
-                                        "Z": 3.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cylinder",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "Z": 3
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1356,15 +1005,17 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cylinder",
                                 "Transform": {
                                     "Location": {
-                                        "X": 11.0,
-                                        "Y": 6.0,
-                                        "Z": 2.0
+                                        "X": 11,
+                                        "Y": 6,
+                                        "Z": 2
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
@@ -1374,36 +1025,7 @@
                                     "Scale": {
                                         "X": 1.2000000476837158,
                                         "Y": 1.2000000476837158,
-                                        "Z": 4.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cylinder",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "Z": 4
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1426,14 +1048,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cylinder",
                                 "Transform": {
                                     "Location": {
-                                        "X": -4.0,
-                                        "Y": 8.0,
+                                        "X": -4,
+                                        "Y": 8,
                                         "Z": 1.25
                                     },
                                     "Rotation": {
@@ -1445,35 +1069,6 @@
                                         "X": 1.2000000476837158,
                                         "Y": 1.2000000476837158,
                                         "Z": 2.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cylinder",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1496,14 +1091,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cylinder",
                                 "Transform": {
                                     "Location": {
-                                        "X": 5.0,
-                                        "Y": -9.0,
+                                        "X": 5,
+                                        "Y": -9,
                                         "Z": 1.75
                                     },
                                     "Rotation": {
@@ -1515,35 +1112,6 @@
                                         "X": 1.2000000476837158,
                                         "Y": 1.2000000476837158,
                                         "Z": 3.5
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cylinder",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1566,14 +1134,16 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Cylinder",
                                 "Transform": {
                                     "Location": {
-                                        "X": 20.0,
-                                        "Y": 5.0,
+                                        "X": 20,
+                                        "Y": 5,
                                         "Z": 2.5
                                     },
                                     "Rotation": {
@@ -1584,36 +1154,7 @@
                                     "Scale": {
                                         "X": 1.2000000476837158,
                                         "Y": 1.2000000476837158,
-                                        "Z": 5.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cylinder",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "Z": 5
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1992,37 +1533,10 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 20.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 2.6,
-                                        "Y": 2.6,
-                                        "Z": 2.6
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
@@ -2033,13 +1547,13 @@
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 0.0,
+                                        "Yaw": 20,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
+                                        "X": 2.6,
+                                        "Y": 2.6,
+                                        "Z": 2.6
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2061,54 +1575,27 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": -3.0,
+                                        "X": -3,
                                         "Y": 2.2,
                                         "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 140.0,
+                                        "Yaw": 140,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2130,54 +1617,27 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
                                         "X": -3.5,
-                                        "Y": -2.0,
+                                        "Y": -2,
                                         "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 75.0,
+                                        "Yaw": 75,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2199,54 +1659,27 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": -6.0,
+                                        "X": -6,
                                         "Y": 0.6,
                                         "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 250.0,
+                                        "Yaw": 250,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2268,10 +1701,12 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
                                         "X": -6.5,
@@ -2280,42 +1715,13 @@
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 310.0,
+                                        "Yaw": 310,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2337,54 +1743,27 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
-                                        "X": -7.0,
+                                        "X": -7,
                                         "Y": -3.4,
                                         "Z": 0.0
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 190.0,
+                                        "Yaw": 190,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -2406,10 +1785,12 @@
                     },
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
                             "Parent": "",
                             "Properties": {
+                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
                                 "Transform": {
                                     "Location": {
                                         "X": -9.5,
@@ -2418,42 +1799,13 @@
                                     },
                                     "Rotation": {
                                         "Pitch": 0.0,
-                                        "Yaw": 35.0,
+                                        "Yaw": 35,
                                         "Roll": 0.0
                                     },
                                     "Scale": {
                                         "X": 2.1,
                                         "Y": 2.1,
                                         "Z": 2.1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Models/ZergEgg/ZergEgg_00.obj",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Yaw": 0.0,
-                                        "Roll": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,

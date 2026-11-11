@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Editor/Gizmo/Gizmo.h"
+#include "Editor/HitoriEd/ComponentReregisterContext.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Actor/LightActorBase.h"
@@ -176,6 +177,7 @@ bool FGizmo::ApplyScaleToLight(float Factor)
     ULocalLightComponent* Light = GetTargetLight();
     if (!Light) return false;
     Light->SetAttenuationRadius(DragStartRadius * Factor);
+    bEditedLightRadius = true;
     return true;
 }
 
@@ -194,6 +196,7 @@ void FGizmo::BeginDrag(int Axis, const FRay& MouseRay, const FVector2& MousePos)
 	DragStartMousePos = MousePos;
 	DraggingAxis = Axis;
 	DragStartLocation = Target->GetWorldLocation();
+	DragStartRelativeLocation = Target->GetRelativeLocation();
 	DragStartRenderLocation = GetRenderLocation();    
 	if (Mode == EGizmoMode::Location)
 	{
@@ -205,6 +208,7 @@ void FGizmo::BeginDrag(int Axis, const FRay& MouseRay, const FVector2& MousePos)
 	DragStartScale = GetScale();
 
 	// Local LightComponent면 Radius 가져와서 저장해놓기
+	bEditedLightRadius = false;
 	if (ULocalLightComponent* Light = GetTargetLight())
     	DragStartRadius = Light->GetAttenuationRadius();
 
@@ -312,11 +316,32 @@ void FGizmo::UpdateDrag(const FRay& MouseRay, const FVector2& MousePos)
 	}
 }
 
-// 드래그 축을 비워 조작을 종료한다.
 void FGizmo::EndDrag()
 {
+	const bool bWasDragging = IsUsing();
 	DraggingAxis = -1;
 	HoveredAxis = -1;
+
+	if (!bWasDragging || !Target || !bReregisterOnDragEnd)
+		return;
+
+	const FRotator Rotation = Target->GetRelativeRotation();
+	const bool bTransformChanged = Target->GetRelativeLocation() != DragStartRelativeLocation
+		|| Target->GetRelativeScale3D() != DragStartScale
+		|| !FMath::IsNearlyEqual(Rotation.Pitch, DragStartRotation.Pitch)
+		|| !FMath::IsNearlyEqual(Rotation.Yaw, DragStartRotation.Yaw)
+		|| !FMath::IsNearlyEqual(Rotation.Roll, DragStartRotation.Roll);
+	ULocalLightComponent* Light = bEditedLightRadius ? GetTargetLight() : nullptr;
+	const bool bRadiusChanged = Light && !FMath::IsNearlyEqual(Light->GetAttenuationRadius(), DragStartRadius);
+
+	if (bTransformChanged || (bRadiusChanged && Light == Target))
+	{
+		FComponentReregisterContext Reregister(Target);
+	}
+	if (bRadiusChanged && Light != Target)
+	{
+		FComponentReregisterContext Reregister(Light);
+	}
 }
 
 // 평면 기저에 점을 투영하고 atan2로 회전각을 구한다.

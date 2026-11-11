@@ -12,6 +12,27 @@
 
 TArray<UObject*> GUObjectArray;
 
+namespace
+{
+	thread_local const void* ConstructingObject = nullptr;
+}
+
+FObjectConstructionScope::FObjectConstructionScope(const void* Object)
+	: Previous(ConstructingObject)
+{
+	ConstructingObject = Object;
+}
+
+FObjectConstructionScope::~FObjectConstructionScope()
+{
+	ConstructingObject = Previous;
+}
+
+bool FObjectConstructionScope::IsConstructing(const void* Object)
+{
+	return ConstructingObject == Object;
+}
+
 UObject::UObject()
 {
 	ObjectUUID = FEngineStatics::GetUUID();
@@ -54,6 +75,7 @@ UClass* UObject::StaticClass()
 		c.Size = sizeof(UObject);
 		c.Constructor = [](void* Memory) -> UObject*
 			{
+				FObjectConstructionScope Scope(Memory);
 				return ::new (Memory) UObject();
 			};
 		bIsInit = true;

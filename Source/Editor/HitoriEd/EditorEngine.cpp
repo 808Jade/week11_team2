@@ -130,7 +130,7 @@ bool UEditorEngine::Init()
 	GizmoRenderer = MakeUnique<FGizmoRenderer>();
 	GizmoRenderer->Init(Renderer);
 
-	Gizmo = MakeUnique<FGizmo>();
+	Gizmo = MakeUnique<FGizmo>(true);
 
 	DetailsPanel = LevelEditorTab->AddPanel<FDetailsPanel>();
 	DetailsPanel->SetImGuiRenderer(ImGuiRenderer.get());
@@ -558,7 +558,8 @@ void UEditorEngine::TickWorldAndEditor(const float DeltaTime)
 	}
 	UpdateGizmoAndPicking();
 	EditorWorld->GetScene().UpdateAllTransforms();
-	if (PlayWorld && bIsPaused)
+	// Editor gizmos can replace PIE render proxies after the world has ticked.
+	if (PlayWorld)
 		PlayWorld->GetScene().UpdateAllTransforms();
 }
 
@@ -867,6 +868,13 @@ FWorldContext* UEditorEngine::GetPIEWorldContext(int32 WorldPIEInstance)
 
 void UEditorEngine::UpdateGizmoAndPicking()
 {
+	// Complete the drag even when the mouse was released outside the viewport.
+	if (Gizmo->IsUsing() && !FInputSystem::IsMouseDown(EMouseButton::Left))
+	{
+		Gizmo->EndDrag();
+		return;
+	}
+
 	const int32 ViewIndex = ViewportsPanel ? ViewportsPanel->GetActiveViewIndex() : -1;
 	if (ViewIndex < 0 || ViewIndex >= 4 || !ViewportsPanel || !ViewportsPanel->IsHovered())
 		return;
@@ -1364,13 +1372,14 @@ void UEditorEngine::DeleteActor(AActor* Actor)
 
 void UEditorEngine::DeleteComponent(UActorComponent* Component)
 {
-	if (!Component)
+	AActor* Owner = Component ? Component->GetOwner() : nullptr;
+	if (!Owner || !Owner->CanDeleteComponentInEditor(Component))
 		return;
 	if (IsPlaying() && !bIsPaused && !IsSimulatingInEditor())
 		return;
 	DetailsPanel->SelectComponent(nullptr);
 	Outline->SetTarget(nullptr);
-	Component->GetOwner()->DestroyComponent(Component);
+	Owner->DestroyComponent(Component);
 }
 
 void UEditorEngine::StartPlayInEditorSession()

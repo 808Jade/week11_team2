@@ -21,6 +21,6 @@ namespace
 ASkeletalMeshActor::ASkeletalMeshActor()
 {
     SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>("USkeletalMeshComponent");
-    SkeletalMeshComponent->SetupAttachment(GetRootComponent());
+    SetRootComponent(SkeletalMeshComponent);
     SkeletalMeshComponent->SetSkeletalMesh(GetTestBoneStickMesh());
 }

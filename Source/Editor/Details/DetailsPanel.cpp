@@ -3,6 +3,7 @@
 #include "Editor/Details/PropertyEditor.h"
 
 #include "imgui_internal.h"
+#include "Editor/HitoriEd/ComponentReregisterContext.h"
 #include "Editor/HitoriEd/EditorDragDrop.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -33,6 +34,24 @@
 
 namespace
 {
+	struct FPropertyEdit
+	{
+		TArray<std::function<void()>> Changes;
+
+		template <typename T, typename Draw>
+		void DrawValue(T& Destination, Draw DrawWidget)
+		{
+			T Value = Destination;
+			if (DrawWidget(Value))
+			{
+				Changes.Add([&Destination, Value = std::move(Value)]() mutable
+				{
+					Destination = std::move(Value);
+				});
+			}
+		}
+	};
+
 	struct FDragSettings
 	{
 		float Speed;
@@ -204,7 +223,7 @@ namespace
 		return isChanged;
 	}
 
-	void DrawTextureSlot(UMaterial** MaterialPtr, int32 SlotIndex)
+	void DrawTextureSlot(FPropertyEdit& Edit, UMaterial** MaterialPtr, int32 SlotIndex)
 	{
 		const float ThumbnailSize = 64.0f;
 
@@ -234,31 +253,23 @@ namespace
 			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(EditorDragDrop::Texture))
 			{
 				UTexture2D* DroppedTexture = *static_cast<UTexture2D**>(Payload->Data);
-
-				// 머티리얼이 없으면 기본 머티리얼에서 시작한다
-				if (!Material)
+				if (Texture != DroppedTexture)
 				{
-					Material = UMaterial::CreateInstance(UAssetManager::GetAssetByPath<UMaterial>("DefaultMaterial"));
-					*MaterialPtr = Material;
-				}
-				// 공유 에셋이면 지금 복제한다.
-				// 이 시점까지 미루면 손대지 않은 오브젝트는 계속 공유 에셋을 쓴다.
-				else if (Material->bIsInstance == false)
-				{
-					Material = UMaterial::CreateInstance(Material);
-					*MaterialPtr = Material;
-				}
-
-				if (Material)
-				{
-					// 슬롯이 배열 범위 밖이면 그 자리까지 늘려 준다
-					while (static_cast<int32>(Material->Textures.Num()) <= SlotIndex)
+					Edit.Changes.Add([MaterialPtr, SlotIndex, DroppedTexture]
 					{
-						Material->Textures.Add(nullptr);
-					}
-
-					Material->Textures[SlotIndex] = DroppedTexture;
-					Texture = DroppedTexture;
+						UMaterial* Editable = *MaterialPtr;
+						if (!Editable)
+							Editable = UMaterial::CreateInstance(UAssetManager::GetAssetByPath<UMaterial>("DefaultMaterial"));
+						else if (!Editable->bIsInstance)
+							Editable = UMaterial::CreateInstance(Editable);
+						if (Editable)
+						{
+							*MaterialPtr = Editable;
+							while (!Editable->Textures.IsValidIndex(SlotIndex))
+								Editable->Textures.Add(nullptr);
+							Editable->Textures[SlotIndex] = DroppedTexture;
+						}
+					});
 				}
 			}
 			ImGui::EndDragDropTarget();
@@ -292,9 +303,9 @@ namespace
 		return AssetPath.stem().string();
 	}
 
-	void DrawFontSlot(UObject* Owner, UFont** FontPtr)
+	UFont* DrawFontSlot(UFont* Current)
 	{
-		UFont* Current = *FontPtr;
+		UFont* Picked = nullptr;
 
 		FString CurrentPath = Current ? Current->GetPath() : "";
 		FString CurrentFileName = Current ? GetAssetDisplayName(CurrentPath) : "None";
@@ -318,18 +329,14 @@ namespace
 
 				ImGui::PushID(*Itr);
 
-				if (ImGui::Selectable(ItemFileName.c_str(), bSelected))
+				if (ImGui::Selectable(ItemFileName.c_str(), bSelected) && !bSelected)
 				{
 					if (ImGui::IsItemHovered())
 					{
 						ImGui::SetTooltip("%s", ItemPath.c_str());
 					}
 
-					// 메모리를 직접 바꾸지 않고 SetFont를 거친다
-					if (UTextRenderComponent* TextComponent = Cast<UTextRenderComponent>(Owner))
-						TextComponent->SetFont(*Itr);
-					else
-						*FontPtr = *Itr;
+					Picked = *Itr;
 				}
 				ImGui::PopID();
 				if (bSelected)
@@ -341,15 +348,7 @@ namespace
 			{
 				ImGui::PushID(ItemPath.c_str());
 				if (ImGui::Selectable(GetAssetDisplayName(ItemPath).c_str(), false))
-				{
-					if (UFont* Font = UAssetManager::GetAssetByPath<UFont>(ItemPath))
-					{
-						if (UTextRenderComponent* TextComponent = Cast<UTextRenderComponent>(Owner))
-							TextComponent->SetFont(Font);
-						else
-							*FontPtr = Font;
-					}
-				}
+					Picked = UAssetManager::GetAssetByPath<UFont>(ItemPath);
 				if (ImGui::IsItemHovered())
 				{
 					ImGui::SetTooltip("%s", ItemPath.c_str());
@@ -358,6 +357,7 @@ namespace
 			}
 			ImGui::EndCombo();
 		}
+		return Picked;
 	}
 
 	void DrawSkeletalMeshSlot(USkinnedMeshComponent* Component)
@@ -369,14 +369,15 @@ namespace
 		const bool bOpen = ImGui::BeginCombo("##SkeletalMesh", CurrentName.c_str());
 		if (ImGui::IsItemHovered() && Current) ImGui::SetTooltip("%s", CurrentPath.c_str());
 		if (!bOpen) return;
-		if (ImGui::Selectable("None", Current == nullptr)) Component->SetSkeletalMesh(nullptr);
+		USkeletalMesh* Picked = Current;
+		if (ImGui::Selectable("None", Current == nullptr)) Picked = nullptr;
 		for (TObjectIterator<USkeletalMesh> Itr; Itr; ++Itr)
 		{
 			const FString Path = Itr->GetPath();
 			if (Path.empty() || UAssetManager::FindLoadedAsset(Path) != *Itr) continue;
 			const bool bSelected = *Itr == Current;
 			ImGui::PushID(*Itr);
-			if (ImGui::Selectable(GetAssetDisplayName(Path).c_str(), bSelected)) Component->SetSkeletalMesh(*Itr);
+			if (ImGui::Selectable(GetAssetDisplayName(Path).c_str(), bSelected)) Picked = *Itr;
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", Path.c_str());
 			if (bSelected) ImGui::SetItemDefaultFocus();
 			ImGui::PopID();
@@ -390,18 +391,23 @@ namespace
 			{
 				if (USkeletalMesh* Mesh = UAssetManager::GetAssetByPath<USkeletalMesh>(ItemPath))
 				{
-					Component->SetSkeletalMesh(Mesh);
+					Picked = Mesh;
 				}
 			}
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", ItemPath.c_str());
 			ImGui::PopID();
 		}
 		ImGui::EndCombo();
+		if (Picked != Current)
+		{
+			FComponentReregisterContext Reregister(Component);
+			Component->SetSkeletalMesh(Picked);
+		}
 	}
 
-	void DrawMeshSlot(UObject* Owner, UStaticMesh** StaticMeshPtr)
+	UStaticMesh* DrawMeshSlot(UStaticMesh* Current)
 	{
-		UStaticMesh* Current = *StaticMeshPtr;
+		UStaticMesh* Picked = nullptr;
 
 		FString CurrentPath = Current ? Current->GetPath() : "";
 		FString CurrentFileName = Current ? GetAssetDisplayName(CurrentPath) : "None";
@@ -426,18 +432,14 @@ namespace
 
 				ImGui::PushID(*Itr);
 
-				if (ImGui::Selectable(ItemFileName.c_str(), bSelected))
+				if (ImGui::Selectable(ItemFileName.c_str(), bSelected) && !bSelected)
 				{
 					if (ImGui::IsItemHovered())
 					{
 						ImGui::SetTooltip("%s", ItemPath.c_str());
 					}
 
-					// 메모리를 직접 바꾸지 않고 SetFont를 거친다
-					if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Owner))
-						MeshComponent->SetStaticMesh(*Itr);
-					else
-						*StaticMeshPtr = *Itr;
+					Picked = *Itr;
 				}
 				ImGui::PopID();
 				if (bSelected)
@@ -449,15 +451,7 @@ namespace
 			{
 				ImGui::PushID(ItemPath.c_str());
 				if (ImGui::Selectable(GetAssetDisplayName(ItemPath).c_str(), false))
-				{
-					if (UStaticMesh* Mesh = UAssetManager::GetAssetByPath<UStaticMesh>(ItemPath))
-					{
-						if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(Owner))
-							MeshComponent->SetStaticMesh(Mesh);
-						else
-							*StaticMeshPtr = Mesh;
-					}
-				}
+					Picked = UAssetManager::GetAssetByPath<UStaticMesh>(ItemPath);
 				if (ImGui::IsItemHovered())
 				{
 					ImGui::SetTooltip("%s", ItemPath.c_str());
@@ -466,6 +460,7 @@ namespace
 			}
 			ImGui::EndCombo();
 		}
+		return Picked;
 	}
 
 	UMaterial* EnsureMaterialOverride(UMeshComponent* MeshComponent, int32 Slot, UMaterial* Effective, UMaterial* Override)
@@ -488,6 +483,7 @@ namespace
 			return false;
 		}
 
+		FComponentReregisterContext Reregister(MeshComponent);
 		Override = EnsureMaterialOverride(MeshComponent, MaterialSlot, Effective, Override);
 		if (!Override) {
 			return false;
@@ -669,6 +665,7 @@ namespace
 
 				if (ImGui::SmallButton("Reset"))
 				{
+					FComponentReregisterContext Reregister(MeshComponent);
 					MeshComponent->SetMaterial(Slot, nullptr);
 					Override = nullptr;
 					Effective = MeshComponent->GetMaterial(Slot);
@@ -695,6 +692,7 @@ namespace
 					int ModelIndex = static_cast<int>(Effective ? Effective->ShadingModel : ELightingModel::BlinnPhong);
 					if (ImGui::Combo("##ShadingModel", &ModelIndex, Models, IM_ARRAYSIZE(Models)))
 					{
+						FComponentReregisterContext Reregister(MeshComponent);
 						Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 						if (Override)
 						{
@@ -720,6 +718,7 @@ namespace
 					FVector4 TempColor = Effective ? Effective->BaseColor : FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 					if (ImGui::ColorEdit4("##BaseColor", &TempColor.X))
 					{
+						FComponentReregisterContext Reregister(MeshComponent);
 						Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 						if (Override)
 						{
@@ -739,6 +738,7 @@ namespace
 					float TempShininess = Effective ? Effective->Shininess : 32.0f;
 					if (ImGui::DragFloat("##Shininess", &TempShininess, 0.5f, 1.0f, 256.0f))
 					{
+						FComponentReregisterContext Reregister(MeshComponent);
 						Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 						if (Override)
 						{
@@ -759,6 +759,7 @@ namespace
 					FVector2 TempUVScrollSpeed = Effective ? Effective->UVScrollSpeed : FVector2();
 					if (ImGui::DragFloat2("##UVScrollSpeed", &TempUVScrollSpeed.X, 0.01f))
 					{
+						FComponentReregisterContext Reregister(MeshComponent);
 						Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 						if (Override)
 						{
@@ -782,8 +783,9 @@ namespace
 					{
 						for (int i = 0; i < IM_ARRAYSIZE(SamplerItems); ++i)
 						{
-							if (ImGui::Selectable(SamplerItems[i], SamplerIndex == i))
+							if (ImGui::Selectable(SamplerItems[i], SamplerIndex == i) && SamplerIndex != i)
 							{
+								FComponentReregisterContext Reregister(MeshComponent);
 								Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 								if (Override)
 								{
@@ -810,8 +812,9 @@ namespace
 					{
 						for (int i = 0; i < IM_ARRAYSIZE(BlendItems); ++i)
 						{
-							if (ImGui::Selectable(BlendItems[i], BlendIndex == i))
+							if (ImGui::Selectable(BlendItems[i], BlendIndex == i) && BlendIndex != i)
 							{
+								FComponentReregisterContext Reregister(MeshComponent);
 								Override = EnsureMaterialOverride(MeshComponent, Slot, Effective, Override);
 								if (Override)
 								{
@@ -840,91 +843,98 @@ namespace
 		return static_cast<uint32>(Value);
 	}
 
-	bool DrawPropertyRow(UObject* Object, void* Container, const FProperty& Property, ImFont* CustomFont);
+	void DrawPropertyRow(FPropertyEdit& Edit, UObject* Object, void* Container, const FProperty& Property, ImFont* CustomFont);
 
-	// 프로퍼티 타입에 맞는 위젯 하나를 그린다. 값이 바뀌면 true
-	// UE도 FProperty는 위젯을 모르고, 에디터(PropertyEditor 모듈)가 CastField로 타입을 보고 위젯을 고른다.
-	bool DrawPropertyValue(UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, ImFont* CustomFont)
+	// Draw against copies so unregister still sees the previous value.
+	void DrawPropertyValue(FPropertyEdit& Edit, UObject* Object, const FProperty& Property,
+		void* ValuePtr, const char* Label, ImFont* CustomFont)
 	{
-		if (const FFloatProperty* FloatProperty = CastField<FFloatProperty>(&Property))
+		if (const auto* FloatProperty = CastField<FFloatProperty>(&Property))
 		{
-			float* Value = &FloatProperty->GetPropertyValue(ValuePtr);
-			const FDragSettings Drag = GetDragSettings(FloatProperty->Meta, 0.1f);
-			const bool bChanged = ImGui::DragFloat(Label, Value, Drag.Speed, Drag.Min, Drag.Max);
-			if (bChanged) ClampToMeta(Value, 1, FloatProperty->Meta);
-			return bChanged;
-		}
-		if (const FIntProperty* IntProperty = CastField<FIntProperty>(&Property))
-		{
-			int32* Value = &IntProperty->GetPropertyValue(ValuePtr);
-			const FPropertyMeta& Meta = IntProperty->Meta;
-			const FDragSettings Drag = GetDragSettings(Meta, 1.0f);
-			const bool bChanged = ImGui::DragInt(Label, Value, Drag.Speed, ToIntBound(Drag.Min), ToIntBound(Drag.Max));
-			if (bChanged && Meta.HasClamp())
+			Edit.DrawValue(FloatProperty->GetPropertyValue(ValuePtr), [&](float& Value)
 			{
-				*Value = ToIntBound(std::clamp(static_cast<float>(*Value), Meta.ClampMin, Meta.ClampMax));
-			}
-			return bChanged;
+				const FDragSettings Drag = GetDragSettings(FloatProperty->Meta, 0.1f);
+				const bool bChanged = ImGui::DragFloat(Label, &Value, Drag.Speed, Drag.Min, Drag.Max);
+				if (bChanged) ClampToMeta(&Value, 1, FloatProperty->Meta);
+				return bChanged;
+			});
 		}
-		if (const FUInt32Property* UIntProperty = CastField<FUInt32Property>(&Property))
+		else if (const auto* IntProperty = CastField<FIntProperty>(&Property))
 		{
-			uint32* Value = &UIntProperty->GetPropertyValue(ValuePtr);
-			const FPropertyMeta& Meta = UIntProperty->Meta;
-			const FDragSettings Drag = GetDragSettings(Meta, 1.0f);
-			const uint32 Min = ToUIntBound(Drag.Min);
-			const uint32 Max = Drag.Min < Drag.Max ? ToUIntBound(Drag.Max) : UINT_MAX;
-			const bool bChanged = ImGui::DragScalar(Label, ImGuiDataType_U32, Value, Drag.Speed, &Min, &Max);
-			if (bChanged && Meta.HasClamp())
+			Edit.DrawValue(IntProperty->GetPropertyValue(ValuePtr), [&](int32& Value)
 			{
-				*Value = ToUIntBound(std::clamp(static_cast<float>(*Value), Meta.ClampMin, Meta.ClampMax));
-			}
-			return bChanged;
+				const FPropertyMeta& Meta = IntProperty->Meta;
+				const FDragSettings Drag = GetDragSettings(Meta, 1.0f);
+				const bool bChanged = ImGui::DragInt(Label, &Value, Drag.Speed, ToIntBound(Drag.Min), ToIntBound(Drag.Max));
+				if (bChanged && Meta.HasClamp())
+					Value = ToIntBound(std::clamp(static_cast<float>(Value), Meta.ClampMin, Meta.ClampMax));
+				return bChanged;
+			});
 		}
-		if (const FVectorProperty* VectorProperty = CastField<FVectorProperty>(&Property))
+		else if (const auto* UIntProperty = CastField<FUInt32Property>(&Property))
 		{
-			FVector& Value = VectorProperty->GetPropertyValue(ValuePtr);
-			const FDragSettings Drag = GetDragSettings(VectorProperty->Meta, 0.1f);
-			const bool bChanged = ImGui::DragFloat3(Label, Value.V, Drag.Speed, Drag.Min, Drag.Max);
-			if (bChanged) ClampToMeta(Value.V, 3, VectorProperty->Meta);
-			return bChanged;
-		}
-		if (const FRotatorProperty* RotatorProperty = CastField<FRotatorProperty>(&Property))
-		{
-			FRotator& Value = RotatorProperty->GetPropertyValue(ValuePtr);
-			// Transform의 Rotation과 같은 X/Y/Z 축 순서로 보여준다.
-			float Euler[3] = { Value.Roll, Value.Pitch, Value.Yaw };
-			const FDragSettings Drag = GetDragSettings(RotatorProperty->Meta, 0.1f);
-			if (ImGui::DragFloat3(Label, Euler, Drag.Speed, Drag.Min, Drag.Max))
+			Edit.DrawValue(UIntProperty->GetPropertyValue(ValuePtr), [&](uint32& Value)
 			{
+				const FPropertyMeta& Meta = UIntProperty->Meta;
+				const FDragSettings Drag = GetDragSettings(Meta, 1.0f);
+				const uint32 Min = ToUIntBound(Drag.Min);
+				const uint32 Max = Drag.Min < Drag.Max ? ToUIntBound(Drag.Max) : UINT_MAX;
+				const bool bChanged = ImGui::DragScalar(Label, ImGuiDataType_U32, &Value, Drag.Speed, &Min, &Max);
+				if (bChanged && Meta.HasClamp())
+					Value = ToUIntBound(std::clamp(static_cast<float>(Value), Meta.ClampMin, Meta.ClampMax));
+				return bChanged;
+			});
+		}
+		else if (const auto* VectorProperty = CastField<FVectorProperty>(&Property))
+		{
+			Edit.DrawValue(VectorProperty->GetPropertyValue(ValuePtr), [&](FVector& Value)
+			{
+				const FDragSettings Drag = GetDragSettings(VectorProperty->Meta, 0.1f);
+				const bool bChanged = ImGui::DragFloat3(Label, Value.V, Drag.Speed, Drag.Min, Drag.Max);
+				if (bChanged) ClampToMeta(Value.V, 3, VectorProperty->Meta);
+				return bChanged;
+			});
+		}
+		else if (const auto* RotatorProperty = CastField<FRotatorProperty>(&Property))
+		{
+			Edit.DrawValue(RotatorProperty->GetPropertyValue(ValuePtr), [&](FRotator& Value)
+			{
+				// Show the axes in the same order as the transform editor.
+				float Euler[3] = { Value.Roll, Value.Pitch, Value.Yaw };
+				const FDragSettings Drag = GetDragSettings(RotatorProperty->Meta, 0.1f);
+				if (!ImGui::DragFloat3(Label, Euler, Drag.Speed, Drag.Min, Drag.Max))
+					return false;
 				ClampToMeta(Euler, 3, RotatorProperty->Meta);
 				Value.Roll = Euler[0];
 				Value.Pitch = Euler[1];
 				Value.Yaw = Euler[2];
-			}
-			return false;
+				return true;
+			});
 		}
-		if (const FVector4Property* Vector4Property = CastField<FVector4Property>(&Property))
+		else if (const auto* Vector4Property = CastField<FVector4Property>(&Property))
 		{
-			FVector4& Value = Vector4Property->GetPropertyValue(ValuePtr);
-			const FDragSettings Drag = GetDragSettings(Vector4Property->Meta, 0.1f);
-			const bool bChanged = ImGui::DragFloat4(Label, &Value.X, Drag.Speed, Drag.Min, Drag.Max);
-			if (bChanged) ClampToMeta(&Value.X, 4, Vector4Property->Meta);
-			return bChanged;
+			Edit.DrawValue(Vector4Property->GetPropertyValue(ValuePtr), [&](FVector4& Value)
+			{
+				const FDragSettings Drag = GetDragSettings(Vector4Property->Meta, 0.1f);
+				const bool bChanged = ImGui::DragFloat4(Label, &Value.X, Drag.Speed, Drag.Min, Drag.Max);
+				if (bChanged) ClampToMeta(&Value.X, 4, Vector4Property->Meta);
+				return bChanged;
+			});
 		}
-		if (const FBoolProperty* BoolProperty = CastField<FBoolProperty>(&Property))
+		else if (const auto* BoolProperty = CastField<FBoolProperty>(&Property))
 		{
-			return ImGui::Checkbox(Label, &BoolProperty->GetPropertyValue(ValuePtr));
+			Edit.DrawValue(BoolProperty->GetPropertyValue(ValuePtr),
+				[&](bool& Value) { return ImGui::Checkbox(Label, &Value); });
 		}
-		if (const FEnumProperty* EnumProperty = CastField<FEnumProperty>(&Property))
+		else if (const auto* EnumProperty = CastField<FEnumProperty>(&Property))
 		{
-			// UENUM: 이름 목록으로 콤보박스를 그린다. UMETA(Hidden) 항목은 목록에서 뺀다.
 			const FEnumInfo* EnumInfo = EnumProperty->Enum;
 			if (!EnumInfo)
 			{
 				ImGui::TextDisabled("(No enum info)");
-				return false;
+				return;
 			}
-			bool bChanged = false;
+
 			const int64 Current = EnumProperty->GetValue(ValuePtr);
 			const FString Preview = EnumInfo->ToName(Current);
 			if (ImGui::BeginCombo(Label, Preview.c_str()))
@@ -932,163 +942,168 @@ namespace
 				for (const FEnumEntry& Entry : EnumInfo->Entries)
 				{
 					if (Entry.bHidden)
-					{
 						continue;
-					}
 					const bool bSelected = Entry.Value == Current;
 					if (ImGui::Selectable(Entry.Name.c_str(), bSelected) && !bSelected)
 					{
-						EnumProperty->SetValue(ValuePtr, Entry.Value);
-						bChanged = true;
+						Edit.Changes.Add([EnumProperty, ValuePtr, Value = Entry.Value]
+						{
+							EnumProperty->SetValue(ValuePtr, Value);
+						});
 					}
 					if (bSelected)
-					{
 						ImGui::SetItemDefaultFocus();
-					}
 				}
 				ImGui::EndCombo();
 			}
-			return bChanged;
 		}
-		if (const FColorProperty* ColorProperty = CastField<FColorProperty>(&Property))
+		else if (const auto* ColorProperty = CastField<FColorProperty>(&Property))
 		{
-			FColor& C = ColorProperty->GetPropertyValue(ValuePtr);
-			float V[4] = { C.R / 255.f, C.G / 255.f, C.B / 255.f, C.A / 255.f };
-			if (ImGui::ColorEdit4(Label, V))
+			Edit.DrawValue(ColorProperty->GetPropertyValue(ValuePtr), [&](FColor& Value)
 			{
-				C = FColor(uint8(V[0] * 255.f + 0.5f), uint8(V[1] * 255.f + 0.5f),
+				float V[4] = { Value.R / 255.f, Value.G / 255.f, Value.B / 255.f, Value.A / 255.f };
+				if (!ImGui::ColorEdit4(Label, V))
+					return false;
+				Value = FColor(uint8(V[0] * 255.f + 0.5f), uint8(V[1] * 255.f + 0.5f),
 					uint8(V[2] * 255.f + 0.5f), uint8(V[3] * 255.f + 0.5f));
 				return true;
-			}
-			return false;
+			});
 		}
-		if (const FLinearColorProperty* LinearColorProperty = CastField<FLinearColorProperty>(&Property))
+		else if (const auto* LinearColorProperty = CastField<FLinearColorProperty>(&Property))
 		{
-			return ImGui::ColorEdit4(Label, LinearColorProperty->GetPropertyValue(ValuePtr).RGBA);
+			Edit.DrawValue(LinearColorProperty->GetPropertyValue(ValuePtr),
+				[&](FLinearColor& Value) { return ImGui::ColorEdit4(Label, Value.RGBA); });
 		}
-		if (const FStrProperty* StrProperty = CastField<FStrProperty>(&Property))
+		else if (const auto* StrProperty = CastField<FStrProperty>(&Property))
 		{
-			FString& Value = StrProperty->GetPropertyValue(ValuePtr);
-
-			char Buffer[256] = {};
-			strncpy_s(Buffer, Value.c_str(), sizeof(Buffer) - 1);
-			if (CustomFont) ImGui::PushFont(CustomFont);
-			if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
+			Edit.DrawValue(StrProperty->GetPropertyValue(ValuePtr), [&](FString& Value)
 			{
-				Value = Buffer;
-			}
-			if (CustomFont) ImGui::PopFont();
-			return false;
+				char Buffer[256] = {};
+				strncpy_s(Buffer, Value.c_str(), sizeof(Buffer) - 1);
+				if (CustomFont) ImGui::PushFont(CustomFont);
+				const bool bChanged = ImGui::InputText(Label, Buffer, sizeof(Buffer));
+				if (CustomFont) ImGui::PopFont();
+				if (bChanged) Value = Buffer;
+				return bChanged;
+			});
 		}
-		if (const FTransformProperty* TransformProperty = CastField<FTransformProperty>(&Property))
+		else if (const auto* TransformProperty = CastField<FTransformProperty>(&Property))
 		{
-			FTransform& Value = TransformProperty->GetPropertyValue(ValuePtr);
-
-			ImGui::NewLine();
-
-			bool bChanged = false;
-			bChanged |= DrawVector3Controller("Location", Value.Location.V, 0.0f, 55.0f);
-			bChanged |= DrawRotatorAsXYZ("Rotation", Value.Rotation);
-			bChanged |= DrawVector3Controller("Scale", Value.Scale.V, 1.0f, 55.0f);
-			return bChanged;
+			Edit.DrawValue(TransformProperty->GetPropertyValue(ValuePtr), [&](FTransform& Value)
+			{
+				ImGui::NewLine();
+				bool bChanged = DrawVector3Controller("Location", Value.Location.V, 0.0f, 55.0f);
+				bChanged |= DrawRotatorAsXYZ("Rotation", Value.Rotation);
+				bChanged |= DrawVector3Controller("Scale", Value.Scale.V, 1.0f, 55.0f);
+				return bChanged;
+			});
 		}
-		if (const FObjectProperty* ObjectProperty = CastField<FObjectProperty>(&Property))
+		else if (const auto* ObjectProperty = CastField<FObjectProperty>(&Property))
 		{
 			UObject** ObjPtr = &ObjectProperty->GetPropertyValue(ValuePtr);
 			const UClass* PropertyClass = ObjectProperty->PropertyClass;
-
 			if (PropertyClass == UMaterial::StaticClass())
 			{
-				DrawTextureSlot(reinterpret_cast<UMaterial**>(ObjPtr), 0);
+				DrawTextureSlot(Edit, reinterpret_cast<UMaterial**>(ObjPtr), 0);
 			}
 			else if (PropertyClass == UFont::StaticClass())
 			{
-				DrawFontSlot(Object, reinterpret_cast<UFont**>(ObjPtr));
+				if (UFont* Picked = DrawFontSlot(Cast<UFont>(*ObjPtr)))
+				{
+					Edit.Changes.Add([Object, ObjPtr, Picked]
+					{
+						if (auto* Component = Cast<UTextRenderComponent>(Object))
+							Component->SetFont(Picked);
+						else
+							*ObjPtr = Picked;
+					});
+				}
 			}
 			else if (PropertyClass == UStaticMesh::StaticClass())
 			{
-				DrawMeshSlot(Object, reinterpret_cast<UStaticMesh**>(ObjPtr));
+				if (UStaticMesh* Picked = DrawMeshSlot(Cast<UStaticMesh>(*ObjPtr)))
+				{
+					Edit.Changes.Add([Object, ObjPtr, Picked]
+					{
+						if (auto* Component = Cast<UStaticMeshComponent>(Object))
+							Component->SetStaticMesh(Picked);
+						else
+							*ObjPtr = Picked;
+					});
+				}
 			}
 			else if (PropertyClass == UTexture2D::StaticClass())
 			{
-				UTexture2D** TexturePtr = reinterpret_cast<UTexture2D**>(ObjPtr);
-				return DrawTexturePicker(*TexturePtr, Label,
-					[TexturePtr](UTexture2D* Picked) { *TexturePtr = Picked; });
+				DrawTexturePicker(Cast<UTexture2D>(*ObjPtr), Label, [&](UTexture2D* Picked)
+				{
+					if (*ObjPtr != Picked)
+						Edit.Changes.Add([ObjPtr, Picked] { *ObjPtr = Picked; });
+				});
 			}
-			return false;
 		}
-
-		if (const FStructProperty* StructProperty = CastField<FStructProperty>(&Property))
+		else if (const auto* StructProperty = CastField<FStructProperty>(&Property))
 		{
-			// USTRUCT: 구조체의 프로퍼티를 한 단계 들여 그린다. 컨테이너가 객체가 아니라 이 멤버의 주소다.
+			// Struct members use the same edit as their enclosing property.
 			ImGui::NewLine();
 			ImGui::Indent();
 			ImGui::PushID(Label);
 
 			TArray<const UStruct*> StructChain;
 			for (const UStruct* Struct = StructProperty->Struct; Struct; Struct = Struct->GetSuperStruct())
-			{
 				StructChain.Add(Struct);
-			}
 
-			bool bChanged = false;
 			for (auto It = StructChain.rbegin(); It != StructChain.rend(); ++It)
 			{
 				for (const FProperty* Member : (*It)->GetProperties())
 				{
 					if (!Member->HasAnyFlags(CPF_Edit))
-					{
 						continue;
-					}
 					const bool bReadOnly = Member->HasAnyFlags(CPF_EditConst);
 					if (bReadOnly) ImGui::BeginDisabled();
-					bChanged |= DrawPropertyRow(Object, ValuePtr, *Member, CustomFont);
+					DrawPropertyRow(Edit, Object, ValuePtr, *Member, CustomFont);
 					if (bReadOnly) ImGui::EndDisabled();
 				}
 			}
 
 			ImGui::PopID();
 			ImGui::Unindent();
-			return bChanged;
 		}
-
-		ImGui::TextDisabled("(Unsupported %s)", Property.GetClass()->GetName());
-		return false;
+		else
+		{
+			ImGui::TextDisabled("(Unsupported %s)", Property.GetClass()->GetName());
+		}
 	}
 
-	// 프로퍼티 한 줄: 라벨과 값 위젯. 값이 바뀌면 true
-	// Container는 프로퍼티를 가진 메모리 (UObject 멤버면 객체, USTRUCT 멤버면 그 구조체 값)
-	bool DrawPropertyRow(UObject* Object, void* Container, const FProperty& Property, ImFont* CustomFont)
+	// Container is either the UObject or the address of a reflected struct.
+	void DrawPropertyRow(FPropertyEdit& Edit, UObject* Object, void* Container, const FProperty& Property, ImFont* CustomFont)
 	{
 		void* ValuePtr = Property.ContainerPtrToValuePtr(Container);
 		const FString Label = "##" + Property.Name;
-
 		const char* DisplayName = Property.Name.c_str();
 
-		// 패널이 넓으면 라벨 | 값을 한 줄에, 좁거나 라벨이 길면 라벨 아래 줄에 값을 놓는다.
 		const float StartX = ImGui::GetCursorPosX();
 		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
 		const float LabelWidth = AvailableWidth * 0.45f;
-
 		const bool bInline = !Property.IsA<FTransformProperty>() && !Property.IsA<FStructProperty>() && AvailableWidth >= 260.0f && ImGui::CalcTextSize(DisplayName).x < LabelWidth;
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextWrapped("%s", DisplayName);
-
 		if (bInline)
 			ImGui::SameLine(StartX + LabelWidth);
 
 		ImGui::SetNextItemWidth(-1.0f);
-
-		return DrawPropertyValue(Object, Property, ValuePtr, Label.c_str(), CustomFont);
+		DrawPropertyValue(Edit, Object, Property, ValuePtr, Label.c_str(), CustomFont);
 	}
 
-	// UClass에 등록된 프로퍼티 한 줄. 구조체 멤버 하나가 바뀌어도 객체에는 바깥 프로퍼티(구조체)가 바뀌었다고 알린다.
-	// (UE는 FPropertyChangedEvent에 MemberProperty와 안쪽 Property를 따로 담는다)
 	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
 	{
-		if (DrawPropertyRow(Object, Object, Property, CustomFont))
+		FPropertyEdit Edit;
+		DrawPropertyRow(Edit, Object, Object, Property, CustomFont);
+		if (!Edit.Changes.IsEmpty())
 		{
+			FComponentReregisterContext Reregister(Cast<UActorComponent>(Object));
+			for (const auto& Change : Edit.Changes)
+				Change();
 			Object->PostEditChangeProperty(Property);
 		}
 	}
@@ -1321,15 +1336,14 @@ void FDetailsPanel::OnRender()
 			}
 			ImGui::PopID();
 
-			if (PendingDeleteComponent)
-			{
-				if (DeleteCallback)
-				{
-					DeleteCallback(PendingDeleteComponent);
-				}
+		}
 
-				PendingDeleteComponent = nullptr;
-			}
+		if (PendingDeleteComponent)
+		{
+			UActorComponent* Component = PendingDeleteComponent;
+			PendingDeleteComponent = nullptr;
+			if (DeleteCallback)
+				DeleteCallback(Component);
 		}
 	}
 	ImGui::End();
@@ -1356,22 +1370,69 @@ void FDetailsPanel::SelectComponent(UActorComponent* Component)
 		Callback(TargetComponent);
 }
 
+namespace
+{
+	void DrawComponentRowTooltip(const UActorComponent* Component)
+	{
+		if (ImGui::GetDragDropPayload() || !ImGui::BeginItemTooltip())
+			return;
+
+		const AActor* Owner = Component->GetOwner();
+		if (Component->HasAnyFlags(EObjectFlags::RF_DefaultSubObject))
+		{
+			ImGui::TextUnformatted("Default subobject: Yes");
+			ImGui::TextUnformatted("This component cannot be deleted in the editor.");
+			if (Owner && Owner->GetRootComponent() == Component)
+				ImGui::TextUnformatted("This class-defined root cannot be replaced in the editor.");
+		}
+		else
+		{
+			ImGui::TextUnformatted("Default subobject: No");
+			if (Owner && Owner->IsDefaultSceneRoot(Component))
+				ImGui::TextUnformatted("This fallback root is removed when another component is made the root.");
+		}
+		ImGui::EndTooltip();
+	}
+
+	USceneComponent* FindSceneComponentById(AActor* Actor, uint32 Id)
+	{
+		for (UActorComponent* Component : Actor->GetComponents())
+			if (Component && Component->GetUUID() == Id)
+				return Cast<USceneComponent>(Component);
+		return nullptr;
+	}
+}
+
 void FDetailsPanel::DrawCompoenetList(AActor* SelectedActor, UActorComponent*& OutSelectedComponent)
 {
 	if (!SelectedActor) { return; }
 
-	if (PendingDragComponent && PendingDroppedComponent)
-	{
-		TryReparent(PendingDroppedComponent, PendingDragComponent);
-		PendingDragComponent = nullptr;
-		PendingDroppedComponent = nullptr;
-	}
-
 	USceneComponent* Root = SelectedActor->GetRootComponent();
 
-	if (Root && ImGui::CollapsingHeader("Components", ImGuiTreeNodeFlags_DefaultOpen))
+	const bool bShowComponents = ImGui::CollapsingHeader("Components", ImGuiTreeNodeFlags_DefaultOpen);
+	if (!Root && ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(EditorDragDrop::Component))
+		{
+			PendingDroppedComponentId = *static_cast<const uint32*>(Payload->Data);
+			PendingDragComponent = nullptr;
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	if (bShowComponents)
 	{
 		DrawSceneComponentNode(Root, Root, OutSelectedComponent);
+		for (UActorComponent* Component : SelectedActor->GetComponents())
+		{
+			auto* Scene = Cast<USceneComponent>(Component);
+			if (Scene && Scene != Root)
+			{
+				USceneComponent* Parent = Scene->GetAttachParent();
+				if (!Parent || Parent->GetOwner() != SelectedActor || Parent->IsHiddenInDetails())
+					DrawSceneComponentNode(Scene, Root, OutSelectedComponent);
+			}
+		}
 	}
 
 	ImGui::Separator();
@@ -1396,6 +1457,7 @@ void FDetailsPanel::DrawCompoenetList(AActor* SelectedActor, UActorComponent*& O
 		const float RowWidth = ImGui::GetContentRegionAvail().x;
 
 		ImGui::TreeNodeEx("ActorComponentNode", Flags, "%s", Label.c_str());
+		DrawComponentRowTooltip(ActorComp);
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
@@ -1404,7 +1466,7 @@ void FDetailsPanel::DrawCompoenetList(AActor* SelectedActor, UActorComponent*& O
 
 		if (ImGui::BeginPopupContextItem("Component Context"))
 		{
-			if (ImGui::MenuItem("Delete", nullptr, false, ActorComp != Root))
+			if (ImGui::MenuItem("Delete", nullptr, false, SelectedActor->CanDeleteComponentInEditor(ActorComp)))
 				PendingDeleteComponent = ActorComp;
 			ImGui::EndPopup();
 		}
@@ -1415,6 +1477,8 @@ void FDetailsPanel::DrawCompoenetList(AActor* SelectedActor, UActorComponent*& O
 
 		ImGui::PopID();
 	}
+
+	HandleComponentDrop(SelectedActor, OutSelectedComponent);
 }
 
 void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneComponent* Root, UActorComponent*& OutSelectedComponent)
@@ -1427,7 +1491,7 @@ void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneCom
 	TArray<USceneComponent*> Children;
 	for (USceneComponent* Child : Component->GetAttachChildren())
 	{
-		if (Child && !Child->IsHiddenInDetails())
+		if (Child && Child->GetOwner() == Component->GetOwner() && !Child->IsHiddenInDetails())
 		{
 			Children.Add(Child);
 		}
@@ -1455,32 +1519,48 @@ void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneCom
 	const float RowWidth = ImGui::GetContentRegionAvail().x;
 	const bool bOpen = ImGui::TreeNodeEx("ComponentNode", Flags, "%s", bIsEditingName ? "" : Label.c_str());
 
-	USceneComponent* DragComponent = Component;
-
-	// source: Root 제외, 현재 Component를 payload에 담음
-	if (Component != Root && ImGui::BeginDragDropSource())
+	AActor* Owner = Component->GetOwner();
+	const bool bCanMove = Owner && Owner->CanDeleteComponentInEditor(Component) && Component != Root;
+	if (bCanMove && ImGui::BeginDragDropSource())
 	{
-		ImGui::SetDragDropPayload(EditorDragDrop::Component, &Component, sizeof(USceneComponent*));
+		const uint32 Id = Component->GetUUID();
+		ImGui::SetDragDropPayload(EditorDragDrop::Component, &Id, sizeof(Id));
+		ImGui::TextUnformatted(Label.c_str());
 		ImGui::EndDragDropSource();
 	}
 	// target: 모든 행이 가능, payload를 받아 현재 Component를 부모로 사용
 	if (ImGui::BeginDragDropTarget())
 	{
-		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(EditorDragDrop::Component))
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(
+			EditorDragDrop::Component, ImGuiDragDropFlags_AcceptBeforeDelivery))
 		{
-			USceneComponent* DroppedComponent = *static_cast<USceneComponent**>(Payload->Data);
-			PendingDroppedComponent = DroppedComponent;
-			PendingDragComponent = DragComponent;
+			const uint32 Id = *static_cast<const uint32*>(Payload->Data);
+			if (Payload->IsDelivery())
+			{
+				PendingDroppedComponentId = Id;
+				PendingDragComponent = Component;
+			}
+			else if (Component == Root && Owner)
+			{
+				if (USceneComponent* Dropped = FindSceneComponentById(Owner, Id))
+				{
+					if (Owner->CanMakeRootInEditor(Dropped))
+						ImGui::SetTooltip("Drop to make this component the root");
+					else if (Root->HasAnyFlags(EObjectFlags::RF_DefaultSubObject))
+						ImGui::SetTooltip("The class-defined root cannot be replaced");
+				}
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
 
 	if (!bIsEditingName)
 	{
+		DrawComponentRowTooltip(Component);
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 			OutSelectedComponent = Component;
 
-		if (Component != Root && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		if (bCanMove && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 		{
 			EditingNameComponent = Component;
 			strncpy_s(ComponentNameEditBuffer, sizeof(ComponentNameEditBuffer), Component->GetName().c_str(), _TRUNCATE);
@@ -1489,7 +1569,7 @@ void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneCom
 
 		if (ImGui::BeginPopupContextItem("Component Context"))
 		{
-			if (ImGui::MenuItem("Delete", nullptr, false, Component != Root))
+			if (ImGui::MenuItem("Delete", nullptr, false, Owner && Owner->CanDeleteComponentInEditor(Component)))
 				PendingDeleteComponent = Component;
 			ImGui::EndPopup();
 		}
@@ -1516,16 +1596,14 @@ void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneCom
 			if (!bCancelled && ComponentNameEditBuffer[0] != '\0')
 			{
 				FName NewName(ComponentNameEditBuffer);
-				AActor* Owner = Component->GetOwner();
-
-				UActorComponent* Existing = Owner->FindComponentByName(NewName);
-				if (!Existing)
+				UObject* Existing = StaticFindObjectFast(nullptr, Component->GetOuter(), NewName);
+				if (!Existing || Existing == Component)
 				{
-					Component->SetName(FName(ComponentNameEditBuffer));
+					Component->SetName(NewName);
 				}
 				else
 				{
-					HTR_LOG(Warning, "A component with this name already exists in this Actor.");
+					HTR_LOG(Warning, "A component with this name already exists under the same Outer.");
 				}
 			}
 			EditingNameComponent = nullptr;
@@ -1544,16 +1622,46 @@ void FDetailsPanel::DrawSceneComponentNode(USceneComponent* Component, USceneCom
 	ImGui::PopID();
 }
 
-void FDetailsPanel::TryReparent(USceneComponent* DroppedComponent, USceneComponent* DragComponent)
+void FDetailsPanel::HandleComponentDrop(AActor* Actor, UActorComponent*& Selection)
 {
-	if (DroppedComponent != nullptr
-		&& DroppedComponent->GetAttachParent() != DragComponent
-		&& DroppedComponent != DragComponent)
+	USceneComponent* Component = PendingDroppedComponentId ? FindSceneComponentById(Actor, PendingDroppedComponentId) : nullptr;
+	USceneComponent* Target = PendingDragComponent;
+	PendingDroppedComponentId = 0;
+	PendingDragComponent = nullptr;
+
+	USceneComponent* Root = Actor->GetRootComponent();
+	if (Component && Actor->CanDeleteComponentInEditor(Component) && Component != Root
+		&& Component != Target && (!Target || Target->GetOwner() == Actor))
 	{
-		DroppedComponent->SetupAttachment(DragComponent, EAttachmentRule::KeepWorld);
+		const bool bCanMakeRoot = Target == Root && Actor->CanMakeRootInEditor(Component);
+		const bool bCanAttach = Target && Component->GetAttachParent() != Target;
+		if (bCanMakeRoot && bCanAttach)
+		{
+			RootDropCandidateId = Component->GetUUID();
+			ImGui::OpenPopup("Component Drop");
+		}
+		else if (bCanMakeRoot && Actor->MakeRootInEditor(Component))
+		{
+			Selection = Component;
+		}
+		else if (bCanAttach)
+		{
+			Component->SetupAttachment(Target, EAttachmentRule::KeepWorld);
+		}
+	}
+
+	if (ImGui::BeginPopup("Component Drop"))
+	{
+		if (auto* Scene = FindSceneComponentById(Actor, RootDropCandidateId); Actor->CanMakeRootInEditor(Scene))
+		{
+			if (ImGui::MenuItem("Make New Root") && Actor->MakeRootInEditor(Scene))
+				Selection = Scene;
+			else if (Root && ImGui::MenuItem("Attach"))
+				Scene->SetupAttachment(Root, EAttachmentRule::KeepWorld);
+		}
+		ImGui::EndPopup();
 	}
 }
-
 
 FDetailsPanel::~FDetailsPanel()
 {

@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "GameFramework/Actor/ProjectileActor.h"
+#include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/FireBallComponent.h"
 #include "Components/ProjectileMovementComponent.h"
@@ -10,23 +11,28 @@ AProjectileActor::AProjectileActor()
 {
     PrimaryActorTick.bCanEverTick = true;
     PrimaryActorTick.bStartWithTickEnabled = false;
-    GetRootComponent()->SetCollisionRadiusOverride(0.5f);
+    auto* CollisionComponent = CreateDefaultSubobject<USphereComponent>("ProjectileCollision");
+    CollisionComponent->SphereRadius = 0.5f;
+    // Preserve the fixed sweep radius and the pool's existing overlap behavior.
+    CollisionComponent->SetCollisionRadiusOverride(CollisionComponent->SphereRadius);
+    CollisionComponent->bGenerateOverlapEvents = false;
+    SetRootComponent(CollisionComponent);
     StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("ProjectileMeshComponent");
     // 이동용 루트는 표시 상태와 분리한다. 숨겨진 메쉬를 부모로 두면 FireBall 자식도 함께 숨겨진다.
-    StaticMeshComponent->SetupAttachment(GetRootComponent());
+    StaticMeshComponent->SetupAttachment(CollisionComponent);
     StaticMeshComponent->SetStaticMesh(UAssetManager::GetAssetByPath<UStaticMesh>("Sphere"));
     StaticMeshComponent->SetRelativeScale3D(FVector(0.5f));
     StaticMeshComponent->SetVisible(false);
     StaticMeshComponent->SetHiddenInGame(true);
     StaticMeshComponent->SetAutoActivate(false);
     FireBallComponent = CreateDefaultSubobject<UFireBallComponent>("FireBallComponent");
-    FireBallComponent->SetupAttachment(GetRootComponent());
+    FireBallComponent->SetupAttachment(CollisionComponent);
     FireBallComponent->SetVisibility(false);
     FireBallComponent->SetHiddenInGame(true);
     FireBallComponent->SetAutoActivate(false);
     // FireBall은 깊이 버퍼의 표면에만 색을 입히므로 전용 구체를 함께 움직인다.
     FireBallMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("FireBallMeshComponent");
-    FireBallMeshComponent->SetupAttachment(GetRootComponent());
+    FireBallMeshComponent->SetupAttachment(CollisionComponent);
     FireBallMeshComponent->SetStaticMesh(UAssetManager::GetAssetByPath<UStaticMesh>("Sphere"));
     FireBallMeshComponent->SetRelativeScale3D(FVector(FireBallComponent->GetRadius() * 0.5f));
     FireBallMeshComponent->SetVisible(false);
@@ -34,7 +40,7 @@ AProjectileActor::AProjectileActor()
     FireBallMeshComponent->SetAutoActivate(false);
     ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
     ProjectileMovementComponent->SetAutoActivate(false);
-    ProjectileMovementComponent->SetUpdatedComponent(GetRootComponent());
+    ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
     ProjectileMovementComponent->InintialSpeed = 20.0f;
     ProjectileMovementComponent->MaxSpeed = 100.0f;
     ProjectileMovementComponent->ProjectileGravityScale = 1.0f;

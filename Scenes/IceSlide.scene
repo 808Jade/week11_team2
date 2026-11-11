@@ -1284,15 +1284,9 @@
                     "Class": "AParticleActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {}
-                        },
-                        {
                             "Class": "UParticleSubUVComponent",
                             "Name": "UParticleSubUVComponent",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": "",
                             "Properties": {
                                 "ColSize": 4,
                                 "RowSize": 4,

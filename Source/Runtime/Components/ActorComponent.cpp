@@ -3,6 +3,29 @@
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
 
+UActorComponent::UActorComponent()
+{
+	PrimaryComponentTick.Target = this;
+	if (!FObjectConstructionScope::IsConstructing(this))
+		return;
+
+	for (UObject* Outer = GetOuter(); Outer; Outer = Outer->GetOuter())
+	{
+		if (AActor* Actor = Cast<AActor>(Outer))
+		{
+			Owner = Actor;
+			break;
+		}
+	}
+}
+
+void UActorComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+	if (Owner)
+		Owner->AddOwnedComponent(this);
+}
+
 UActorComponent::~UActorComponent()
 {
 	assert(!bRegistered && "Delete Without Unregister");
