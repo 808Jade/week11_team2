@@ -23,11 +23,19 @@ enum class EGizmoSpace
 class FGizmo   // 상태 + 로직
 {
 public:
+	explicit FGizmo(bool bInReregisterOnDragEnd = false)
+		: bReregisterOnDragEnd(bInReregisterOnDragEnd) {}
+
 	// Gizmo 대상 설정
 	void SetTarget(USceneComponent* InTarget, bool InbUseActorBounds = false)
-	{ 
-		Target = InTarget; 
-		bUseActorBounds = InbUseActorBounds; 
+	{
+		if (Target != InTarget)
+		{
+			DraggingAxis = -1;
+			HoveredAxis = -1;
+		}
+		Target = InTarget;
+		bUseActorBounds = InbUseActorBounds;
 	}
 	USceneComponent* GetTarget() const { return Target; }
 
@@ -75,6 +83,7 @@ private:
 	FTransform Transform = FTransform();
 	USceneComponent* Target = nullptr;
 	bool bUseActorBounds = false;
+	bool bReregisterOnDragEnd = false;
 
 	int HoveredAxis = -1;
 	int DraggingAxis = -1;
@@ -82,6 +91,7 @@ private:
 	FVector2 DragStartMousePos;
 	FVector DragStartPoint;
 	FVector DragStartLocation;
+	FVector DragStartRelativeLocation;
 	FRotator DragStartRotation;
 	FVector DragStartScale;
 	FVector DragAxisDirection;
@@ -97,6 +107,7 @@ private:
 
 	// Light Component인 경우 Radius를 증감하기 위한 멤버변수와 함수
 	float DragStartRadius = 0.0f;
+	bool bEditedLightRadius = false;
 	bool ApplyScaleToLight(float Factor);
 	ULocalLightComponent* GetTargetLight() const;
 };

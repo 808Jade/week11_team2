@@ -120,6 +120,7 @@ UObject* UClass::CreateDefaultObject()
 
 			Constructor(ClassDefaultObject);
 			HashObject(ClassDefaultObject, this);
+			ClassDefaultObject->PostInitProperties();
 		}
 	}
 	return ClassDefaultObject;

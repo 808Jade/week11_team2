@@ -14,4 +14,12 @@ public:
 		TArray<FBoneAnimationTrack> InTracks, FString& OutError);
 	void GetAnimationPose(FAnimationPoseData& OutPoseData,
 		const FAnimExtractContext& ExtractionContext) const override;
+
+	FVector GetRootLocationAtTime(double Time) const override;
+	FQuat GetRootRotationAtTime(double Time) const override;
+
+private:
+	// 시간을 앞뒤 키 인덱스와 보간 비율로 바꾼다 (GetAnimationPose와 같은 규칙)
+	void GetKeyFrame(double Time, int32& OutFirst, int32& OutSecond, float& OutAlpha) const;
+	const FRawAnimSequenceTrack* FindRootTrack() const;
 };

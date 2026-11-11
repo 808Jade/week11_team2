@@ -50,7 +50,7 @@ namespace
 		FPerObjectConstants Constants{};
 		Constants.World = LocalToWorld;
 		Constants.NormalMatrix = WorldToLocal.GetTransposed();
-		Constants.ShadowFlags.X = bReceiveShadow ? 1.0f : 0.0f;   // GBuffer가 NormalRoughness.w 부호로 넘긴다
+		Constants.ObjectFlags.X = bReceiveShadow ? 1.0f : 0.0f;   // GBuffer가 NormalRoughness.w 부호로 넘긴다
 		std::memcpy(Dest, &Constants, sizeof(Constants));
 	}
 }
@@ -112,6 +112,9 @@ AActor* UWorld::SpawnActor(UClass* Class, FName InName, const FTransform* Transf
 	// 2. Actor에 World/Level 연결
 	NewActor->World = this;
 	NewActor->Level = PersistentLevel;
+
+	if (!NewActor->GetRootComponent())
+		NewActor->SetRootComponent(NewObject<USceneComponent>(NewActor, FName("DefaultSceneRoot")));
 
 	// 3. Transform 적용
 	const FTransform SpawnTransform = Transform ? *Transform : FTransform::Identity;

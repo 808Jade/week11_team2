@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -7,37 +7,10 @@
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 10.0,
-                                        "Y": 10.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -52,21 +25,24 @@
                                         "Yaw": 0.0
                                     },
                                     "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
+                                        "X": 10,
+                                        "Y": 10,
                                         "Z": 1.0
                                     }
                                 },
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASpotLightActor",
@@ -74,7 +50,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -96,12 +72,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "USpotLightComponent",
                             "Name": "USpotLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 14.300000190734863,
                                 "InnerConeAngle": 15.0,
@@ -129,7 +107,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -163,7 +143,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "USpotLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -185,7 +165,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -195,7 +177,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "USpotLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -218,22 +200,27 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ASpotLightActor_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
+                            "Parent": 0,
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0.0,
@@ -254,51 +241,27 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_1",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
+                            "Parent": 0,
                             "Properties": {
+                                "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 5.316015720367432,
@@ -312,49 +275,23 @@
                                     },
                                     "Scale": {
                                         "X": 1.0,
-                                        "Y": 10.0,
-                                        "Z": 10.0
+                                        "Y": 10,
+                                        "Z": 10
                                     }
                                 },
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0.0,
-                                        "Y": 0.0,
-                                        "Z": 0.0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0.0,
-                                        "Roll": 0.0,
-                                        "Yaw": 0.0
-                                    },
-                                    "Scale": {
-                                        "X": 1.0,
-                                        "Y": 1.0,
-                                        "Z": 1.0
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_2",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

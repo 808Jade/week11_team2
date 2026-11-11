@@ -7,7 +7,9 @@
 #include "SkeletalMeshComponent.generated.h"
 
 class UAnimInstance;
+class UAnimationAsset;
 class USkeletalMeshComponent;
+struct FRootMotionDelta;
 
 // AnimNotify를 받는 델리게이트. Type으로 Notify / StateBegin / StateTick / StateEnd를 구분합니다.
 DECLARE_DELEGATE(FAnimNotifySignature, USkeletalMeshComponent*, const FAnimNotifyEvent&, EAnimNotifyEventType);
@@ -44,10 +46,12 @@ public:
 
 	const TArray<FBoneInfo>& GetBones() const;
 	int32 FindBoneIndex(const FString& Name) const;
+
 	FTransform GetBoneLocalTransform(int32 BoneIndex) const;
 	void SetBoneLocalTransform(int32 BoneIndex, const FTransform& Local);
 	FMatrix GetBoneComponentMatrix(int32 BoneIndex) const;
 	FMatrix GetBoneWorldMatrix(int32 BoneIndex) const;
+
 	void ResetPose();
 	void RefreshBoneTransformsNow();
 
@@ -66,4 +70,5 @@ private:
 	UAnimInstance* AnimScriptInstance = nullptr;
 	TArray<FTransform> BoneSpaceTransforms;
 
+	void ApplyRootMotion(const FRootMotionDelta& Delta);
 };

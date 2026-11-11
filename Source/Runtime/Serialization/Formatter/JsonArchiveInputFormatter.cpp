@@ -24,6 +24,12 @@ FJsonArchiveInputFormatter::FJsonArchiveInputFormatter(FArchive& InInner)
     ValueStack.Add(&Root);
 }
 
+FJsonArchiveInputFormatter::FJsonArchiveInputFormatter(FArchive& InInner, const FJsonValue& Document)
+	: Inner(InInner)
+{
+	ValueStack.Add(&Document);
+}
+
 FJsonArchiveInputFormatter::~FJsonArchiveInputFormatter()
 {
 }

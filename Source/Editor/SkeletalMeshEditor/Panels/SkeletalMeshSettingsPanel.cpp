@@ -36,6 +36,12 @@ void FSkeletalMeshSettingsPanel::DrawContent()
 		Editor.SetBoneVisualizerVisible(bShowBoneVisualizer);
 	}
 
+	bool bShowBoneWeightHeatmap = Editor.IsBoneWeightHeatmapVisible();
+	if (ImGui::Checkbox("Bone Weight Heatmap", &bShowBoneWeightHeatmap))
+	{
+		Editor.SetBoneWeightHeatmapVisible(bShowBoneWeightHeatmap);
+	}
+
 	if (FEditorViewportClient* Client = Editor.GetViewportClient())
 	{
 		bool bWireframe = Client->IsWireframe();

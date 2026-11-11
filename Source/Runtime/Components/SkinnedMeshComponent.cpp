@@ -10,9 +10,9 @@
 
 namespace
 {
-	TUniquePtr<FSkeletalMeshObject> MakeMeshObject(USkeletalMesh* Mesh)
+	TUniquePtr<FSkeletalMeshObject> MakeMeshObject(USkeletalMesh* Mesh, bool bForceCPU)
 	{
-		if (USkinnedMeshComponent::IsGPUSkinningEnabled())
+		if (!bForceCPU && USkinnedMeshComponent::IsGPUSkinningEnabled())
 		{
 			TUniquePtr<FSkeletalMeshObjectGPUSkin> GPUObject = MakeUnique<FSkeletalMeshObjectGPUSkin>(Mesh);
 			if (GPUObject->IsValid())
@@ -104,6 +104,24 @@ void USkinnedMeshComponent::UpdateBoneTransformsNow()
 	SendRenderDynamicData();
 }
 
+void USkinnedMeshComponent::SetBoneWeightHeatmapIndex(int32 BoneIndex)
+{
+	// Weight는 CPU 스킨만 기록하므로, Heatmap을 켜는 동안에는 이 컴포넌트를 CPU 스킨으로 전환한다.
+	const bool bWantCPUSkinning = BoneIndex >= 0;
+	if (bForceCPUSkinning != bWantCPUSkinning)
+	{
+		bForceCPUSkinning = bWantCPUSkinning;
+		if (IsGPUSkinningEnabled())
+			RefreshSkinningMode();
+	}
+
+	if (!MeshObject || MeshObject->GetBoneWeightHeatmapIndex() == BoneIndex) return;
+	MeshObject->SetBoneWeightHeatmapIndex(BoneIndex);
+
+	// 포즈가 멈춰 있어도 새 본의 Weight가 기록되도록 즉시 다시 스키닝한다.
+	UpdateBoneTransformsNow();
+}
+
 void USkinnedMeshComponent::RefreshBoneTransforms()
 {
 	const TArray<FBoneInfo>& Bones = SkeletalMesh->GetRefSkeleton();
@@ -133,7 +151,7 @@ void USkinnedMeshComponent::SendRenderDynamicData()
 void USkinnedMeshComponent::RecreateMeshObject()
 {
 	const bool bValid = SkeletalMesh && !SkeletalMesh->GetRenderData().LODRenderData.IsEmpty();
-	MeshObject = bValid ? MakeMeshObject(SkeletalMesh) : nullptr;
+	MeshObject = bValid ? MakeMeshObject(SkeletalMesh, bForceCPUSkinning) : nullptr;
 	ComponentSpaceTransforms.Reset();
 	OnSkeletalMeshChanged();
 	
@@ -154,7 +172,7 @@ void USkinnedMeshComponent::SetUseGPUSkinning(bool bEnabled)
 void USkinnedMeshComponent::RefreshSkinningMode()
 {
 	if (!MeshObject) return;
-	MeshObject = MakeMeshObject(SkeletalMesh);
+	MeshObject = MakeMeshObject(SkeletalMesh, bForceCPUSkinning);
 	UpdateBoneTransformsNow();   // 포즈는 그대로 두고 새 MeshObject에 다시 올린다
 }
 

@@ -50,6 +50,7 @@ struct FObjectDuplicationParameters
 
 
 UObject* StaticConstructObject_Internal(const FStaticConstructObjectParameters& Params);
+UObject* NewObject_Internal(const FStaticConstructObjectParameters& Params);
 UObject* DuplicateObject_Internal(UClass* Class, const UObject* SourceObject, UObject* Outer, const FName Name = NAME_None);
 FName MakeUniqueObjectName(UObject* Outer, const UClass* Class, FName BaseName = NAME_None);
 UObject* StaticDuplicateObject(UObject const* SourceObject, UObject* DestOuter, const FName DestName = NAME_None, EObjectFlags FlagMask = EObjectFlags::RF_AllFlags, UClass* DestClass = nullptr);
@@ -79,7 +80,7 @@ T* NewObject
 	Params.Name = Name;
 	Params.SetFlags = Flags;
 
-	T* Result = static_cast<T*>(StaticConstructObject_Internal(Params));
+	T* Result = static_cast<T*>(NewObject_Internal(Params));
 	return Result;
 };
 
@@ -89,7 +90,7 @@ T* NewObject(UObject* Outer = nullptr)
 	FStaticConstructObjectParameters Params(T::StaticClass());
 	Params.Outer = Outer;
 
-	T* Result = static_cast<T*>(StaticConstructObject_Internal(Params));
+	T* Result = static_cast<T*>(NewObject_Internal(Params));
 	return Result;
 }
 
@@ -101,7 +102,7 @@ T* NewObject(UObject* Outer, FName Name, EObjectFlags Flags = EObjectFlags::RF_N
 	Params.Name = Name;
 	Params.SetFlags = Flags;
 
-	T* Result = static_cast<T*>(StaticConstructObject_Internal(Params));
+	T* Result = static_cast<T*>(NewObject_Internal(Params));
 	return Result;
 }
 

@@ -15,7 +15,7 @@ class UActorComponent : public UObject
 
 
 public:
-	UActorComponent() { PrimaryComponentTick.Target = this; }
+	UActorComponent();
 	virtual ~UActorComponent() override;
 
 	virtual void InitializeComponent() { bIsInitialized = true; }
@@ -26,8 +26,8 @@ public:
 	{
 	};
 
-	void SetOwner(AActor* InOwner) { Owner = InOwner; }
 	AActor* GetOwner() const { return Owner; }
+	void PostInitProperties() override;
 
 	// 디테일 패널에서 이 컴포넌트를 통째로 숨긴다 (에디터 시각화용 빌보드 등)
 	void SetHiddenInDetails(bool bInHidden) { bHiddenInDetails = bInHidden; }

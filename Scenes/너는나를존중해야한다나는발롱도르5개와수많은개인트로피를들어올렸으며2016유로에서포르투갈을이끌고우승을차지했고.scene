@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -9,7 +9,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -31,7 +31,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         },
                         {
                             "BonePose": [
@@ -1099,7 +1101,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 1,
                             "Properties": {
                                 "SkeletalMesh": "Imported/Ronaldo/SK_Ronaldo_ValveBiped_Bip01_Pelvis.fbxbin",
                                 "Transform": {
@@ -1127,14 +1129,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ASkeletalMeshActor_0",
                     "Properties": {
                         "ScriptPath": "scripts/ronaldo_siu.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

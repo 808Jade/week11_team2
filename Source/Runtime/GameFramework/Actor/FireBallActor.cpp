@@ -3,6 +3,7 @@
 
 AFireBallActor::AFireBallActor()
 {
+	SetRootComponent(CreateDefaultSubobject<USceneComponent>("FireBallRoot"));
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("UStaticMeshComponent");
 	StaticMeshComponent->SetupAttachment(GetRootComponent());
 

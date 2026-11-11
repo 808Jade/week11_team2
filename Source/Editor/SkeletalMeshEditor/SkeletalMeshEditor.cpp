@@ -219,6 +219,13 @@ void FSkeletalMeshEditor::Tick(float DeltaTime)
 	CameraInput = {};
 	GizmoInput = {};
 
+	// 선택한 본이 없으면 어떤 본과도 일치하지 않는 번호를 넘겨 메시 전체를 Weight 0으로 표시합니다.
+	if (MeshComponent)
+	{
+		const int32 HeatmapBone = SelectedBoneIndex >= 0 ? SelectedBoneIndex : MaxSkeletalMeshBones;
+		MeshComponent->SetBoneWeightHeatmapIndex(bShowBoneWeightHeatmap ? HeatmapBone : -1);
+	}
+
 	// 드래그 중에는 Gizmo가 포즈를 갱신하므로 역방향 동기화를 멈춥니다.
 	SyncBoneGizmo();
 }

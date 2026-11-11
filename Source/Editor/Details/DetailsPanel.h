@@ -50,7 +50,8 @@ private:
 	FImGuiRenderer* ImGuiRenderer = nullptr;
 	float ShadowPreviewContrast = 32.0f;
 	void DrawSceneComponentNode(USceneComponent* Component, USceneComponent* Root, UActorComponent*& OutSelectedComponent);
-	void TryReparent(USceneComponent* DroppedComponent, USceneComponent* DragComponent);
+	void HandleComponentDrop(AActor* Actor, UActorComponent*& Selection);
+	uint32 RootDropCandidateId = 0;
 
 	UWorld* World = nullptr;
 	ImFont* CustomFont = nullptr;
@@ -66,7 +67,7 @@ private:
 	bool bFocusNameEdit = false;
 	bool bIsEditingName = false;
 
-	USceneComponent* PendingDroppedComponent = nullptr;
+	uint32 PendingDroppedComponentId = 0;
 	USceneComponent* PendingDragComponent = nullptr;
 };
 

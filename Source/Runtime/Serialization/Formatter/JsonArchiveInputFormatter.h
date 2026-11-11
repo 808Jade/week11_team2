@@ -13,6 +13,8 @@ public:
 	FJsonArchiveInputFormatter& operator=(const FJsonArchiveInputFormatter&) = delete;
 
 	explicit FJsonArchiveInputFormatter(FArchive& InInner);
+	FJsonArchiveInputFormatter(FArchive& InInner, const FJsonValue& Document);
+	FJsonValue& GetDocument() { return Root; }
 	virtual ~FJsonArchiveInputFormatter();
 	
 	const FJsonObject* FindField(FArchiveFieldName Name);

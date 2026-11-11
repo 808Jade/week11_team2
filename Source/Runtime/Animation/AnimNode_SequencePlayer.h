@@ -43,14 +43,21 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 	// 이번 Update에서 루프 경계를 넘어 시간이 감싸졌는지. (Notify 구간을 둘로 나눠야 하는 경우)
 	bool DidWrapThisUpdate() const { return bWrappedThisUpdate; }
 
+	// 이번 Update에 지나간 구간의 root 이동량. 정지·배속 0이면 0입니다.
+	FRootMotionDelta GetRootMotionDelta() const override { return RootMotionDelta; }
+
 	void Update(const FAnimationUpdateContext& Context) override;
 	void Evaluate(FPoseContext& Output) override;
 
 private:
 	// 이번 Update에 지나간 구간의 Notify를 Queue에 넣습니다. 루프로 감싸졌으면 구간을 둘로 나눕니다.
 	void CollectNotifies(FAnimNotifyQueue& Queue, double From, double To, double Length) const;
+	// 이번 Update에 지나간 구간(Prev → Current)의 root 이동량을 RootMotionDelta에 넣습니다. 역재생·루프 감쌈도 처리합니다.
+	void ExtractRootMotion(double Prev, double Current, double Length);
 
 	const UAnimSequenceBase* Sequence = nullptr;
+	FRootMotionDelta RootMotionDelta;
+
 	double InternalTimeAccumulator = 0.0;
 	double PreviousTimeAccumulator = 0.0;
 	float PlayRate = 1.0f;
