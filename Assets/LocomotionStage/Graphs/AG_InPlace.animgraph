@@ -109,7 +109,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -286,7 +286,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -517,7 +517,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -694,7 +694,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -859,7 +859,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -1024,7 +1024,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -1189,7 +1189,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -3418,25 +3418,135 @@
                                         "To": 4
                                     },
                                     {
-                                        "Duration": 0.11999999731779099,
+                                        "Duration": 0.2,
                                         "From": 6,
                                         "Id": 24,
                                         "Priority": 1,
                                         "Rule": {
                                             "Nodes": [
                                                 {
+                                                    "Id": 0,
+                                                    "Type": 2,
+                                                    "Name": "Speed",
+                                                    "Value": 0,
+                                                    "Bool": false,
                                                     "A": -1,
                                                     "B": -1,
-                                                    "Bool": false,
-                                                    "Id": 0,
-                                                    "Name": "Land",
-                                                    "Type": 15,
-                                                    "Value": 0,
-                                                    "X": -250,
+                                                    "X": 0,
                                                     "Y": 0
+                                                },
+                                                {
+                                                    "Id": 1,
+                                                    "Type": 0,
+                                                    "Name": "",
+                                                    "Value": 0.3,
+                                                    "Bool": false,
+                                                    "A": -1,
+                                                    "B": -1,
+                                                    "X": 0,
+                                                    "Y": 90
+                                                },
+                                                {
+                                                    "Id": 2,
+                                                    "Type": 4,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": 0,
+                                                    "B": 1,
+                                                    "X": 230,
+                                                    "Y": 40
+                                                },
+                                                {
+                                                    "Id": 3,
+                                                    "Type": 13,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": -1,
+                                                    "B": -1,
+                                                    "X": 0,
+                                                    "Y": 180
+                                                },
+                                                {
+                                                    "Id": 4,
+                                                    "Type": 0,
+                                                    "Name": "",
+                                                    "Value": 0.12,
+                                                    "Bool": false,
+                                                    "A": -1,
+                                                    "B": -1,
+                                                    "X": 0,
+                                                    "Y": 270
+                                                },
+                                                {
+                                                    "Id": 5,
+                                                    "Type": 5,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": 3,
+                                                    "B": 4,
+                                                    "X": 230,
+                                                    "Y": 220
+                                                },
+                                                {
+                                                    "Id": 6,
+                                                    "Type": 10,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": 2,
+                                                    "B": 5,
+                                                    "X": 460,
+                                                    "Y": 130
+                                                },
+                                                {
+                                                    "Id": 7,
+                                                    "Type": 14,
+                                                    "Name": "Land",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": -1,
+                                                    "B": -1,
+                                                    "X": 0,
+                                                    "Y": 360
+                                                },
+                                                {
+                                                    "Id": 8,
+                                                    "Type": 0,
+                                                    "Name": "",
+                                                    "Value": 0.3,
+                                                    "Bool": false,
+                                                    "A": -1,
+                                                    "B": -1,
+                                                    "X": 0,
+                                                    "Y": 450
+                                                },
+                                                {
+                                                    "Id": 9,
+                                                    "Type": 7,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": 7,
+                                                    "B": 8,
+                                                    "X": 230,
+                                                    "Y": 400
+                                                },
+                                                {
+                                                    "Id": 10,
+                                                    "Type": 11,
+                                                    "Name": "",
+                                                    "Value": 0,
+                                                    "Bool": false,
+                                                    "A": 6,
+                                                    "B": 9,
+                                                    "X": 690,
+                                                    "Y": 260
                                                 }
                                             ],
-                                            "Result": 0
+                                            "Result": 10
                                         },
                                         "To": 0
                                     }
@@ -3449,7 +3559,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -3626,7 +3736,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -3803,7 +3913,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -3968,7 +4078,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -4133,7 +4243,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -4310,7 +4420,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -4514,7 +4624,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -4679,7 +4789,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -4844,7 +4954,7 @@
                                                     "BoolDefault": false,
                                                     "Default": 0,
                                                     "Name": "Speed",
-                                                    "Source": 1,
+                                                    "Source": 0,
                                                     "Type": 0
                                                 },
                                                 {
@@ -5030,7 +5140,7 @@
                                 "BoolDefault": false,
                                 "Default": 0,
                                 "Name": "Speed",
-                                "Source": 1,
+                                "Source": 0,
                                 "Type": 0
                             },
                             {
@@ -5629,7 +5739,7 @@
             "BoolDefault": false,
             "Default": 0,
             "Name": "Speed",
-            "Source": 1,
+            "Source": 0,
             "Type": 0
         },
         {

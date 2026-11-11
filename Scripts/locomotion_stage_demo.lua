@@ -4,6 +4,7 @@ local Spawn = nil
 local Time, Age = 0.0, 0.0
 local PreviousStage = -1
 local Busy = false
+local FlowYaw = 0.0
 
 local function IndexOf(Name)
     for Index, Clip in ipairs(Library.Clips) do
@@ -23,7 +24,13 @@ function Tick(DeltaTime)
     Time, Age = Time + Step, Age + Step
     if obj.Name == "Flow Demonstrator" then
         obj.Location = FVector(Spawn.x + math.sin(Time * 0.8) * 2.0, Spawn.y, Spawn.z)
-        obj.Rotation = FRotator(0.0, math.cos(Time * 0.8) >= 0.0 and 0.0 or 180.0, 0.0)
+        -- 그래프의 Speed는 스크립트가 넣는다. 위치 식의 미분(2 * 0.8 * cos)이 실제 이동 속도다.
+        local Velocity = math.cos(Time * 0.8) * 1.6
+        Mesh:SetAnimGraphFloat("Speed", math.abs(Velocity))
+        -- 방향이 바뀌는 끝점에서 180도 튀지 않도록 바라보는 방향을 돌려 맞춘다.
+        local TargetYaw = Velocity >= 0.0 and 0.0 or 180.0
+        FlowYaw = FlowYaw + ((TargetYaw - FlowYaw + 180.0) % 360.0 - 180.0) * math.min(1.0, Step * 8.0)
+        obj.Rotation = FRotator(0.0, FlowYaw, 0.0)
         Mesh:SetAnimGraphBool("IsCrouching", math.floor(Time / 6.0) % 2 == 1)
     elseif obj.Name == "Aim Demonstrator" then
         Mesh:SetAnimGraphBool("IsAiming", true)

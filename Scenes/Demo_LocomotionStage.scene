@@ -41,7 +41,7 @@
                                         "Z": 1
                                     }
                                 },
-                                "Intensity": 2.2,
+                                "Intensity": 1.5,
                                 "LightColor": 4294967295,
                                 "bCastShadows": true,
                                 "AngularRadiusDegrees": 2,
@@ -89,7 +89,7 @@
                                         "Z": 1
                                     }
                                 },
-                                "Intensity": 0.85,
+                                "Intensity": 0.4,
                                 "LightColor": 4294967295,
                                 "bCastShadows": false,
                                 "AngularRadiusDegrees": 2,
@@ -9184,6 +9184,718 @@
                                 "bBlockComponent": false,
                                 "bCastShadow": false,
                                 "bGenerateOverlapEvents": false
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Flow Spot",
+                    "RootComponent": 131,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 131,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": -9.0,
+                                        "Y": 0.0,
+                                        "Z": 7.5
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 160.0,
+                                "LightColor": 4292275455,
+                                "bCastShadows": true,
+                                "AttenuationRadius": 14.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 30,
+                                "OuterConeAngle": 44
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Traverse Spot Ramp",
+                    "RootComponent": 132,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 132,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 6.0,
+                                        "Y": -12.0,
+                                        "Z": 7.5
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 150.0,
+                                "LightColor": 4294961372,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 14.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 28,
+                                "OuterConeAngle": 42
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Traverse Spot Steps",
+                    "RootComponent": 133,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 133,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 15.5,
+                                        "Y": -12.0,
+                                        "Z": 7.5
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 150.0,
+                                "LightColor": 4294961372,
+                                "bCastShadows": true,
+                                "AttenuationRadius": 14.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 28,
+                                "OuterConeAngle": 42
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Combat Spot",
+                    "RootComponent": 134,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 134,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 17.0,
+                                        "Y": 5.0,
+                                        "Z": 8.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 200.0,
+                                "LightColor": 4289779455,
+                                "bCastShadows": true,
+                                "AttenuationRadius": 16.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 32,
+                                "OuterConeAngle": 46
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Root Track Spot",
+                    "RootComponent": 135,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 135,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 8.0,
+                                        "Y": -6.0,
+                                        "Z": 7.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 140.0,
+                                "LightColor": 4294962110,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 13.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 30,
+                                "OuterConeAngle": 44
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "ASpotLightActor",
+                    "Name": "Light / Clip Lab Spot",
+                    "RootComponent": 136,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "USpotLightComponent",
+                            "Name": "USpotLightComponent",
+                            "Id": 136,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": -8.0,
+                                        "Y": 12.0,
+                                        "Z": 7.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 89,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 150.0,
+                                "LightColor": 4294964725,
+                                "bCastShadows": true,
+                                "AttenuationRadius": 13.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0,
+                                "InnerConeAngle": 30,
+                                "OuterConeAngle": 44
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Pool Glow",
+                    "RootComponent": 137,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 137,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 9.0,
+                                        "Y": 13.5,
+                                        "Z": 0.6
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 3.0,
+                                "LightColor": 4294953040,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 7.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Crouch Tunnel Lamp",
+                    "RootComponent": 138,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 138,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.5,
+                                        "Y": 12.0,
+                                        "Z": 1.05
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 2.0,
+                                "LightColor": 4284132095,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 5.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Backdrop Wash North",
+                    "RootComponent": 139,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 139,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 26.5,
+                                        "Y": 9.0,
+                                        "Z": 3.5
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 4.0,
+                                "LightColor": 4291320575,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 10.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Backdrop Wash South",
+                    "RootComponent": 140,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 140,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 26.5,
+                                        "Y": -9.0,
+                                        "Z": 3.5
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 4.0,
+                                "LightColor": 4294937690,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 10.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Flow Demonstrator Lamp",
+                    "RootComponent": 141,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 141,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 21.5,
+                                        "Y": -17.0,
+                                        "Z": 3.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 2.5,
+                                "LightColor": 4290051990,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 7.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Action Demonstrator Lamp",
+                    "RootComponent": 142,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 142,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 23.0,
+                                        "Y": 5.0,
+                                        "Z": 3.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 2.5,
+                                "LightColor": 4286105855,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 7.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Aim Demonstrator Lamp",
+                    "RootComponent": 143,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 143,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 23.0,
+                                        "Y": 12.5,
+                                        "Z": 3.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 2.5,
+                                "LightColor": 4294940350,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 7.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Name": "Light / Bench Lamp",
+                    "RootComponent": 144,
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "Components": [
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Id": 144,
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "bAutoActivate": true,
+                                "bVisible": true,
+                                "bHiddenInGame": false,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 17.0,
+                                        "Y": 9.8,
+                                        "Z": 1.6
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Yaw": 0.0,
+                                        "Roll": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "Intensity": 1.5,
+                                "LightColor": 4289387775,
+                                "bCastShadows": false,
+                                "AttenuationRadius": 4.0,
+                                "LightFalloffExponent": 1.0,
+                                "SourceRadius": 0.02,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowSlopeBias": 0.5,
+                                "ShadowSharpen": 0.0
                             }
                         }
                     ]

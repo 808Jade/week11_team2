@@ -64,6 +64,9 @@ public:
 private:
     // 상태 정의 ID를 실행 상태 배열의 인덱스로 변환한다.
     int32 FindStateIndex(int32 Id) const;
+    // FromIndex 상태에서 나가는 전환(Any State 포함)을 우선순위 순으로 검사해 처음 참인 전환을 시작한다.
+    // bInterrupt면 진행 중인 블렌딩의 도착 상태에서 검사하며, 지금까지 출력한 포즈를 출발 포즈로 고정해 새 전환으로 넘어간다.
+    bool TryStartTransition(const FAnimationUpdateContext& Context, int32 FromIndex, bool bInterrupt);
 
 private:
     // 상태별 실행 포즈 링크와 경과 시간을 가진 이 인스턴스의 상태 목록이다.
@@ -86,6 +89,12 @@ private:
     float mBlendElapsed{};
     // 현재 전환을 완료할 때까지 사용할 전체 블렌딩 시간이다.
     float mBlendDuration{};
+
+    // 직전 Evaluate의 출력 포즈. 블렌딩 도중 다른 전환이 끼어들면 이 포즈에서 새 도착 상태로 블렌딩한다.
+    TArray<FTransform> mLastOutputPose{};
+    // 끼어든 전환의 출발 포즈(직전 출력의 사본). mBlendFromSnapshot일 때 출발 상태 대신 사용한다.
+    TArray<FTransform> mSnapshotPose{};
+    bool mBlendFromSnapshot{false};
 };
 
 // 전환 규칙을 인스턴스 변수와 현재 상태의 재생 정보로 평가한다.

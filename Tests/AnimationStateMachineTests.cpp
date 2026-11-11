@@ -211,6 +211,57 @@ namespace {
         Check(Near(Shared.GetTime(), 0.1f), "Shared pose nodes advance once per frame");
     }
 
+    void TestTransitionInterrupt() {
+        // 블렌딩 중에 도착 상태의 전환이 참이 되면 기다리지 않고, 그때까지 섞인 포즈에서 새 상태로 블렌딩한다.
+        UAnimGraph Graph{};
+        const int32 Node{Graph.AddNode("StateMachine", "Interrupt Machine", 0.0f, 0.0f)};
+        auto* Data{Graph.FindStateMachine(Node)};
+        const int32 First{Data->AddState("First", 0.0f, 0.0f, Graph)};
+        const int32 Second{Data->AddState("Second", 250.0f, 0.0f, Graph)};
+        const int32 Third{Data->AddState("Third", 500.0f, 0.0f, Graph)};
+        const int32 Enter{Data->AddTransition(First, Second)};
+        SetFlagRule(Data->FindTransition(Enter)->mRule);
+        Data->FindTransition(Enter)->mDuration = 0.4f;
+        const int32 Leave{Data->AddTransition(Second, Third)};
+        auto& LeaveRule{Data->FindTransition(Leave)->mRule};
+        const int32 Getter{LeaveRule.AddNode(EAnimRuleNodeType::GetBool, 0.0f, 0.0f)};
+        const int32 Not{LeaveRule.AddNode(EAnimRuleNodeType::Not, 200.0f, 0.0f)};
+        LeaveRule.FindNode(Getter)->mName = "Flag";
+        LeaveRule.Connect(Getter, Not, 0);
+        LeaveRule.SetResult(Not);
+        Data->FindTransition(Leave)->mDuration = 0.4f;
+
+        FTestInstance Instance{};
+        FProbeNode A{0.0f};
+        FProbeNode B{10.0f};
+        FProbeNode C{20.0f};
+        FAnimNode_StateMachine Machine{};
+        Machine.Configure(*Data);
+        Machine.AddState(*Data->FindState(First), &A);
+        Machine.AddState(*Data->FindState(Second), &B);
+        Machine.AddState(*Data->FindState(Third), &C);
+        Machine.Initialize(Instance);
+        Instance.SetRoot(&Machine);
+        auto Evaluate = [&] {
+            FPoseContext Output{Instance};
+            Machine.Evaluate(Output);
+            return Output.mPose.Num() == 1 ? Output.mPose[0].Location.X : -1.0f;
+        };
+
+        Instance.SetFlag(true);
+        Instance.UpdateAnimation(0.1f);
+        Instance.UpdateAnimation(0.1f);
+        Check(Machine.GetTargetState() == Second && Near(Evaluate(), 2.5f), "First -> Second is a quarter of the way through its blend");
+        Instance.SetFlag(false);
+        Instance.UpdateAnimation(0.1f);
+        Check(Machine.GetTargetState() == Third && Machine.GetActiveTransition() == Leave, "A transition out of the blend target interrupts the running blend");
+        Check(Near(Evaluate(), 2.5f), "The interrupting blend starts from the pose that was on screen");
+        Instance.UpdateAnimation(0.1f);
+        Check(Near(Evaluate(), 2.5f + (20.0f - 2.5f) * 0.25f), "The interrupting blend moves from the frozen pose toward the new target");
+        Instance.UpdateAnimation(0.3f);
+        Check(Machine.GetCurrentState() == Third && Machine.GetTargetState() < 0 && Near(Evaluate(), 20.0f), "The interrupting blend commits the new target");
+    }
+
     void TestAnyState() {
         UAnimGraph Graph{};
         const int32 Node{Graph.AddNode("StateMachine", "Any State Machine", 0.0f, 0.0f)};
@@ -645,6 +696,7 @@ int main() {
         GEngine = NewObject<UGameEngine>();
         TestRulesAndRuntime();
         TestAnyState();
+        TestTransitionInterrupt();
         TestAssetData();
         TestGraphOwnership();
         TestSceneVersionCompatibility();

@@ -33,6 +33,12 @@ int32 FBoneContainer::GetMeshPoseIndexFromSkeletonPoseIndex(int32 SkeletonBoneIn
 
 void FBoneContainer::FillWithRefPose(TArray<FTransform>& OutPose) const
 {
+	// 메시 없이 노드만 평가하는 경우(상태 머신 단위 테스트 등)는 빈 포즈로 시작한다.
+	if (!AssetSkeletalMesh)
+	{
+		OutPose.Empty();
+		return;
+	}
 	const auto& MeshBones = AssetSkeletalMesh->GetRefSkeleton();
 	OutPose.SetNum(MeshBones.Num());
 	for (int32 I = 0; I < MeshBones.Num(); ++I)

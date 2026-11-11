@@ -55,12 +55,33 @@ for (const Kind of ['InPlace', 'RootMotion']) {
 
     const Graph = Read('Assets/StateMachineLab/ThirdPerson.animgraph');
     Graph.Variables.push({ Name: 'IsSeated', Default: 0, BoolDefault: false, Source: 0, Type: 1 });
-    Graph.Variables.find(Variable => Variable.Name === 'Speed').Source = Kind === 'InPlace' ? 1 : 0;
+    // Speed는 스크립트가 매 프레임 넣는다(InPlace는 실제 이동 속도, RootMotion은 입력 속도).
+    // OwnerSpeed로 두면 그래프가 컴포넌트 위치 변화로 속도를 다시 계산해 덮어쓰는데, 컴포넌트가 액터 스크립트보다 먼저
+    // Tick하므로 "지난 프레임 이동량 / 이번 프레임 DeltaTime"이 되어 프레임 시간이 흔들릴 때마다 Blend Space가 떨린다.
+    Graph.Variables.find(Variable => Variable.Name === 'Speed').Source = 0;
     VisitGraphs(Graph, Child => {
         Child.Variables = Clone(Graph.Variables);
         for (const Node of Child.Nodes) for (const Parameter of Node.Parameters) {
             if (Parameter.Name === 'Sequence') Parameter.Value = ClipMaps[Kind][Path.basename(Parameter.Value, '.fbxbin')].Key;
             if (Parameter.Name === 'BlendSpace') Parameter.Value = `LocomotionStage/Graphs/${Kind}_${Path.basename(Parameter.Value)}`;
+        }
+    });
+    // 착지 클립(약 1.3초)이 끝날 때까지 기다리지 않는다. 움직이고 있으면 0.12초 뒤, 서 있으면 끝나기 0.3초 전에 Grounded로 섞는다.
+    // (Speed > 0.3 && StateTime >= 0.12) || TimeRemaining(Land) <= 0.3
+    VisitGraphs(Graph, Child => {
+        for (const Machine of Child.StateMachines) {
+            const Ids = Object.fromEntries(Machine.States.map(State => [State.Name, State.Id]));
+            if (Ids.Land === undefined || Ids.Grounded === undefined) continue;
+            for (const Transition of Machine.Transitions) if (Transition.From === Ids.Land && Transition.To === Ids.Grounded) {
+                const N = (Id, Type, Name, Value, A, B, X, Y) => ({ Id, Type, Name, Value, Bool: false, A, B, X, Y });
+                Transition.Duration = 0.2;
+                Transition.Rule = { Nodes: [
+                    N(0, 2, 'Speed', 0, -1, -1, 0, 0), N(1, 0, '', 0.3, -1, -1, 0, 90), N(2, 4, '', 0, 0, 1, 230, 40),
+                    N(3, 13, '', 0, -1, -1, 0, 180), N(4, 0, '', 0.12, -1, -1, 0, 270), N(5, 5, '', 0, 3, 4, 230, 220),
+                    N(6, 10, '', 0, 2, 5, 460, 130), N(7, 14, 'Land', 0, -1, -1, 0, 360), N(8, 0, '', 0.3, -1, -1, 0, 450),
+                    N(9, 7, '', 0, 7, 8, 230, 400), N(10, 11, '', 0, 6, 9, 690, 260)
+                ], Result: 10 };
+            }
         }
     });
     Graph.Nodes[0].Name = 'Locomotion Stage';
@@ -145,8 +166,8 @@ function Character(Name, Location, Color, Script, Kind = 'InPlace', Yaw = 0) {
 }
 
 for (const [Name, Location, Angles, Intensity, Color] of [
-    ['Stage Key', [0, 0, 12], [48, -45, 180], 2.2, 4294967295],
-    ['Stage Fill', [0, 0, 8], [28, 130, 180], 0.85, 4294967295]
+    ['Stage Key', [0, 0, 12], [48, -45, 180], 1.5, 4294967295],
+    ['Stage Fill', [0, 0, 8], [28, 130, 180], 0.4, 4294967295]
 ]) Actor(Name, 'ADirectionalLightActor', [Component('UDirectionalLightComponent', 'UDirectionalLightComponent', { Transform: Transform(Location, [1, 1, 1], Angles), Intensity, LightColor: Color, bCastShadows: Name === 'Stage Key', AngularRadiusDegrees: 2, DynamicShadowCascades: 4, DynamicShadowDistanceMovableLight: 100, ShadowBias: 0.5, ShadowSlopeBias: 0.7 })]);
 
 const CameraRoot = Component('USceneComponent', 'DefaultSceneRoot', { Transform: Transform([-9, 0, 0]) });
@@ -210,6 +231,32 @@ for (const [Name, X, Y, Color, Kind] of [['Flow Demonstrator', 21.5, -17, Colors
     Box(`${Name} Plinth`, [X, Y, 0.005], [3.4, 3.4, 0.01], Colors.Navy);
     Text(`${Name} Label`, Name.replace(' Demonstrator', '').toUpperCase(), [X + 1.4, Y - 1.6, 2.8], 0.28);
 }
+
+// 구역마다 위에서 내려 비추는 Spot과 포인트 강조광. FColor는 { R, G, B, A } 바이트를 리틀 엔디언 uint32로 저장한다.
+const LightColor = ([R, G, B]) => ((255 << 24) | (B << 16) | (G << 8) | R) >>> 0;
+function Light(Kind, Name, Location, Rgb, Intensity, AttenuationRadius, bCastShadows, Cone) {
+    const Properties = { Transform: Transform(Location, [1, 1, 1], Kind === 'Spot' ? [89, 0, 0] : [0, 0, 0]), Intensity, LightColor: LightColor(Rgb), bCastShadows, AttenuationRadius, LightFalloffExponent: 1, SourceRadius: 0.02, ShadowResolutionScale: 1, ShadowBias: 0.5, ShadowSlopeBias: 0.5, ShadowSharpen: 0 };
+    if (Cone) [Properties.InnerConeAngle, Properties.OuterConeAngle] = Cone;
+    Actor(`Light / ${Name}`, `A${Kind}LightActor`, [Component(`U${Kind}LightComponent`, `U${Kind}LightComponent`, Properties)]);
+}
+for (const [Name, Location, Rgb, Intensity, Radius, Shadows, Cone] of [
+    ['Flow Spot', [-9, 0, 7.5], [255, 236, 214], 160, 14, true, [30, 44]],
+    ['Traverse Spot Ramp', [6, -12, 7.5], [220, 232, 255], 150, 14, false, [28, 42]],
+    ['Traverse Spot Steps', [15.5, -12, 7.5], [220, 232, 255], 150, 14, true, [28, 42]],
+    ['Combat Spot', [17, 5, 8], [255, 214, 176], 200, 16, true, [32, 46]],
+    ['Root Track Spot', [8, -6, 7], [190, 235, 255], 140, 13, false, [30, 44]],
+    ['Clip Lab Spot', [-8, 12, 7], [245, 245, 255], 150, 13, true, [30, 44]]
+]) Light('Spot', Name, Location, Rgb, Intensity, Radius, Shadows, Cone);
+for (const [Name, Location, Rgb, Intensity, Radius] of [
+    ['Pool Glow', [9, 13.5, 0.6], [80, 200, 255], 3, 7],
+    ['Crouch Tunnel Lamp', [0.5, 12, 1.05], [255, 170, 90], 2, 5],
+    ['Backdrop Wash North', [26.5, 9, 3.5], [255, 90, 200], 4, 10],
+    ['Backdrop Wash South', [26.5, -9, 3.5], [90, 140, 255], 4, 10],
+    ['Flow Demonstrator Lamp', [21.5, -17, 3], [150, 255, 180], 2.5, 7],
+    ['Action Demonstrator Lamp', [23, 5, 3], [255, 200, 120], 2.5, 7],
+    ['Aim Demonstrator Lamp', [23, 12.5, 3], [190, 150, 255], 2.5, 7],
+    ['Bench Lamp', [17, 9.8, 1.6], [255, 220, 170], 1.5, 4]
+]) Light('Point', Name, Location, Rgb, Intensity, Radius, false);
 
 Save('Scenes/Demo_LocomotionStage.scene', { Version: 5, World: { Properties: {}, PersistentLevel: { Properties: {}, Actors } } });
 
