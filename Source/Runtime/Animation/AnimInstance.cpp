@@ -210,6 +210,7 @@ FRootMotionDelta UAnimInstance::ExtractSequenceEvents(const UAnimSequenceBase& S
         const FQuat LockRotation{Sequence.GetRootRotationAtTime(0.0)};
         Result.mTranslation = LockRotation.RotateVector(Translation);
         Result.mRotation = LockRotation * Rotation * LockRotation.UnitInverse();
+        Result.mRotationPivot = Sequence.GetRootLocationAtTime(0.0);
     }
 
     if (FAnimNotifyQueue* Queue{Context.GetNotifyQueue()}; Queue != nullptr) {

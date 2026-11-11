@@ -313,16 +313,25 @@ void USkeletalMeshComponent::ApplyRootMotion(const FRootMotionDelta& Delta) {
     USceneComponent* Root{Owner ? Owner->GetRootComponent() : nullptr};
     if (!Root) return;
 
-    if (HasTranslation) {
-        const FVector WorldDelta{GetWorldMatrix().TransformVector(T)};
-        Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
-    }
+    // 이동량은 이번 프레임에 회전하기 전의 컴포넌트 방향을 기준으로 계산한다.
+    const FMatrix ComponentToWorld{GetWorldMatrix()};
+    FVector WorldDelta{ComponentToWorld.TransformVector(T)};
 
+    // 컴포넌트 공간 회전을 월드 공간 회전으로 바꾼 뒤(C * R * C⁻¹) Actor 회전 앞에 곱한다
     if (HasRotation) {
+        const FVector PivotBeforeRotation{ComponentToWorld.TransformPosition(Delta.mRotationPivot)};
         const FQuat ComponentRot{GetWorldRotation().Quaternion()};
         const FQuat WorldDeltaRot{ComponentRot * R * ComponentRot.UnitInverse()};
         const FQuat NewRootRot{WorldDeltaRot * Root->GetWorldRotation().Quaternion()};
         Root->SetWorldRotation(NewRootRot.ToFRotator(), false);
+
+        // 액터 원점에서 회전해도 고정된 루트 본에는 애니메이션의 이동량만 적용되도록 보정한다.
+        const FVector PivotAfterRotation{GetWorldMatrix().TransformPosition(Delta.mRotationPivot)};
+        WorldDelta += PivotBeforeRotation - PivotAfterRotation;
+    }
+
+    if (WorldDelta != FVector::ZeroVector) {
+        Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
     }
 }
 

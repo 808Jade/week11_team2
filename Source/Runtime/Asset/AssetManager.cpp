@@ -47,6 +47,11 @@ namespace
 			return EAssetType::Texture;
 		}
 		if (Extension == ".json") {
+			// 애니메이션 옆의 Notify 사이드카(AS_X.notifies.json)는 폰트 아틀라스가 아니다.
+			// 폰트로 분류하면 콘텐츠 드로어가 썸네일을 만들려고 폰트로 읽다가 예외가 난다.
+			if (Path.ends_with(".notifies.json")) {
+				return EAssetType::None;
+			}
 			return EAssetType::Font;
 		}
 		if (Extension == ".obj") {

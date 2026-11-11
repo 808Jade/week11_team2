@@ -315,7 +315,8 @@ FString FHumanoidRetargeter::HumanoidBoneKey(const FString& Name)
 	return HumanoidKey(Name);
 }
 
-bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const FReferenceSkeleton& InTarget, FString& Error)
+bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const FReferenceSkeleton& InTarget, FString& Error,
+	bool bExtractRootMotion)
 {
 	if (!InSource.Validate(Error) || !InTarget.Validate(Error)) return false;
 	Source = &InSource;
@@ -511,6 +512,29 @@ bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const F
 	const float SourceLeg = LegLength(SourceLayout, SourceRefWorld);
 	const float TargetLeg = LegLength(TargetLayout, TargetRefWorld);
 	HeightScale = SourceLeg > 1.e-4f && TargetLeg > 1.e-4f ? TargetLeg / SourceLeg : 1.0f;
+
+	// 6) Root Motion: 런타임은 Skeleton 0번 본의 이동만 Actor로 넘긴다. 0번 본이 Hips 위에 따로 있고 소스 본을 받지 않을 때만
+	//    Hips의 바닥 평면 이동을 그 본으로 옮길 수 있다. (0번 본이 Hips 자체면 옮길 곳이 없다)
+	RootMotionBone = INDEX_NONE;
+	if (bExtractRootMotion && TargetHips != 0 && TargetToSource[0] == INDEX_NONE)
+	{
+		bool bRootAboveHips = false;
+		for (int32 Bone = InTarget.RefBoneInfo[TargetHips].ParentIndex; Bone != INDEX_NONE; Bone = InTarget.RefBoneInfo[Bone].ParentIndex)
+			bRootAboveHips = bRootAboveHips || Bone == 0;
+		if (bRootAboveHips)
+		{
+			RootMotionBone = 0;
+			// 서 있는 축은 기준 자세의 Hips → Head 방향에서 가장 큰 성분으로 정한다. Head가 없으면 엔진의 위(Z)다.
+			TargetUpAxis = 2;
+			if (const int32 Head = FindKey(TargetLayout, "head"); Head != INDEX_NONE)
+			{
+				const FVector Up = Origin(TargetRefWorld[Head]) - TargetRefHipsPosition;
+				for (int32 Axis = 0; Axis < 3; ++Axis)
+					if (std::abs(Up.V[Axis]) > std::abs(Up.V[TargetUpAxis])) TargetUpAxis = Axis;
+			}
+			DrivenTargetBones.Add(RootMotionBone);
+		}
+	}
 	return true;
 }
 
@@ -532,6 +556,10 @@ void FHumanoidRetargeter::Retarget(const TArray<FTransform>& SourceLocal, TArray
 	TArray<FMatrix> TargetWorldRot, TargetWorld;
 	TargetWorldRot.SetNum(Num);
 	TargetWorld.SetNum(Num);
+
+	// 기준 시점 대비 Hips 이동량(타깃 축·타깃 크기 기준)
+	const FVector HipsDelta = RotateRow(Origin(SourceWorld[SourceHips]) - SourceRefHipsPosition, Align) * HeightScale;
+
 	for (int32 T = 0; T < Num; ++T)
 	{
 		const int32 Parent = Target->RefBoneInfo[T].ParentIndex;
@@ -551,10 +579,18 @@ void FHumanoidRetargeter::Retarget(const TArray<FTransform>& SourceLocal, TArray
 			WorldRot = TargetRefLocalRot[T] * ParentRot;
 		}
 
+		if (T == RootMotionBone)
+		{
+			// root 본(부모 없음)의 위치는 컴포넌트 공간이다. Hips의 바닥 평면 이동을 여기로 옮긴다.
+			// 아래에서 Hips 로컬 위치를 부모 월드의 역으로 구하므로, 옮긴 만큼 Hips에서는 저절로 빠진다(월드 위치는 그대로).
+			FVector Ground = HipsDelta;
+			Ground.V[TargetUpAxis] = 0.0f;
+			Local.Location = Local.Location + Ground;
+		}
+
 		if (T == TargetHips)
 		{
-			const FVector Delta = RotateRow(Origin(SourceWorld[SourceHips]) - SourceRefHipsPosition, Align);
-			const FVector World = TargetRefHipsPosition + Delta * HeightScale;
+			const FVector World = TargetRefHipsPosition + HipsDelta;
 			Local.Location = Parent >= 0 ? ParentWorld.Inverse().TransformPosition(World) : World;
 		}
 

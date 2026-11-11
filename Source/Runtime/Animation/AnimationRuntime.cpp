@@ -31,5 +31,6 @@ void FAnimationRuntime::BlendTwoPosesTogether(const TArray<FTransform>& PoseA, c
 
 FRootMotionDelta FAnimationRuntime::BlendRootMotion(const FRootMotionDelta& A, const FRootMotionDelta& B, float WeightOfA) {
     const float Alpha{1.0f - std::clamp(WeightOfA, 0.0f, 1.0f)};
-    return {A.mTranslation + (B.mTranslation - A.mTranslation) * Alpha, FMath::Slerp(A.mRotation, B.mRotation, Alpha)};
+    return {A.mTranslation + (B.mTranslation - A.mTranslation) * Alpha, FMath::Slerp(A.mRotation, B.mRotation, Alpha),
+        A.mRotationPivot + (B.mRotationPivot - A.mRotationPivot) * Alpha};
 }

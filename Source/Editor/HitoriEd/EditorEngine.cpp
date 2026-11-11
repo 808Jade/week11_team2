@@ -345,6 +345,7 @@ namespace
 	// 명령줄 일괄 애니메이션 임포트. 폴더의 .fbx를 전부 지정한 Skeleton으로 리타깃 임포트하고 에디터를 끝냅니다.
 	//   HitoriEditor.exe -ImportAnimFolder "Assets/Models/TekkenAnim" -AnimSkeleton "Imported/Devil Jin/SKEL_Devil Jin_Root ground 2.fbxbin" [-ImportLog "path.txt"]
 	//                    [-ImportAnimOnly "Flying Kick;Goalkeeper Drop Kick"]   (확장자 없는 파일 이름을 ;로 구분. 주면 그 파일만 임포트)
+	//                    [-AnimRootMotion]   (Import FBX 창의 Root Motion from Hips. 골반의 수평 이동을 Skeleton root 본 트랙으로 옮김)
 	// 에디터 Import FBX 창에서 Import Only Animations + Skeleton + Retarget (Humanoid)를 고른 것과 같습니다. 출력 폴더도 같은 기본값(Assets/Imported/<FBX 이름>)입니다.
 	// 반환값: 명령줄에 요청이 있었으면 true (처리 후 에디터를 닫음)
 	bool RunCommandLineAnimationImport()
@@ -358,6 +359,9 @@ namespace
 			return FString(Utf8.begin(), Utf8.end());
 		};
 		FString Folder, SkeletonKey, LogPath, Only;
+		bool bRootMotion = false;
+		for (int Index = 1; Index < Argc; ++Index)
+			bRootMotion = bRootMotion || _wcsicmp(Argv[Index], L"-AnimRootMotion") == 0;
 		for (int Index = 1; Index + 1 < Argc; ++Index)
 		{
 			if (_wcsicmp(Argv[Index], L"-ImportAnimFolder") == 0) Folder = ToUtf8(Argv[++Index]);
@@ -397,6 +401,7 @@ namespace
 			Options.bImportOnlyAnimations = true;
 			Options.AnimationSkeletonKey = SkeletonKey;
 			Options.bRetargetHumanoid = true;
+			Options.bRetargetRootMotion = bRootMotion;
 
 			int32 Succeeded = 0;
 			for (const std::filesystem::path& Source : Sources)

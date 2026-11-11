@@ -394,6 +394,9 @@ void FContentDrawerPanel::RenderAssetGrid()
 		const fs::path Path = It->path();
 
 		const FString FilenameString = PathLabel(Path.filename());
+		// 애니메이션의 Notify 사이드카는 에셋이 아니라 애니메이션에 딸린 저장 파일이라 보여 주지 않는다.
+		if (FilenameString.ends_with(".notifies.json"))
+			continue;
 		if (bSearching && !ImStristr(FilenameString.c_str(), nullptr, SearchText, nullptr))
 			continue;
 

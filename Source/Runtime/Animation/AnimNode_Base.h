@@ -12,10 +12,13 @@ class UAnimInstance;
 struct FAnimNode_Base;
 struct FAnimNotifyQueue;
 
+// 한 프레임의 root 이동과 회전 중심은 컴포넌트 공간 기준이다.
 struct FRootMotionDelta {
 public:
     FVector mTranslation{};
     FQuat mRotation{FQuat::Identity()};
+    // 포즈에서 고정된 루트 본 위치. 액터를 이 점을 중심으로 돌려야 루트 본이 제자리에서 회전한다.
+    FVector mRotationPivot{};
 };
 
 // 노드 갱신에 필요한 인스턴스와 프레임 시간을 함께 전달한다.

@@ -13,7 +13,12 @@ public:
 	static FString HumanoidBoneKey(const FString& Name);
 
 	// Source/Target은 부모가 먼저 오는 기준 Skeleton이다. 실패하면 Error에 이유를 남긴다.
-	bool Initialize(const FReferenceSkeleton& Source, const FReferenceSkeleton& Target, FString& Error);
+	// bExtractRootMotion이면 Hips의 바닥 평면 이동을 타깃 Skeleton의 root 본(0번) 트랙으로 옮긴다(UE의 "골반 이동을 root로 굽기").
+	// 런타임 Root Motion은 0번 본의 이동만 Actor로 넘기는데, Mixamo처럼 골반이 최상위인 소스는 이동이 전부 골반에 있기 때문이다.
+	// 타깃의 0번 본이 Hips의 조상이고 소스 본에 매핑되지 않았을 때만 적용된다(HasRootMotion으로 확인).
+	bool Initialize(const FReferenceSkeleton& Source, const FReferenceSkeleton& Target, FString& Error,
+		bool bExtractRootMotion = false);
+	bool HasRootMotion() const { return RootMotionBone != INDEX_NONE; }
 
 	// SourceLocal(소스 본 수만큼의 로컬 포즈) → 타깃 로컬 포즈(타깃 본 수만큼).
 	void Retarget(const TArray<FTransform>& SourceLocal, TArray<FTransform>& OutTargetLocal) const;
@@ -41,4 +46,9 @@ private:
 	FVector SourceRefHipsPosition;
 	FVector TargetRefHipsPosition;
 	float HeightScale = 1.0f;
+
+	// Root Motion을 구울 타깃 root 본(0번). 굽지 않으면 INDEX_NONE.
+	int32 RootMotionBone = INDEX_NONE;
+	// 타깃 캐릭터가 서 있는 축(0=X, 1=Y, 2=Z). 이 축의 이동(점프 높이)은 골반에 남기고 나머지 두 축만 root로 옮긴다.
+	int32 TargetUpAxis = 2;
 };
