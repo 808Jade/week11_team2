@@ -9,8 +9,18 @@ bool UFont::LoadFontAtlasJson(const FString& JsonPath)
 		return false;
 	}
 
-	json Root;
-	File >> Root;
+	// .json이라고 모두 폰트 아틀라스는 아니다. 형식이 다르면 예외를 던지지 않고 실패로 돌려준다.
+	// (nlohmann::json은 없는 키를 const로 읽거나 객체가 아닌 값에 ["키"]를 쓰면 예외를 던진다)
+	const json Root = json::parse(File, nullptr, false);
+	const bool bIsFontAtlas = Root.is_object()
+		&& Root.contains("atlas") && Root["atlas"].is_object()
+		&& Root["atlas"].contains("width") && Root["atlas"].contains("height") && Root["atlas"].contains("distanceRange")
+		&& Root.contains("metrics") && Root["metrics"].is_object() && Root["metrics"].contains("lineHeight")
+		&& Root.contains("glyphs") && Root["glyphs"].is_array();
+	if (!bIsFontAtlas)
+	{
+		return false;
+	}
 
 	const auto& AtlasJson = Root["atlas"];
 	Width = AtlasJson["width"].get<float>();

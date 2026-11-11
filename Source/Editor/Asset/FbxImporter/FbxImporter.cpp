@@ -1133,13 +1133,13 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 	FHumanoidRetargeter Retargeter;
 	FString Reason;
 	// 기본값으로 사람 형태를 못 찾는 파일(기본값이 비어 있는 등)은 예전처럼 0초 포즈를 기준으로 한다.
-	if (bUseRestReference && !Retargeter.Initialize(RestReference, Target, Reason))
+	if (bUseRestReference && !Retargeter.Initialize(RestReference, Target, Reason, Options.bRetargetRootMotion))
 	{
 		Warn("Rest pose is not usable as the retarget reference (" + Reason + "); the pose at time zero is used [" + NodePath(Root) + "]");
 		bUseRestReference = false;
 		Retargeter = FHumanoidRetargeter();
 	}
-	if (!bUseRestReference && !Retargeter.Initialize(SourceReference, Target, Reason))
+	if (!bUseRestReference && !Retargeter.Initialize(SourceReference, Target, Reason, Options.bRetargetRootMotion))
 	{
 		Warn("Humanoid retarget skipped for " + SkeletonKey + " [" + NodePath(Root) + "]: " + Reason);
 		return true;
@@ -1147,6 +1147,10 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 	const TArray<int32>& Driven = Retargeter.GetDrivenTargetBones();
 	Warn("Humanoid retarget drives " + std::to_string(Driven.Num()) + " of " + std::to_string(Target.GetNum()) +
 		" target bone(s) [" + NodePath(Root) + "]");
+	if (Options.bRetargetRootMotion)
+		Warn(Retargeter.HasRootMotion()
+			? "Root motion: horizontal Hips travel is baked onto root bone '" + Target.RefBoneInfo[0].Name + "'"
+			: "Root motion was not baked: the selected Skeleton's root bone is the Hips itself or already receives a source bone");
 
 	std::map<FString, int32> Occurrences;
 	for (int StackIndex = 0; StackIndex < Scene->GetSrcObjectCount<FbxAnimStack>(); ++StackIndex)

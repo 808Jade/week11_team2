@@ -161,6 +161,12 @@ void FLevelEditorTab::DrawFbxImportDialog()
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Bake the animation onto the selected Skeleton even when bone names or hierarchy differ.\n"
 			"Bones are matched by humanoid names (Hips, Spine chain, Neck, Head, arms, legs) and rotate by their change from the reference pose.");
+	ImGui::BeginDisabled(!FbxOptions.bRetargetHumanoid);
+	ImGui::Checkbox("Root Motion from Hips", &FbxOptions.bRetargetRootMotion);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Move the horizontal travel of the Hips onto the root bone of the selected Skeleton.\n"
+			"Needed for sources whose top bone is the Hips (Mixamo). Enable Root Motion on the component to move the Actor with it.");
+	ImGui::EndDisabled();
 	ImGui::EndDisabled();
 	int Range = static_cast<int>(FbxOptions.AnimationRange);
 	if (ImGui::Combo("Animation Length", &Range, "Timeline\0Animated Time\0Set Range\0"))
