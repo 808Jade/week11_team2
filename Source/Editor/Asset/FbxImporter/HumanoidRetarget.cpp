@@ -460,7 +460,7 @@ bool FHumanoidRetargeter::Initialize(const FReferenceSkeleton& InSource, const F
 		const int32 S = TargetToSource[T];
 		if (S == INDEX_NONE) continue;
 
-		// 소스 기준 자세가 T-포즈가 아닐 수 있다. 스킨 없는 Mixamo 애니메이션 FBX는 BindPose가 없어 0프레임 자세가 기준이 된다.
+		// 소스 기준 자세가 T-포즈가 아닐 수 있다. 스킨 없는 애니메이션 FBX는 BindPose가 없어 노드 기본값(없으면 0초 포즈)이 기준이 된다.
 		// 그래서 타깃 기준 자세를 본마다 소스 기준 자세 쪽으로 돌려 둔다.
 		//   a) 자식 하나를 조준한다(팔·다리·척추).
 		//   b) 자식이 여럿이거나 매핑 안 된 중간 본을 건너야 하면 매핑된 하위 본들로 비틀림까지 맞춘다(손목→손가락 첫 마디, 머리→눈·머리끝).

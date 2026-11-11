@@ -86,7 +86,8 @@ void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
 	}
 	InternalTimeAccumulator = Next;
 
-	ExtractRootMotion(PreviousTimeAccumulator, InternalTimeAccumulator, Length);
+	if (bRootMotionEnabled && Sequence && Sequence->HasRootTrack())
+		ExtractRootMotion(PreviousTimeAccumulator, InternalTimeAccumulator, Length);
 
 	if (FAnimNotifyQueue* Queue = Context.GetNotifyQueue(); Queue && Sequence)
 		CollectNotifies(*Queue, PreviousTimeAccumulator, InternalTimeAccumulator, Length);
@@ -163,5 +164,5 @@ void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)
 	}
 
 	FAnimationPoseData PoseData{ Output.RequiredBones, Output.Pose };
-	Sequence->GetAnimationPose(PoseData, FAnimExtractContext{ InternalTimeAccumulator, true });
+	Sequence->GetAnimationPose(PoseData, FAnimExtractContext{ InternalTimeAccumulator, bRootMotionEnabled });
 }

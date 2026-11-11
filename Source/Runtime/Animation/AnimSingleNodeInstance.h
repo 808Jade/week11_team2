@@ -49,6 +49,10 @@ public:
 
 	bool DidWrapThisUpdate() const { return SingleNode.DidWrapThisUpdate(); }
 
+	// root 본의 이동을 Pose에서 빼서 Actor 이동으로 넘길지. (USkeletalMeshComponent::bEnableRootMotion이 매 Tick 넘깁니다)
+	void SetRootMotionEnabled(bool bEnabled) { SingleNode.SetRootMotionEnabled(bEnabled); }
+	bool IsRootMotionEnabled() const { return SingleNode.IsRootMotionEnabled(); }
+
 protected:
 	void NativeInitializeAnimation() override { RootNode = &SingleNode; }
 

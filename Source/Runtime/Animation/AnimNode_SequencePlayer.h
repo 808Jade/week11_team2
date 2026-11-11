@@ -28,6 +28,11 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 
 	void SetLooping(bool bInLooping) { bLoopAnimation = bInLooping; }
 
+	// root 본(Skeleton 0번)의 이동·회전을 Pose에서 빼서 RootMotionDelta로 내보낼지. 기본은 끔(UE의 Enable Root Motion과 같다).
+	// 끄면 root 본도 다른 본처럼 Pose 안에서 움직입니다. 골반이 root인 Skeleton(Mixamo 등)은 켜면 몸 전체가 흔들립니다.
+	void SetRootMotionEnabled(bool bInEnabled) { bRootMotionEnabled = bInEnabled; }
+	bool IsRootMotionEnabled() const { return bRootMotionEnabled; }
+
 	////////////////////////////////////////////////////////////
 	// Getter
 	////////////////////////////////////////////////////////////
@@ -43,7 +48,7 @@ struct FAnimNode_SequencePlayer final : FAnimNode_Base
 	// 이번 Update에서 루프 경계를 넘어 시간이 감싸졌는지. (Notify 구간을 둘로 나눠야 하는 경우)
 	bool DidWrapThisUpdate() const { return bWrappedThisUpdate; }
 
-	// 이번 Update에 지나간 구간의 root 이동량. 정지·배속 0이면 0입니다.
+	// 이번 Update에 지나간 구간의 root 이동량. 정지·배속 0이거나 Root Motion이 꺼져 있거나 root 트랙이 없으면 0입니다.
 	FRootMotionDelta GetRootMotionDelta() const override { return RootMotionDelta; }
 
 	void Update(const FAnimationUpdateContext& Context) override;
@@ -63,6 +68,7 @@ private:
 	float PlayRate = 1.0f;
 	bool bLoopAnimation = true;
 	bool bPlaying = true;
+	bool bRootMotionEnabled = false;
 	bool bWrappedThisUpdate = false;
 	// 시간을 직접 정한 뒤(재생 시작·스크러빙·처음으로) 아직 한 번도 진행하지 않았는지.
 	// 그 첫 구간은 출발 시점도 포함해서, 0초나 멈춘 자리에 있는 Notify도 재생을 시작하면 발동합니다.

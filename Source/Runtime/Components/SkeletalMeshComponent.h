@@ -44,6 +44,12 @@ public:
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.01, UIMin=0.01, UIMax=5, Delta=0.01))
 	float AnimPlayRate = 1.0f;
 
+	// UE의 Enable Root Motion. 켜면 Skeleton root 본(0번)의 이동·회전을 Pose에서 빼서 Actor에 적용한다.
+	// 움직임 전용 root 본이 있는 애니메이션(UAL1_Standard_RM 등)에서만 켠다.
+	// 골반이 root인 Skeleton(Mixamo 등)에서 켜면 골반의 흔들림이 Actor 전체로 옮겨 가고, root 트랙이 없는 애니메이션에는 효과가 없다.
+	UPROPERTY(EditAnywhere)
+	bool bEnableRootMotion = false;
+
 	const TArray<FBoneInfo>& GetBones() const;
 	int32 FindBoneIndex(const FString& Name) const;
 

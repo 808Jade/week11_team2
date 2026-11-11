@@ -390,6 +390,8 @@ public:
 	std::unordered_map<FbxNode*, FbxAMatrix> ClusterBones;
 	std::unordered_map<FbxMesh*, FbxAMatrix> ClusterMeshes;
 	std::unordered_map<FbxNode*, FbxAMatrix> BindCache;
+	// BindPose도 Cluster도 없어서 Bind()가 0초의 평가값을 돌려준 노드. (스킨 없는 애니메이션 전용 FBX의 본)
+	std::unordered_set<FbxNode*> EvaluatedBinds;
 	std::unordered_map<FbxSurfaceMaterial*, FString> Materials;
 	std::unordered_set<FbxSurfaceMaterial*> SkippedOpacityTextures;
 	std::unordered_map<FString, FString> Textures;
@@ -707,7 +709,11 @@ FbxAMatrix FImport::Bind(FbxNode* Node)
 		if (Found && !Near(Result, It->second)) Warn("BindPose and Cluster differ; BindPose retained: " + NodePath(Node));
 		if (!Found) { Result = It->second; Found = true; }
 	}
-	if (!Found) Result = Node->EvaluateGlobalTransform(FBXSDK_TIME_ZERO);
+	if (!Found)
+	{
+		Result = Node->EvaluateGlobalTransform(FBXSDK_TIME_ZERO);
+		EvaluatedBinds.insert(Node);
+	}
 	BindCache.emplace(Node, Result);
 	return Result;
 }
@@ -1096,9 +1102,44 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 	if (bRootRelativeToParent)
 		SourceReference.RefBonePose[0] = ToTransform(Bind(Root->GetParent()).Inverse() * Bind(Root));
 
+	const int32 NumSourceBones = static_cast<int32>(Rig.Bones.size());
+
+	// BindPose도 Cluster도 없는 본(스킨 없는 애니메이션 전용 FBX)은 Bind()가 0초의 애니메이션 포즈를 돌려준다.
+	// 그 포즈를 기준 자세로 삼으면 첫 프레임의 기울기·돌아선 방향이 캐릭터 축(Align)에 섞여 애니메이션 전체가 그만큼 틀어진다
+	// (첫 프레임에 몸을 숙이고 시작하는 클립일수록 크게). 그래서 노드의 기본값(애니메이션 커브를 뺀 값, 보통 T-포즈)을 기준으로 쓴다.
+	FReferenceSkeleton RestReference;
+	bool bUseRestReference = std::any_of(Rig.Bones.begin(), Rig.Bones.end(),
+		[this](FbxNode* Bone) { return EvaluatedBinds.contains(Bone); });
+	if (bUseRestReference)
+	{
+		auto Rest = [this](FbxNode* Node)
+		{
+			const FbxAMatrix Bound = Bind(Node);
+			return EvaluatedBinds.contains(Node) ? Node->EvaluateGlobalTransform(FBXSDK_TIME_INFINITE) : Bound;
+		};
+		RestReference = SourceReference;
+		for (int32 Index = 0; Index < NumSourceBones && bUseRestReference; ++Index)
+		{
+			FbxNode* Node = Rig.Bones[Index];
+			const int32 Parent = SourceReference.RefBoneInfo[Index].ParentIndex;
+			const FbxAMatrix Local = Parent >= 0 ? Rest(Rig.Bones[Parent]).Inverse() * Rest(Node)
+				: bRootRelativeToParent ? Rest(Node->GetParent()).Inverse() * Rest(Node)
+				: FrameInverse * Rest(Node);
+			if (FiniteMatrix(EngineMatrix(Local, UnitScale))) RestReference.RefBonePose[Index] = ToTransform(Local);
+			else bUseRestReference = false;
+		}
+	}
+
 	FHumanoidRetargeter Retargeter;
 	FString Reason;
-	if (!Retargeter.Initialize(SourceReference, Target, Reason))
+	// 기본값으로 사람 형태를 못 찾는 파일(기본값이 비어 있는 등)은 예전처럼 0초 포즈를 기준으로 한다.
+	if (bUseRestReference && !Retargeter.Initialize(RestReference, Target, Reason))
+	{
+		Warn("Rest pose is not usable as the retarget reference (" + Reason + "); the pose at time zero is used [" + NodePath(Root) + "]");
+		bUseRestReference = false;
+		Retargeter = FHumanoidRetargeter();
+	}
+	if (!bUseRestReference && !Retargeter.Initialize(SourceReference, Target, Reason))
 	{
 		Warn("Humanoid retarget skipped for " + SkeletonKey + " [" + NodePath(Root) + "]: " + Reason);
 		return true;
@@ -1107,7 +1148,6 @@ bool FImport::CookRetargetedAnimations(FRig& Rig, const FString& SkeletonKey, co
 	Warn("Humanoid retarget drives " + std::to_string(Driven.Num()) + " of " + std::to_string(Target.GetNum()) +
 		" target bone(s) [" + NodePath(Root) + "]");
 
-	const int32 NumSourceBones = static_cast<int32>(Rig.Bones.size());
 	std::map<FString, int32> Occurrences;
 	for (int StackIndex = 0; StackIndex < Scene->GetSrcObjectCount<FbxAnimStack>(); ++StackIndex)
 	{

@@ -28,6 +28,9 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     if (AnimScriptInstance)
     {
+        // Details에서 재생 중에 바꿔도 바로 반영되도록 매 Tick 넘긴다.
+        if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimScriptInstance))
+            SingleNode->SetRootMotionEnabled(bEnableRootMotion);
         AnimScriptInstance->UpdateAnimation(DeltaTime);
         ApplyRootMotion(AnimScriptInstance->GetRootMotionDelta());
         if (AnimScriptInstance->EvaluateAnimation(BoneSpaceTransforms))
@@ -86,6 +89,7 @@ bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 
     if (NewInstance)
         delete std::exchange(AnimScriptInstance, NewInstance.release());
+    SingleNode->SetRootMotionEnabled(bEnableRootMotion);
     SingleNode->PlayAnim();
     SingleNode->EvaluateAnimation(BoneSpaceTransforms);
     RefreshBoneTransformsNow();

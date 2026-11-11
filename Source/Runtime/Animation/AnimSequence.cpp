@@ -121,7 +121,8 @@ void UAnimSequence::GetAnimationPose(FAnimationPoseData& OutPoseData,
 			: FMath::Lerp(Raw.ScaleKeys[First], Raw.ScaleKeys[Second], Alpha);
 	}
 
-	if (ExtractionContext.bExtractRootMotion)
+	// root 트랙이 없으면 고정할 값이 없다. 0/단위 회전으로 덮어쓰면 root 본의 기준 자세(세워 주는 회전 등)가 사라진다.
+	if (ExtractionContext.bExtractRootMotion && HasRootTrack())
 	{
 		// root 이동·회전은 Actor로 넘기므로, Pose 안의 root는 첫 프레임 위치·회전에 고정한다
 		const int32 RootIndex = OutPoseData.RequiredBones.GetMeshPoseIndexFromSkeletonPoseIndex(0);

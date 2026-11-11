@@ -342,6 +342,7 @@ namespace
 {
 	// 명령줄 일괄 애니메이션 임포트. 폴더의 .fbx를 전부 지정한 Skeleton으로 리타깃 임포트하고 에디터를 끝냅니다.
 	//   HitoriEditor.exe -ImportAnimFolder "Assets/Models/TekkenAnim" -AnimSkeleton "Imported/Devil Jin/SKEL_Devil Jin_Root ground 2.fbxbin" [-ImportLog "path.txt"]
+	//                    [-ImportAnimOnly "Flying Kick;Goalkeeper Drop Kick"]   (확장자 없는 파일 이름을 ;로 구분. 주면 그 파일만 임포트)
 	// 에디터 Import FBX 창에서 Import Only Animations + Skeleton + Retarget (Humanoid)를 고른 것과 같습니다. 출력 폴더도 같은 기본값(Assets/Imported/<FBX 이름>)입니다.
 	// 반환값: 명령줄에 요청이 있었으면 true (처리 후 에디터를 닫음)
 	bool RunCommandLineAnimationImport()
@@ -354,10 +355,11 @@ namespace
 			const std::u8string Utf8 = std::filesystem::path(Value).u8string();
 			return FString(Utf8.begin(), Utf8.end());
 		};
-		FString Folder, SkeletonKey, LogPath;
+		FString Folder, SkeletonKey, LogPath, Only;
 		for (int Index = 1; Index + 1 < Argc; ++Index)
 		{
 			if (_wcsicmp(Argv[Index], L"-ImportAnimFolder") == 0) Folder = ToUtf8(Argv[++Index]);
+			else if (_wcsicmp(Argv[Index], L"-ImportAnimOnly") == 0) Only = ToUtf8(Argv[++Index]);
 			else if (_wcsicmp(Argv[Index], L"-AnimSkeleton") == 0) SkeletonKey = ToUtf8(Argv[++Index]);
 			else if (_wcsicmp(Argv[Index], L"-ImportLog") == 0) LogPath = ToUtf8(Argv[++Index]);
 		}
@@ -377,7 +379,10 @@ namespace
 		{
 			FString Extension = FbxPath::ToString(It->path().extension());
 			std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char C) { return static_cast<char>(std::tolower(C)); });
-			if (It->is_regular_file() && Extension == ".fbx") Sources.push_back(It->path());
+			if (!It->is_regular_file() || Extension != ".fbx") continue;
+			// -ImportAnimOnly: ;로 감싼 목록에서 ";이름;"을 찾는다.
+			if (!Only.empty() && (";" + Only + ";").find(";" + FbxPath::ToString(It->path().stem()) + ";") == FString::npos) continue;
+			Sources.push_back(It->path());
 		}
 		std::sort(Sources.begin(), Sources.end());
 

@@ -19,6 +19,9 @@ public:
 	const UAnimDataModel* GetDataModel() const { return DataModel; }
 	float GetPlayLength() const override;
 	virtual void GetAnimationPose(FAnimationPoseData& OutPoseData, const FAnimExtractContext& ExtractionContext) const = 0;
+	// Skeleton의 root 본(0번)을 움직이는 트랙이 있는지. 없으면 root 이동을 뽑을 것이 없고, Pose의 root도 기준 자세 그대로 둔다.
+	// (리타깃한 애니메이션은 매핑된 본의 트랙만 있어서 root 트랙이 없는 경우가 많다)
+	virtual bool HasRootTrack() const { return false; }
 	virtual FVector GetRootLocationAtTime(double Time) const { return FVector(0, 0, 0); }
 	virtual FQuat GetRootRotationAtTime(double Time) const { return FQuat::Identity(); }
 
