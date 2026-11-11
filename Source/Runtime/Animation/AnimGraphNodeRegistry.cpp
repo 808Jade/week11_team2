@@ -4,6 +4,7 @@
 #include "Animation/AnimNode_BlendSpacePlayer.h"
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "Animation/AnimNode_TwoWayBlend.h"
+#include "Animation/AnimNode_StateMachine.h"
 
 #include <algorithm>
 #include <charconv>
@@ -23,6 +24,7 @@ namespace {
     }
 
     std::vector<FAnimGraphNodeType> CreateNodeTypes() {
+        // 타입을 등록하면 생성 메뉴, 파라미터 UI와 인스턴스 생성이 같은 정보를 사용한다.
         std::vector<FAnimGraphNodeType> Types{};
 
         const FAnimGraphParameterInfo PlayRate{"PlayRate", EAnimGraphParameterType::Float, "1", false, -3.0f, 3.0f};
@@ -42,8 +44,6 @@ namespace {
             auto Node{std::make_unique<FAnimNode_TwoWayBlend>()};
 
             Node->mAlpha = Context.GetFloat("Alpha");
-            Node->mAlphaBinding = Context.GetBinding("Alpha");
-            Node->mAlphaBindingName = Context.GetBindingName("Alpha");
 
             return std::unique_ptr<FAnimNode_Base>{std::move(Node)};
         }});
@@ -53,12 +53,14 @@ namespace {
 
             Node->mBlendSpace = Context.mLoadBlendSpace ? Context.mLoadBlendSpace(Context.GetString("BlendSpace")) : nullptr;
             Node->mX = Context.GetFloat("X");
-            Node->mXBinding = Context.GetBinding("X");
-            Node->mXBindingName = Context.GetBindingName("X");
             Node->mPlayRate = Context.GetFloat("PlayRate");
             Node->mLoop = Context.GetBool("Loop");
 
             return std::unique_ptr<FAnimNode_Base>{std::move(Node)};
+        }});
+
+        Types.push_back({"StateMachine", "State Machine", {}, {}, [](const FAnimGraphNodeBuildContext&) {
+            return std::make_unique<FAnimNode_StateMachine>();
         }});
 
         return Types;
@@ -97,18 +99,6 @@ FString FAnimGraphNodeBuildContext::GetString(const FString& Name) const {
     const FString* Default{FindDefault(mParameters, Name)};
 
     return Default != nullptr ? *Default : FString{};
-}
-
-FString FAnimGraphNodeBuildContext::GetBindingName(const FString& Name) const {
-    const FString* Value{mNode != nullptr ? mNode->FindParameter(Name + ".Binding") : nullptr};
-
-    return Value != nullptr ? *Value : FString{};
-}
-
-const float* FAnimGraphNodeBuildContext::GetBinding(const FString& Name) const {
-    const FString Variable{GetBindingName(Name)};
-
-    return !Variable.empty() && mFindVariable ? mFindVariable(Variable) : nullptr;
 }
 
 const std::vector<FAnimGraphNodeType>& FAnimGraphNodeRegistry::GetNodeTypes() {

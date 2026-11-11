@@ -1426,6 +1426,7 @@ void UEditorEngine::PresentFrame()
 }
 
 USkeletalMeshComponent* UEditorEngine::FindAnimGraphDebugTarget() const {
+    // Details의 컴포넌트를 우선하고 액터만 선택했으면 첫 스켈레탈 메시를 찾는다.
     auto* Component{DetailsPanel ? Cast<USkeletalMeshComponent>(DetailsPanel->GetSelectedComponent()) : nullptr};
     const auto* Selected{Component ? Component->GetOwner() : OutlinerPanel ? OutlinerPanel->GetSelectedActor() : nullptr};
     if (!Selected) {
@@ -1444,6 +1445,7 @@ USkeletalMeshComponent* UEditorEngine::FindAnimGraphDebugTarget() const {
         return Component;
     }
 
+    // 에디터 월드 객체를 선택한 상태에서도 같은 액터 및 컴포넌트 이름의 PIE 복제본을 관찰한다.
     for (const auto* Level : PlayWorld->GetLevels()) {
         for (const auto* Actor : Level->GetActors()) {
             if (!Actor || Actor->GetFName() != Selected->GetFName()) {

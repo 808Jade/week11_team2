@@ -1,0 +1,271 @@
+{
+    "Class": "BlendSpace1D",
+    "FormatVersion": 1,
+    "Axes": [
+        {
+            "Name": "Clip Index",
+            "Min": 0,
+            "Max": 42
+        }
+    ],
+    "Samples": [
+        {
+            "Animation": "StateMachineLab/Rig/A_TPose.fbxbin",
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Crouch_Fwd_Loop.fbxbin",
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Crouch_Idle_Loop.fbxbin",
+            "X": 2,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Dance_Loop.fbxbin",
+            "X": 3,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Death01.fbxbin",
+            "X": 4,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Driving_Loop.fbxbin",
+            "X": 5,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Fixing_Kneeling.fbxbin",
+            "X": 6,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Hit_Chest.fbxbin",
+            "X": 7,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Hit_Head.fbxbin",
+            "X": 8,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Idle_Loop.fbxbin",
+            "X": 9,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Idle_Talking_Loop.fbxbin",
+            "X": 10,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Idle_Torch_Loop.fbxbin",
+            "X": 11,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Interact.fbxbin",
+            "X": 12,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Jog_Fwd_Loop.fbxbin",
+            "X": 13,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Jump_Land.fbxbin",
+            "X": 14,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Jump_Loop.fbxbin",
+            "X": 15,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Jump_Start.fbxbin",
+            "X": 16,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/PickUp_Table.fbxbin",
+            "X": 17,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Down.fbxbin",
+            "X": 18,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Neutral.fbxbin",
+            "X": 19,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Aim_Up.fbxbin",
+            "X": 20,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Idle_Loop.fbxbin",
+            "X": 21,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Reload.fbxbin",
+            "X": 22,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Pistol_Shoot.fbxbin",
+            "X": 23,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Punch_Cross.fbxbin",
+            "X": 24,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Punch_Jab.fbxbin",
+            "X": 25,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Push_Loop.fbxbin",
+            "X": 26,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Roll.fbxbin",
+            "X": 27,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sitting_Enter.fbxbin",
+            "X": 28,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sitting_Exit.fbxbin",
+            "X": 29,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sitting_Idle_Loop.fbxbin",
+            "X": 30,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sitting_Talking_Loop.fbxbin",
+            "X": 31,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Spell_Simple_Enter.fbxbin",
+            "X": 32,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Spell_Simple_Exit.fbxbin",
+            "X": 33,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Spell_Simple_Idle_Loop.fbxbin",
+            "X": 34,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Spell_Simple_Shoot.fbxbin",
+            "X": 35,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sprint_Loop.fbxbin",
+            "X": 36,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Swim_Fwd_Loop.fbxbin",
+            "X": 37,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Swim_Idle_Loop.fbxbin",
+            "X": 38,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sword_Attack.fbxbin",
+            "X": 39,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Sword_Idle.fbxbin",
+            "X": 40,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Walk_Formal_Loop.fbxbin",
+            "X": 41,
+            "Y": 0,
+            "Z": 0
+        },
+        {
+            "Animation": "StateMachineLab/Rig/Walk_Loop.fbxbin",
+            "X": 42,
+            "Y": 0,
+            "Z": 0
+        }
+    ]
+}

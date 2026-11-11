@@ -11,6 +11,7 @@
 #include "Editor/HitoriEd/EditorDragDrop.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace
 {
@@ -22,6 +23,161 @@ namespace
 		const auto Utf8 = Path.generic_u8string();
 		return FString(Utf8.begin(), Utf8.end());
 	}
+
+	// UE Content Browser처럼 에셋 타입을 썸네일 아래 색 띠로 구분한다.
+	struct FAssetTypeStyle
+	{
+		const char* Label;
+		ImU32 Color;
+	};
+
+	bool GetAssetTypeStyle(EFbxAssetType Type, FAssetTypeStyle& Out)
+	{
+		switch (Type)
+		{
+		case EFbxAssetType::SkeletalMesh: Out = { "Skeletal Mesh", IM_COL32(236, 105, 199, 255) }; return true; // 핑크
+		case EFbxAssetType::Skeleton:     Out = { "Skeleton", IM_COL32(105, 200, 245, 255) }; return true;      // 하늘색
+		case EFbxAssetType::AnimSequence: Out = { "Animation", IM_COL32(130, 220, 80, 255) }; return true;      // 연두색
+		default: return false;
+		}
+	}
+
+	// 타입 띠가 이미 타입을 알려 주므로, 표시 이름에서 접두사(AS_, SK_ 등)와 .fbxbin을 뺀다. 실제 파일 이름은 그대로다.
+	FString MakeTileDisplayName(const FString& Filename, bool bHasTypeStyle)
+	{
+		if (!bHasTypeStyle)
+		{
+			return Filename;
+		}
+
+		FString Name = Filename;
+		constexpr const char* Extension = ".fbxbin";
+		constexpr size_t ExtensionLength = 7;
+		if (Name.size() > ExtensionLength && Name.compare(Name.size() - ExtensionLength, ExtensionLength, Extension) == 0)
+		{
+			Name.resize(Name.size() - ExtensionLength);
+		}
+		for (const char* Prefix : { "SKEL_", "AS_", "SK_" })
+		{
+			const size_t Length = std::strlen(Prefix);
+			if (Name.size() > Length && Name.compare(0, Length, Prefix) == 0)
+			{
+				Name.erase(0, Length);
+				break;
+			}
+		}
+		return Name;
+	}
+
+	// UTF-8 문자 경계 단위로 앞/뒤로 한 글자 이동한다.
+	const char* NextChar(const char* It, const char* End)
+	{
+		if (It >= End) return End;
+		++It;
+		while (It < End && (static_cast<unsigned char>(*It) & 0xC0) == 0x80) ++It;
+		return It;
+	}
+
+	const char* PrevChar(const char* Begin, const char* It)
+	{
+		if (It <= Begin) return Begin;
+		--It;
+		while (It > Begin && (static_cast<unsigned char>(*It) & 0xC0) == 0x80) --It;
+		return It;
+	}
+
+	// Begin부터 Width 안에 들어가는 가장 긴 앞부분의 끝을 돌려준다. (최소 한 글자)
+	const char* FitPrefix(const char* Begin, const char* End, float Width)
+	{
+		const char* Fit = NextChar(Begin, End);
+		for (const char* It = Fit; It < End;)
+		{
+			const char* Next = NextChar(It, End);
+			if (ImGui::CalcTextSize(Begin, Next).x > Width) break;
+			Fit = It = Next;
+		}
+		return Fit;
+	}
+
+	// End에서 거꾸로 Width 안에 들어가는 가장 긴 뒷부분의 시작을 돌려준다.
+	const char* FitSuffix(const char* Begin, const char* End, float Width)
+	{
+		const char* Fit = End;
+		while (Fit > Begin)
+		{
+			const char* Prev = PrevChar(Begin, Fit);
+			if (ImGui::CalcTextSize(Prev, End).x > Width) break;
+			Fit = Prev;
+		}
+		return Fit;
+	}
+
+	// 이름을 최대 두 줄로 그린다. 두 줄에도 넘치면 가운데를 생략해서 앞부분(1줄)과 뒷부분(2줄)을 보여 준다.
+	// 반환값: 이름 전체를 다 보여 줬는지
+	bool DrawTwoLineName(ImDrawList* DrawList, const ImVec2& Min, float Width, const FString& Name)
+	{
+		const char* Begin = Name.c_str();
+		const char* End = Begin + Name.size();
+		const float LineHeight = ImGui::GetTextLineHeight();
+		const ImU32 Color = ImGui::GetColorU32(ImGuiCol_Text);
+
+		auto DrawLine = [&](int32 Line, const char* LineBegin, const char* LineEnd, const char* Prefix)
+		{
+			const float PrefixWidth = Prefix ? ImGui::CalcTextSize(Prefix).x : 0.0f;
+			const float TextWidth = PrefixWidth + ImGui::CalcTextSize(LineBegin, LineEnd).x;
+			ImVec2 Pos(Min.x + ImMax(0.0f, (Width - TextWidth) * 0.5f), Min.y + LineHeight * Line);
+			if (Prefix)
+			{
+				DrawList->AddText(Pos, Color, Prefix);
+				Pos.x += PrefixWidth;
+			}
+			DrawList->AddText(Pos, Color, LineBegin, LineEnd);
+		};
+
+		DrawList->PushClipRect(Min, ImVec2(Min.x + Width, Min.y + LineHeight * 2.0f), true);
+		bool bComplete = true;
+		if (ImGui::CalcTextSize(Begin, End).x <= Width)
+		{
+			DrawLine(0, Begin, End, nullptr);
+		}
+		else
+		{
+			const char* FirstEnd = FitPrefix(Begin, End, Width);
+			DrawLine(0, Begin, FirstEnd, nullptr);
+			if (ImGui::CalcTextSize(FirstEnd, End).x <= Width)
+			{
+				DrawLine(1, FirstEnd, End, nullptr);
+			}
+			else
+			{
+				constexpr const char* Ellipsis = "...";
+				const char* TailBegin = FitSuffix(FirstEnd, End, Width - ImGui::CalcTextSize(Ellipsis).x);
+				DrawLine(1, TailBegin, End, Ellipsis);
+				bComplete = false;
+			}
+		}
+		DrawList->PopClipRect();
+		return bComplete;
+	}
+}
+
+bool FContentDrawerPanel::GetBakedAssetType(const fs::path& Path, const FString& PathString, EFbxAssetType& OutType)
+{
+	if (!FFbxAssetBake::IsBakedPath(PathString)) return false;
+
+	std::error_code Ec;
+	const fs::file_time_type WriteTime = fs::last_write_time(Path, Ec);
+	if (Ec) return false;
+
+	FBakedTypeEntry& Entry = BakedTypeCache[PathString];
+	if (Entry.WriteTime != WriteTime)
+	{
+		// 새로 만들어졌거나 다시 임포트된 파일만 헤더를 읽는다.
+		Entry.WriteTime = WriteTime;
+		Entry.bValid = FFbxAssetBake::ReadAssetType(PathString, Entry.Type);
+	}
+	OutType = Entry.Type;
+	return Entry.bValid;
 }
 
 bool FContentDrawerPanel::Init()
@@ -132,6 +288,7 @@ void FContentDrawerPanel::RenderAssetPane()
 }
 
 void FContentDrawerPanel::RenderCreateAssetPopup() {
+    // 에셋 종류별 기본 이름을 정한 뒤 공통 이름 입력 및 중복 검사 창으로 연결한다.
     bool OpenCreate{};
     if (ImGui::BeginPopupContextWindow("##DrawerContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
         if (ImGui::MenuItem("Create Widget")) {
@@ -324,6 +481,7 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 	const float TileOffset = ImMax(0.0f, (AvailableWidth - ButtonSize) * 0.5f);
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TileOffset);
 	ImGui::Button("##Thumbnail", ImVec2(ButtonSize, ButtonSize));
+	const bool bThumbnailHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip);
 
 	ImVec2 ImageSize(0.0f, 0.0f);
 	const FTexture2D* Resource = Thumbnail ? Thumbnail->GetResource() : nullptr;
@@ -343,6 +501,31 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 			ImGui::GetWindowDrawList()->AddImage(TextureId, ImageMin,
 				ImVec2(ImageMin.x + ImageSize.x, ImageMin.y + ImageSize.y));
 		}
+	}
+
+	// 베이크된 FBX 에셋은 타입별 색 띠와 타입 이름을 썸네일 아래쪽에 겹쳐 그린다.
+	EFbxAssetType BakedType;
+	FAssetTypeStyle TypeStyle;
+	const bool bHasTypeStyle = !bIsDirectory && GetBakedAssetType(Path, PathString, BakedType)
+		&& GetAssetTypeStyle(BakedType, TypeStyle);
+	if (bHasTypeStyle && ImGui::IsItemVisible())
+	{
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImVec2 ButtonMin = ImGui::GetItemRectMin();
+		const ImVec2 ButtonMax = ImGui::GetItemRectMax();
+		constexpr float StripHeight = 4.0f;
+		const float LabelHeight = ImGui::GetTextLineHeight();
+
+		const ImVec2 StripMin(ButtonMin.x, ButtonMax.y - StripHeight);
+		const ImVec2 LabelMin(ButtonMin.x, StripMin.y - LabelHeight);
+		DrawList->AddRectFilled(LabelMin, ImVec2(ButtonMax.x, StripMin.y), IM_COL32(20, 20, 20, 190));
+		DrawList->AddRectFilled(StripMin, ButtonMax, TypeStyle.Color);
+
+		const ImVec2 TextSize = ImGui::CalcTextSize(TypeStyle.Label);
+		const ImVec2 TextPos(ButtonMin.x + ImMax(2.0f, (ButtonMax.x - ButtonMin.x - TextSize.x) * 0.5f), LabelMin.y);
+		DrawList->PushClipRect(LabelMin, ImVec2(ButtonMax.x, StripMin.y), true);
+		DrawList->AddText(TextPos, TypeStyle.Color, TypeStyle.Label);
+		DrawList->PopClipRect();
 	}
 
 	// 페이로드에 포인터를 그대로 실어서 받는 쪽이 AssetMap을 다시 뒤지지 않게 한다.
@@ -370,6 +553,7 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 
     if (!bIsDirectory) {
         const auto Extension{Path.extension()};
+        // 타입별 페이로드를 사용해 애니메이션 선택기와 Blend Space 캔버스에 드롭할 수 있게 한다.
         const char* PayloadType{};
         if (Extension == L".animgraph") {
             PayloadType = AnimGraphPayload;
@@ -396,29 +580,34 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 		}
 		else if (OnOpenMesh)
 		{
+			// 메시 Viewer와 Animation 에디터 모두 같은 콜백(EditorManager::OpenEditor)으로 엽니다.
 			EFbxAssetType Type;
-			const bool bFbxMesh = FFbxAssetBake::IsBakedPath(PathString) && FFbxAssetBake::ReadAssetType(PathString, Type)
-				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh);
-			if (Path.extension() == ".obj" || bFbxMesh || Path.extension() == ".animgraph" || Path.extension() == ".blendspace") OnOpenMesh(FbxPath::ToString(Path));
+			const bool bFbxOpenable = GetBakedAssetType(Path, PathString, Type)
+				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh || Type == EFbxAssetType::AnimSequence);
+			if (Path.extension() == ".obj" || bFbxOpenable || Path.extension() == ".animgraph" || Path.extension() == ".blendspace") OnOpenMesh(PathString);
 		}
 	}
 
-	// 셀 전체 폭에 파일 이름 표시
+	// 셀 전체 폭에 이름을 최대 두 줄로 표시 (UE Content Browser 타일처럼). 줄 수를 고정해 격자 높이를 맞춘다.
 	const float LabelWidth = ImMax(1.0f, AvailableWidth);
-	ImGui::Dummy(ImVec2(LabelWidth, ImGui::GetTextLineHeight()));
+	ImGui::Dummy(ImVec2(LabelWidth, ImGui::GetTextLineHeight() * 2.0f));
+	const bool bLabelHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip);
 	if (ImGui::IsItemVisible())
 	{
-		const char* Filename = FilenameString.c_str();
-		const ImVec2 TextSize = ImGui::CalcTextSize(Filename);
-		ImVec2 LabelMin = ImGui::GetItemRectMin();
-		const ImVec2 LabelMax = ImGui::GetItemRectMax();
-		LabelMin.x += ImMax(0.0f, (LabelWidth - TextSize.x) * 0.5f);
-		ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), LabelMin, LabelMax, LabelMax.x,
-			Filename, Filename + FilenameString.size(), &TextSize);
-		if (TextSize.x > LabelWidth)
+		DrawTwoLineName(ImGui::GetWindowDrawList(), ImGui::GetItemRectMin(), LabelWidth,
+			MakeTileDisplayName(FilenameString, bHasTypeStyle));
+	}
+
+	// 썸네일이나 이름 어디에 올려도 전체 이름·타입·경로를 보여 준다.
+	if ((bThumbnailHovered || bLabelHovered) && !ImGui::IsDragDropActive() && ImGui::BeginTooltip())
+	{
+		ImGui::TextUnformatted(FilenameString.c_str());
+		if (bHasTypeStyle)
 		{
-			ImGui::SetItemTooltip("%s", Filename);
+			ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(TypeStyle.Color), "%s", TypeStyle.Label);
 		}
+		ImGui::TextDisabled("%s", PathLabel(Path).c_str());
+		ImGui::EndTooltip();
 	}
 
 	ImGui::PopID();

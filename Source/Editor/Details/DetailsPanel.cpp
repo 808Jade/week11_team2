@@ -1770,6 +1770,7 @@ void FDetailsPanel::SetOpenAnimGraphDebugCallback(std::function<void()> Callback
 }
 
 void FDetailsPanel::DrawAnimGraphSlot(USkeletalMeshComponent* Component) {
+    // 컴포넌트의 그래프 지정과 현재 선택 메시의 PIE 디버그 창 열기를 한곳에 제공한다.
     FString Path{Component->GetAnimGraph()};
     if (DrawAnimationAssetPicker("Anim Graph", Path, EAssetType::AnimGraph)) {
         Component->SetAnimGraph(Path, mAnimGraphError);

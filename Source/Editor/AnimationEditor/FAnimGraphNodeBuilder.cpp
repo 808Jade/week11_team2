@@ -61,6 +61,7 @@ void FAnimGraphNodeBuilder::FitPins(const char* Input, const char* Output) {
 }
 
 void FAnimGraphNodeBuilder::FitProperty(const char* Label, const char* Value) {
+    // 속성별 최대 라벨 폭과 값 폭을 따로 모아 모든 행의 값 열을 맞춘다.
     mLabelWidth = std::max(mLabelWidth, ImGui::CalcTextSize(Label).x);
     mValueWidth = std::max(mValueWidth, ImGui::CalcTextSize(Value).x);
     mWidth = std::max(mWidth, mLabelWidth + PropertySpacing + mValueWidth);
@@ -172,6 +173,7 @@ void FAnimGraphNodeBuilder::End() {
     ImGui::PopID();
     ed::EndNode();
 
+    // EndNode 이후 확정된 크기로 헤더 배경을 그려 긴 내용에도 배경 폭이 맞게 한다.
     ImDrawList* DrawList{ed::GetNodeBackgroundDrawList(mId)};
     const ImVec2 Position{ed::GetNodePosition(mId)};
     const ImVec2 Size{ed::GetNodeSize(mId)};

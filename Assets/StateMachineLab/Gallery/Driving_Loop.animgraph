@@ -1,0 +1,33 @@
+{
+    "FormatVersion": 1,
+    "OutputX": 300,
+    "OutputY": 0,
+    "Variables": [],
+    "VariableGetters": [],
+    "Nodes": [
+        {
+            "Id": 0,
+            "Type": "SequencePlayer",
+            "Name": "Driving_Loop",
+            "X": 0,
+            "Y": 0,
+            "Parameters": [
+                {
+                    "Name": "Sequence",
+                    "Value": "StateMachineLab/Rig/Driving_Loop.fbxbin"
+                },
+                {
+                    "Name": "Loop",
+                    "Value": "true"
+                }
+            ]
+        }
+    ],
+    "Links": [
+        {
+            "From": 0,
+            "To": -1,
+            "Pin": 0
+        }
+    ]
+}

@@ -1,4 +1,5 @@
-local ActionNode <const> = 1
+-- 자동 속도 변화와 수동 조절로 Blend Space를 비교하고 단발 Punch 포즈를 혼합하는 실습이다.
+local ActionNode <const> = "Punch (One Shot)"
 local CycleDuration <const> = 12.0
 local ActionCue <const> = 8.8
 local Sweep <const> = {
@@ -24,6 +25,7 @@ local ActionAlpha = 0.0
 local ActionState = "READY"
 
 local function GetSweepSpeed(Time)
+    -- 구간의 양 끝에서 기울기가 0인 보간으로 속도 프리셋 사이를 왕복한다.
     for Index = 2, #Sweep do
         local Next = Sweep[Index]
         if Time <= Next[1] then
@@ -66,6 +68,7 @@ local function StartAction()
 end
 
 local function UpdateAction(DeltaTime)
+    -- 클립 종료 여부는 C++ 플레이어에서 읽고 Lua는 진입 및 복귀의 블렌딩 비율을 조절한다.
     if ActionState == "PLAYING" then
         if Mesh:IsAnimGraphPlayerFinished(ActionNode) then
             ActionState = "FADE OUT"
@@ -87,6 +90,7 @@ function BeginPlay()
     Mesh = assert(GetComponentByName("USkeletalMeshComponent"), "Animation Lab requires a Skeletal Mesh Component")
     local InitialSpeed = obj.Name == "Run Reference" and 5.0 or 0.0
     assert(Mesh:SetAnimGraphFloat("Speed", InitialSpeed), "Animation Lab graph is not assigned")
+    -- 기준 캐릭터는 고정 속도로 재생하고 Live Graph 한 캐릭터만 입력과 HUD를 담당한다.
     if obj.Name ~= "Live Graph" then
         return
     end

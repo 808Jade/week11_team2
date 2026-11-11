@@ -89,6 +89,7 @@ bool UBlendSpace::SetSampleValue(int32 Index, const FVector& SampleValue) {
 }
 
 FVector UBlendSpace::ClampInput(const FVector& Input) const {
+    // 사용하지 않는 축은 0으로 만들고, 유효 축은 에셋에 설정된 범위로 제한한다.
     std::array<float, 3> Values{Input.X, Input.Y, Input.Z};
 
     for (std::size_t AxisIndex{}; AxisIndex < Values.size(); ++AxisIndex) {
@@ -101,6 +102,7 @@ FVector UBlendSpace::ClampInput(const FVector& Input) const {
 }
 
 double UBlendSpace::GetBlendedPlayLength(const std::vector<FBlendSampleWeight>& Weights) const {
+    // 샘플 길이의 가중 평균을 플레이어의 공통 재생 주기로 사용한다.
     double Length{};
 
     for (const FBlendSampleWeight& Weight : Weights) {
@@ -208,6 +210,7 @@ void UBlendSpace::Serialize(FAnimAssetArchive& Archive) {
         return;
     }
 
+    // 모든 샘플을 정상적으로 읽은 경우에만 기존 샘플 목록을 교체한다.
     std::vector<FBlendSample> LoadedSamples{};
 
     if (Archive.IsLoading()) {

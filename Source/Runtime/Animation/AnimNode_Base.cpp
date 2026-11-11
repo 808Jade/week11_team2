@@ -2,18 +2,10 @@
 #include "Animation/AnimNode_Base.h"
 #include "Animation/AnimInstance.h"
 
-FAnimationUpdateContext::FAnimationUpdateContext(UAnimInstance& AnimInstance, float DeltaTime, uint64 UpdateCounter)
+FAnimationUpdateContext::FAnimationUpdateContext(UAnimInstance& AnimInstance, float DeltaTime, FAnimNotifyQueue* NotifyQueue)
     : mAnimInstance{&AnimInstance},
       mDeltaTime{DeltaTime},
-      mUpdateCounter{UpdateCounter} {
-}
-
-FAnimationUpdateContext FAnimationUpdateContext::FractionalWeight(float Multiplier) const {
-    FAnimationUpdateContext Result{*this};
-
-    Result.mWeight *= Multiplier;
-
-    return Result;
+      mNotifyQueue{NotifyQueue} {
 }
 
 UAnimInstance& FAnimationUpdateContext::GetAnimInstance() const {
@@ -22,14 +14,6 @@ UAnimInstance& FAnimationUpdateContext::GetAnimInstance() const {
 
 float FAnimationUpdateContext::GetDeltaTime() const {
     return mDeltaTime;
-}
-
-float FAnimationUpdateContext::GetFinalBlendWeight() const {
-    return mWeight;
-}
-
-uint64 FAnimationUpdateContext::GetUpdateCounter() const {
-    return mUpdateCounter;
 }
 
 FPoseContext::FPoseContext(UAnimInstance& AnimInstance)
@@ -52,9 +36,6 @@ void FPoseContext::ResetToReferencePose() {
 }
 
 void FPoseLink::Initialize(UAnimInstance& AnimInstance) {
-    mLastUpdateCounter = 0;
-    mLastWeight = 0.0f;
-
     if (mLinkedNode != nullptr) {
         mLinkedNode->Initialize(AnimInstance);
     }
@@ -62,30 +43,25 @@ void FPoseLink::Initialize(UAnimInstance& AnimInstance) {
 
 void FPoseLink::Update(const FAnimationUpdateContext& Context) {
     if (mLinkedNode != nullptr) {
-        if (mLastUpdateCounter != Context.GetUpdateCounter()) {
-            mLastUpdateCounter = Context.GetUpdateCounter();
-            mLastWeight = 0.0f;
-        }
-
-        mLastWeight += Context.GetFinalBlendWeight();
-        mLinkedNode->RecordUpdate(Context);
-        mLinkedNode->Update(Context);
+        // 여러 입력이 같은 노드를 참조해도 인스턴스를 거쳐 프레임당 한 번만 갱신한다.
+        Context.GetAnimInstance().UpdateNode(*mLinkedNode, Context);
     }
 }
 
-void FPoseLink::Evaluate(FPoseContext& Output) {
+void FPoseLink::Evaluate(FPoseContext& Output, float Weight) {
     if (mLinkedNode != nullptr) {
+        // 같은 노드를 여러 경로로 평가할 수 있으므로 방문 기록은 연결별로 남긴다.
+        UAnimInstance& AnimInstance{Output.GetAnimInstance()};
+        AnimInstance.BeginDebugVisit(*mLinkedNode, this, Weight);
         mLinkedNode->Evaluate(Output);
+        AnimInstance.EndDebugVisit();
     } else {
         Output.ResetToReferencePose();
     }
 }
 
-float FPoseLink::GetDebugWeight(uint64 UpdateCounter) const {
-    return mLastUpdateCounter == UpdateCounter ? mLastWeight : 0.0f;
-}
-
 void FAnimNode_Base::Initialize(UAnimInstance& AnimInstance) {
+    AnimInstance.ResetNodeUpdate(*this);
     std::vector<FAnimNodePoseInput> Inputs{};
 
     GetPoseInputs(Inputs);
@@ -107,16 +83,13 @@ void FAnimNode_Base::GetPoseInputs(std::vector<FAnimNodePoseInput>&) {
 void FAnimNode_Base::GetDebugValues(std::vector<FAnimNodeValue>&) {
 }
 
-float FAnimNode_Base::GetDebugWeight(uint64 UpdateCounter) const {
-    return mLastUpdateCounter == UpdateCounter ? mLastWeight : 0.0f;
+void FAnimNode_Base::GetValueInputs(std::vector<FAnimNodeValueInput>&) {
 }
 
-void FAnimNode_Base::RecordUpdate(const FAnimationUpdateContext& Context) {
+FAnimNotifyQueue* FAnimationUpdateContext::GetNotifyQueue() const {
+    return mNotifyQueue;
+}
 
-    if (mLastUpdateCounter == Context.GetUpdateCounter()) {
-        mLastWeight += Context.GetFinalBlendWeight();
-    } else {
-        mLastWeight = Context.GetFinalBlendWeight();
-        mLastUpdateCounter = Context.GetUpdateCounter();
-    }
+FRootMotionDelta FAnimNode_Base::GetRootMotionDelta() const {
+    return {};
 }

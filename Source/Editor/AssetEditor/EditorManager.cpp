@@ -56,6 +56,7 @@ FAssetEditor* FEditorManager::FindEditor(const FString& Path) const
 }
 
 void FEditorManager::CreateEditor(const FString& AssetPath) {
+    // 애니메이션 에셋은 전용 편집기를 재사용하고 기존 메시 에디터 생성 경로와 구분한다.
     const FString FilePathForAnimation{FAssetUtils::ResolveAssetFilePath(AssetPath)};
     const auto AnimationPath{FbxPath::FromString(FilePathForAnimation)};
     const auto Extension{AnimationPath.extension()};
@@ -257,6 +258,7 @@ void FEditorManager::Shutdown()
 }
 
 void FEditorManager::DrawEditorUI(USkeletalMeshComponent* DebugTarget, bool Playing) {
+    // 에셋 편집 창과 실행 인스턴스 디버그 창을 같은 에디터 프레임에서 그린다.
     TabContainer.OnRender();
     if (mAnimGraphEditor) {
         mAnimGraphEditor->Draw();

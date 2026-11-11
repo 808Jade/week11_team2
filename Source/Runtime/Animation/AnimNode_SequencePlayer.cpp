@@ -12,7 +12,7 @@ bool FAnimNode_SequencePlayer::SetSequence(const UAnimSequenceBase* Sequence, bo
     }
 
     const double Length{Sequence->GetPlayLength()};
-    if (!std::isfinite(PlayRate) || PlayRate <= 0.0f || !std::isfinite(Length) || Length < 0.0) {
+    if (!std::isfinite(PlayRate) || !std::isfinite(Length) || Length < 0.0) {
         OutError = "Invalid play rate or sequence length";
         return false;
     }
@@ -25,12 +25,16 @@ bool FAnimNode_SequencePlayer::SetSequence(const UAnimSequenceBase* Sequence, bo
 }
 
 void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context) {
-    if (!mPaused) {
-        AdvanceTime(Context.GetDeltaTime(), GetCurrentAssetLength());
+    mRootMotionDelta = {};
+    AdvanceTime(Context.GetDeltaTime(), GetCurrentAssetLength());
+
+    if (mSequence != nullptr && mAdvancedThisUpdate) {
+        mRootMotionDelta = Context.GetAnimInstance().ExtractSequenceEvents(*mSequence, mPreviousTime, mInternalTime, mPlayRate, mWrappedThisUpdate, mIncludeStartThisUpdate, Context);
     }
 }
 
 void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output) {
+    // 시퀀스가 없는 노드도 유효한 기준 포즈를 출력해 상위 블렌딩이 가능하게 한다.
     if (mSequence != nullptr) {
         Output.GetAnimInstance().EvaluateSequence(*mSequence, mInternalTime, Output.mPose);
     } else {
@@ -38,15 +42,17 @@ void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output) {
     }
 }
 
-const char* FAnimNode_SequencePlayer::GetNodeType() const {
-    return "Sequence Player";
+const FString& FAnimNode_SequencePlayer::GetNodeType() const {
+    static const FString Type{"Sequence Player"};
+
+    return Type;
 }
 
 void FAnimNode_SequencePlayer::GetDebugValues(std::vector<FAnimNodeValue>& OutValues) {
     FAnimNodeValue Sequence{};
 
     Sequence.mName = "Sequence";
-    Sequence.mText = mSequence != nullptr ? FbxPath::ToString(FbxPath::FromString(mSequence->GetPath()).stem()) : "None";
+    Sequence.mValue = mSequence != nullptr ? FbxPath::ToString(FbxPath::FromString(mSequence->GetPath()).stem()) : "None";
     OutValues.push_back(std::move(Sequence));
 
     GetPlayerDebugValues(OutValues);
@@ -57,5 +63,9 @@ double FAnimNode_SequencePlayer::GetCurrentAssetLength() const {
 }
 
 void FAnimNode_SequencePlayer::SetPaused(bool Paused) {
-    mPaused = Paused;
+    SetPlaying(!Paused);
+}
+
+FRootMotionDelta FAnimNode_SequencePlayer::GetRootMotionDelta() const {
+    return mRootMotionDelta;
 }

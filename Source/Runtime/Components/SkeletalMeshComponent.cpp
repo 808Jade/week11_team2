@@ -4,6 +4,8 @@
 #include "Animation/AnimGraphInstance.h"
 #include "Animation/AnimNode_AssetPlayerBase.h"
 #include "Serialization/MathSerialization.h"
+#include "GameFramework/Actor.h"
+#include "Script/LuaScriptInstance.h"
 #include <memory>
 #include <utility>
 
@@ -18,6 +20,7 @@ void USkeletalMeshComponent::OnRegister() {
 }
 
 void USkeletalMeshComponent::RestoreAnimGraph() {
+    // 씬 로드와 메시 변경 시 저장된 경로로 재생 인스턴스를 다시 만든다.
     if (mAnimScriptInstance || mAnimGraphPath.empty() || !GetSkeletalMesh()) {
         return;
     }
@@ -46,6 +49,7 @@ bool USkeletalMeshComponent::SetAnimGraph(const FString& Path, FString& OutError
         return false;
     }
 
+    // 아직 메시가 없으면 경로만 보관하고 등록 또는 메시 설정 시 초기화를 완료한다.
     if (!GetSkeletalMesh()) {
         mAnimGraphPath = Instance->GetAnimGraph();
         return true;
@@ -54,8 +58,11 @@ bool USkeletalMeshComponent::SetAnimGraph(const FString& Path, FString& OutError
         return false;
     }
 
+    // 새 인스턴스 초기화가 성공한 뒤에만 기존 재생기를 교체한다.
     mAnimGraphPath = Instance->GetAnimGraph();
     delete std::exchange(mAnimScriptInstance, Instance.release());
+    // 에디터에서 Tick을 기다리지 않고 연결 직후의 초기 포즈를 메시와 렌더링에 반영한다.
+    mAnimScriptInstance->SetRootMotionEnabled(bEnableRootMotion);
     mAnimScriptInstance->UpdateAnimation(0.0f);
     if (mAnimScriptInstance->EvaluateAnimation(mBoneSpaceTransforms)) {
         RefreshBoneTransformsNow();
@@ -76,9 +83,14 @@ bool USkeletalMeshComponent::SetAnimGraphFloat(const FString& Name, float Value)
     return Instance && Instance->SetFloatVariable(Name, Value);
 }
 
-bool USkeletalMeshComponent::RestartAnimGraphPlayer(int32 NodeId) {
+bool USkeletalMeshComponent::SetAnimGraphBool(const FString& Name, bool Value) {
     auto* Instance{Cast<UAnimGraphInstance>(mAnimScriptInstance)};
-    auto* Player{Instance ? Instance->FindAssetPlayer(NodeId) : nullptr};
+    return Instance && Instance->SetBoolVariable(Name, Value);
+}
+
+bool USkeletalMeshComponent::RestartAnimGraphPlayer(const FString& Name) {
+    auto* Instance{Cast<UAnimGraphInstance>(mAnimScriptInstance)};
+    auto* Player{Instance ? Instance->FindAssetPlayer(Name) : nullptr};
     if (!Player) {
         return false;
     }
@@ -87,50 +99,63 @@ bool USkeletalMeshComponent::RestartAnimGraphPlayer(int32 NodeId) {
     return true;
 }
 
-bool USkeletalMeshComponent::IsAnimGraphPlayerFinished(int32 NodeId) const {
+bool USkeletalMeshComponent::IsAnimGraphPlayerFinished(const FString& Name) const {
     const auto* Instance{Cast<UAnimGraphInstance>(mAnimScriptInstance)};
-    const auto* Player{Instance ? Instance->FindAssetPlayer(NodeId) : nullptr};
+    const auto* Player{Instance ? Instance->FindAssetPlayer(Name) : nullptr};
     return Player && Player->IsFinished();
 }
 
-void USkeletalMeshComponent::TickComponent(float DeltaTime)
-{
-    if (mAnimScriptInstance)
-    {
+void USkeletalMeshComponent::TickComponent(float DeltaTime) {
+    if (mAnimScriptInstance != nullptr) {
+        mAnimScriptInstance->SetRootMotionEnabled(bEnableRootMotion);
         mAnimScriptInstance->UpdateAnimation(DeltaTime);
-        if (mAnimScriptInstance->EvaluateAnimation(mBoneSpaceTransforms))
+        ApplyRootMotion(mAnimScriptInstance->GetRootMotionDelta());
+
+        if (mAnimScriptInstance->EvaluateAnimation(mBoneSpaceTransforms)) {
             MarkBoneTransformsDirty();
+        }
+
+        DispatchAnimNotifies();
     }
+
     Super::TickComponent(DeltaTime);
 }
 
-bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping,
-    float PlayRate, FString& OutError)
-{
+bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool Looping, float PlayRate, FString& OutError) {
     OutError.clear();
-    if (!GetSkeletalMesh() || !NewAnimToPlay)
-    {
+
+    if (GetSkeletalMesh() == nullptr || NewAnimToPlay == nullptr) {
         OutError = "Set a skeletal mesh and animation asset first";
         return false;
     }
 
-    auto* SingleNode = Cast<UAnimSingleNodeInstance>(mAnimScriptInstance);
-    std::unique_ptr<UAnimSingleNodeInstance> NewInstance;
-    if (!SingleNode)
-    {
+    auto* SingleNode{Cast<UAnimSingleNodeInstance>(mAnimScriptInstance)};
+    std::unique_ptr<UAnimSingleNodeInstance> NewInstance{};
+
+    if (SingleNode == nullptr) {
         NewInstance.reset(NewObject<UAnimSingleNodeInstance>(this, NAME_None, EObjectFlags::RF_Transient));
-        if (!NewInstance)
-        {
+
+        if (NewInstance == nullptr) {
             OutError = "Could not create animation instance";
             return false;
         }
-        if (!NewInstance->InitializeAnimation(OutError)) return false;
+
+        if (!NewInstance->InitializeAnimation(OutError)) {
+            return false;
+        }
+
         SingleNode = NewInstance.get();
     }
-    if (!SingleNode->SetAnimationAsset(NewAnimToPlay, bLooping, PlayRate, OutError)) return false;
 
-    if (NewInstance)
+    if (!SingleNode->SetAnimationAsset(NewAnimToPlay, Looping, PlayRate, OutError)) {
+        return false;
+    }
+
+    if (NewInstance != nullptr) {
         delete std::exchange(mAnimScriptInstance, NewInstance.release());
+    }
+
+    SingleNode->SetRootMotionEnabled(bEnableRootMotion);
     SingleNode->PlayAnim();
     SingleNode->EvaluateAnimation(mBoneSpaceTransforms);
     RefreshBoneTransformsNow();
@@ -203,6 +228,7 @@ void USkeletalMeshComponent::Serialize(FStructuredArchive::FRecord Record)
     Super::Serialize(Record);   // 메시를 먼저 정해서 포즈를 바인드 포즈로 초기화한다
 
     FArchive& Ar = Record.GetUnderlyingArchive();
+    // 실행 포인터 대신 에셋 경로만 저장하고 로드 후에는 메시를 기준으로 인스턴스를 재생성한다.
     if (auto Field{Record.TryEnterField("AnimGraph", !mAnimGraphPath.empty())}) {
         *Field << mAnimGraphPath;
     } else if (Ar.IsLoading()) {
@@ -247,4 +273,59 @@ void USkeletalMeshComponent::OnSkeletalMeshChanged()
     if (IsRegistered()) {
         RestoreAnimGraph();
     }
+}
+
+void USkeletalMeshComponent::BeginPlay() {
+    Super::BeginPlay();
+    if (!mAnimGraphPath.empty() || !AnimToPlay) return;
+
+    FString Error{};
+    if (!PlayAnimation(AnimToPlay, bLoopAnimation, AnimPlayRate, Error))
+        HTR_LOG(Warning, "AnimToPlay '{}' could not play on {}: {}", AnimToPlay->GetPath(), GetName(), Error);
+}
+
+void USkeletalMeshComponent::DispatchAnimNotifies() {
+    if (!mAnimScriptInstance) return;
+
+    const TArray<FAnimNotifyDispatch> Notifies{mAnimScriptInstance->TakePendingNotifies()};
+    for (const FAnimNotifyDispatch& Notify : Notifies) {
+        OnAnimNotify.Broadcast(this, Notify.Event, Notify.Type);
+
+        AActor* Owner{GetOwner()};
+        if (!Owner || !Owner->Script) continue;
+        switch (Notify.Type) {
+        case EAnimNotifyEventType::Notify:     Owner->Script->Call("OnAnimNotify", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateBegin: Owner->Script->Call("OnAnimNotifyBegin", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateEnd:   Owner->Script->Call("OnAnimNotifyEnd", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateTick:  break;
+        }
+    }
+}
+
+void USkeletalMeshComponent::ApplyRootMotion(const FRootMotionDelta& Delta) {
+    const FVector& T{Delta.mTranslation};
+    const FQuat& R{Delta.mRotation};
+    const bool HasTranslation{T.X != 0.0f || T.Y != 0.0f || T.Z != 0.0f};
+    const bool HasRotation{R.X * R.X + R.Y * R.Y + R.Z * R.Z > 1.e-10f};
+    if (!HasTranslation && !HasRotation) return;
+
+    AActor* Owner{GetOwner()};
+    USceneComponent* Root{Owner ? Owner->GetRootComponent() : nullptr};
+    if (!Root) return;
+
+    if (HasTranslation) {
+        const FVector WorldDelta{GetWorldMatrix().TransformVector(T)};
+        Root->SetWorldLocation(Root->GetWorldLocation() + WorldDelta, false);
+    }
+
+    if (HasRotation) {
+        const FQuat ComponentRot{GetWorldRotation().Quaternion()};
+        const FQuat WorldDeltaRot{ComponentRot * R * ComponentRot.UnitInverse()};
+        const FQuat NewRootRot{WorldDeltaRot * Root->GetWorldRotation().Quaternion()};
+        Root->SetWorldRotation(NewRootRot.ToFRotator(), false);
+    }
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const {
+    return Cast<UAnimSingleNodeInstance>(mAnimScriptInstance);
 }

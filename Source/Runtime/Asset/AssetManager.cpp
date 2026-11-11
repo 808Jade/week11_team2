@@ -264,6 +264,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 }
 
 const UAssetManager::FAssetFile* UAssetManager::FindOrDiscoverAssetFile(const FString& Key) {
+    // 시작 시 스캔 이후 추가된 애니메이션 파일도 경로를 직접 확인해 지연 로딩할 수 있게 한다.
     if (const auto* File{AssetPathMap.Find(Key)}) {
         return File;
     }
@@ -801,6 +802,7 @@ bool UAssetManager::BuildMaterialsFromSlots(const TArray<FSkeletalMaterialSlot>&
 }
 
 void UAssetManager::LoadAnimationEditorAsset(const FString& Key, const FString& Path, EAssetType Type) {
+    // 임시 소유 객체로 역직렬화하고 검증에 성공한 에셋만 매니저에 등록한다.
     FAnimAssetArchive Archive{true};
     if (!Archive.Load(Path)) {
         HTR_LOG(Error, "{}", Archive.GetError());
@@ -829,6 +831,7 @@ void UAssetManager::LoadAnimationEditorAsset(const FString& Key, const FString& 
 }
 
 std::vector<FString> UAssetManager::GetAnimationAssetPaths(EAssetType Type) {
+    // 파일 인덱스와 로드 캐시를 합치고 중복 키를 제거하되 목록 조회만으로 에셋을 로드하지 않는다.
     const auto& Manager{Get()};
     std::set<FString> Keys{};
     for (const auto& [Key, File] : Manager.AssetPathMap) {
@@ -861,6 +864,7 @@ bool UAssetManager::SaveAnimGraph(const FString& Path, UAnimGraph& Graph, FStrin
         return false;
     }
 
+    // 디스크 저장이 끝난 뒤 기존 객체의 내용을 교체해 참조를 유지하고 그래프 리비전을 갱신한다.
     Get().AssetPathMap.Add(Key, {Path, EAssetType::AnimGraph});
     if (auto* Cached{Cast<UAnimGraph>(FindLoadedAsset(Key))}) {
         Cached->CopyFrom(Graph);
@@ -885,6 +889,7 @@ bool UAssetManager::SaveBlendSpace(const FString& Path, UBlendSpace& BlendSpace,
         return false;
     }
 
+    // 실행 플레이어가 보관한 에셋 포인터는 유지한 채 축과 샘플 설정을 갱신한다.
     Get().AssetPathMap.Add(Key, {Path, EAssetType::BlendSpace});
     if (auto* Cached{Cast<UBlendSpace>(FindLoadedAsset(Key))}) {
         Cached->CopyFrom(BlendSpace);

@@ -1,5 +1,6 @@
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 
+# 같은 소스와 빌드 설정을 재현하도록 커밋과 다운로드 해시를 고정한다.
 vcpkg_from_github(
     OUT_SOURCE_PATH SourcePath
     REPO thedmd/imgui-node-editor

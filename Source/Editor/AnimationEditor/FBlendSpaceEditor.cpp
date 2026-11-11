@@ -70,6 +70,7 @@ bool FBlendSpaceEditor::Open(const std::filesystem::path& Path, FString& Error) 
         return false;
     }
 
+    // 저장하기 전까지 샘플 이동이 실행 중인 공유 에셋을 바꾸지 않도록 편집 복사본을 사용한다.
     mEditing.reset(NewObject<UBlendSpace1D>());
     mEditing->CopyFrom(*Source);
 
@@ -118,6 +119,7 @@ bool FBlendSpaceEditor::Save() {
 }
 
 float FBlendSpaceEditor::Snap(float Value, bool Free) const {
+    // Ctrl로 자유 배치를 요청한 경우를 제외하고 축의 격자 간격에 샘플 좌표를 맞춘다.
     const FBlendParameter& Parameter{mEditing->GetBlendParameter(EBlendSpaceAxis::X)};
     float Result{std::clamp(Value, Parameter.mMin, Parameter.mMax)};
 
@@ -343,6 +345,7 @@ void FBlendSpaceEditor::DrawCanvas() {
     const float TrackWidth{Size.x - 2.0f * Margin};
     const float AxisY{End.y - 2.5f * TextHeight};
     const double Range{static_cast<double>(Parameter.mMax) - Parameter.mMin};
+    // 축 값과 화면 좌표의 변환을 공유해 그리기, 드롭과 드래그 위치가 일치하게 한다.
     const auto ToScreen{[&](float Value) {
         const double Alpha{std::clamp((static_cast<double>(Value) - Parameter.mMin) / Range, 0.0, 1.0)};
 
@@ -431,6 +434,7 @@ void FBlendSpaceEditor::DrawCanvas() {
     const ImU32 PreviewColor{IM_COL32(105, 235, 169, 255)};
     const ImU32 SelectionColor{IM_COL32(111, 195, 255, 255)};
 
+    // 런타임과 같은 샘플 선택 함수를 사용해 미리보기 가중치가 실제 재생과 일치하게 한다.
     std::vector<FBlendSampleWeight> Weights{};
     mEditing->GetSamplesToBlend({mPreviewInput, 0.0f, 0.0f}, Weights);
 

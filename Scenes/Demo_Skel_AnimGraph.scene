@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -7,9 +7,116 @@
                     "Class": "ASkeletalMeshActor",
                     "Components": [
                         {
+                            "AnimGraph": "AnimationGraphDemo/XBot.animgraph",
+                            "BonePose": [],
+                            "Class": "USkeletalMeshComponent",
+                            "Id": 309,
+                            "Name": "USkeletalMeshComponent",
+                            "Outer": 0,
+                            "OverrideMaterials": [
+                                {
+                                    "Base": "Imported/X Bot/M_X Bot_Beta_HighLimbsGeoSG3.fbxbin",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1,
+                                            "X": 0.5600000023841858,
+                                            "Y": 0.23000000417232513,
+                                            "Z": 0.17000000178813934
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "ShadingModel": "BlinnPhong",
+                                        "Shininess": 28,
+                                        "SpecularColor": {
+                                            "X": 0.25,
+                                            "Y": 0.25,
+                                            "Z": 0.25
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0,
+                                            0
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Base": "Imported/X Bot/M_X Bot_Beta_Joints_MAT1.fbxbin",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1,
+                                            "X": 0.18000000715255737,
+                                            "Y": 0.07500000298023224,
+                                            "Z": 0.057999998331069946
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "ShadingModel": "BlinnPhong",
+                                        "Shininess": 18,
+                                        "SpecularColor": {
+                                            "X": 0.1599999964237213,
+                                            "Y": 0.1599999964237213,
+                                            "Z": 0.1599999964237213
+                                        },
+                                        "Textures": [
+                                            "WhiteTexture",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0,
+                                            0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "Parent": 318,
+                            "Properties": {
+                                "AnimPlayRate": 1,
+                                "AnimToPlay": null,
+                                "SkeletalMesh": "Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0,
+                                        "Y": 0,
+                                        "Z": 0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bEnableRootMotion": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bLoopAnimation": true,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
                             "Class": "USceneComponent",
+                            "Id": 318,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -32,118 +139,24 @@
                                 "bHiddenInGame": false,
                                 "bVisible": true
                             }
-                        },
-                        {
-                            "BonePose": [],
-                            "Class": "USkeletalMeshComponent",
-                            "Name": "USkeletalMeshComponent",
-                            "OverrideMaterials": [
-                                {
-                                    "Base": "Imported/X Bot/M_X Bot_Beta_HighLimbsGeoSG3.fbxbin",
-                                    "Instance": {
-                                        "BaseColor": {
-                                            "X": 0.56,
-                                            "Y": 0.23,
-                                            "Z": 0.17,
-                                            "W": 1
-                                        },
-                                        "BlendState": "Opaque",
-                                        "FlipNormalY": false,
-                                        "PSOType": 0,
-                                        "Properties": {},
-                                        "SamplerState": "LinearClamp",
-                                        "Shininess": 28,
-                                        "SpecularColor": {
-                                            "X": 0.25,
-                                            "Y": 0.25,
-                                            "Z": 0.25
-                                        },
-                                        "Textures": [
-                                            "WhiteTexture",
-                                            "FlatNormalTexture"
-                                        ],
-                                        "UVScrollSpeed": [
-                                            0,
-                                            0
-                                        ]
-                                    }
-                                },
-                                {
-                                    "Base": "Imported/X Bot/M_X Bot_Beta_Joints_MAT1.fbxbin",
-                                    "Instance": {
-                                        "BaseColor": {
-                                            "X": 0.18,
-                                            "Y": 0.075,
-                                            "Z": 0.058,
-                                            "W": 1
-                                        },
-                                        "BlendState": "Opaque",
-                                        "FlipNormalY": false,
-                                        "PSOType": 0,
-                                        "Properties": {},
-                                        "SamplerState": "LinearClamp",
-                                        "Shininess": 18,
-                                        "SpecularColor": {
-                                            "X": 0.16,
-                                            "Y": 0.16,
-                                            "Z": 0.16
-                                        },
-                                        "Textures": [
-                                            "WhiteTexture",
-                                            "FlatNormalTexture"
-                                        ],
-                                        "UVScrollSpeed": [
-                                            0,
-                                            0
-                                        ]
-                                    }
-                                }
-                            ],
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "SkeletalMesh": "Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin",
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0,
-                                        "Y": 0,
-                                        "Z": 0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bBlockComponent": false,
-                                "bCastShadow": true,
-                                "bGenerateOverlapEvents": true,
-                                "bHiddenInGame": false,
-                                "bReceiveShadow": true,
-                                "bReceivesDecals": true,
-                                "bVisible": true
-                            },
-                            "AnimGraph": "AnimationGraphDemo/XBot.animgraph"
                         }
                     ],
                     "Name": "X Bot",
                     "Properties": {
                         "ScriptPath": "Scripts/anim_graph_demo.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": 309
                 },
                 {
                     "Class": "APawn",
                     "Components": [
                         {
                             "Class": "USceneComponent",
+                            "Id": 319,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -169,8 +182,10 @@
                         },
                         {
                             "Class": "UCameraComponent",
+                            "Id": 320,
                             "Name": "CameraComponent",
-                            "Parent": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 319,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -199,42 +214,18 @@
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 319
                 },
                 {
                     "Class": "ADirectionalLightActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0,
-                                        "Y": 0,
-                                        "Z": 0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UDirectionalLightComponent",
+                            "Id": 312,
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3,
                                 "CascadeDistributionExponent": 3,
@@ -273,6 +264,7 @@
                         },
                         {
                             "Class": "UBillboardComponent",
+                            "Id": 313,
                             "Material": {
                                 "Base": "BillboardMaterial",
                                 "Instance": {
@@ -287,6 +279,7 @@
                                     "PSOType": 14,
                                     "Properties": {},
                                     "SamplerState": "LinearClamp",
+                                    "ShadingModel": "BlinnPhong",
                                     "Shininess": 32,
                                     "SpecularColor": {
                                         "X": 1,
@@ -303,7 +296,8 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Outer": 0,
+                            "Parent": 312,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -334,13 +328,15 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 315,
                             "Name": "UArrowComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 312,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -369,27 +365,19 @@
                                 "bReceivesDecals": true,
                                 "bVisible": true
                             }
-                        }
-                    ],
-                    "Name": "CapoeiraKeyLight",
-                    "Properties": {
-                        "ScriptPath": "",
-                        "bActorEnableCollision": true
-                    }
-                },
-                {
-                    "Class": "AStaticMeshActor",
-                    "Components": [
+                        },
                         {
                             "Class": "USceneComponent",
+                            "Id": 321,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
                                         "Y": 0,
-                                        "Z": -0.10000000149011612
+                                        "Z": 0
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -397,39 +385,53 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 12,
-                                        "Y": 12,
-                                        "Z": 0.20000000298023224
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
                                     }
                                 },
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
                             }
-                        },
+                        }
+                    ],
+                    "Name": "CapoeiraKeyLight",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    },
+                    "RootComponent": 312
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Components": [
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 317,
                             "Name": "UStaticMeshComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.16,
-                                            "Y": 0.2,
-                                            "Z": 0.25,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.1599999964237213,
+                                            "Y": 0.20000000298023224,
+                                            "Z": 0.25
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
                                         "PSOType": 0,
                                         "Properties": {},
                                         "SamplerState": "LinearClamp",
+                                        "ShadingModel": "BlinnPhong",
                                         "Shininess": 16,
                                         "SpecularColor": {
-                                            "X": 0.035,
-                                            "Y": 0.035,
-                                            "Z": 0.035
+                                            "X": 0.03500000014901161,
+                                            "Y": 0.03500000014901161,
+                                            "Z": 0.03500000014901161
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -442,7 +444,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 322,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -471,13 +473,43 @@
                                 "bReceivesDecals": true,
                                 "bVisible": true
                             }
+                        },
+                        {
+                            "Class": "USceneComponent",
+                            "Id": 322,
+                            "Name": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0,
+                                        "Y": 0,
+                                        "Z": -0.10000000149011612
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 12,
+                                        "Y": 12,
+                                        "Z": 0.20000000298023224
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "Floor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": 317
                 }
             ],
             "Properties": {}

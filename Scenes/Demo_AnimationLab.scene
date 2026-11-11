@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -7,45 +7,21 @@
                     "Class": "ASkeletalMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": -2.15,
-                                        "Y": 0,
-                                        "Z": 0.14
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
+                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph",
                             "BonePose": [],
                             "Class": "USkeletalMeshComponent",
+                            "Id": 143,
                             "Name": "USkeletalMeshComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Main.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.34,
-                                            "Y": 0.6,
-                                            "Z": 0.89,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.3400000035762787,
+                                            "Y": 0.6000000238418579,
+                                            "Z": 0.8899999856948853
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -55,9 +31,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -73,10 +49,10 @@
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Joints.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.075,
-                                            "Y": 0.18,
-                                            "Z": 0.31,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.07500000298023224,
+                                            "Y": 0.18000000715255737,
+                                            "Z": 0.3100000023841858
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -86,9 +62,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -101,8 +77,10 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 164,
                             "Properties": {
+                                "AnimPlayRate": 1,
+                                "AnimToPlay": null,
                                 "SkeletalMesh": "AnimationLab/Rig/SK_UAL1_Standard_root.fbxbin",
                                 "Transform": {
                                     "Location": {
@@ -124,64 +102,71 @@
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
+                                "bEnableRootMotion": false,
                                 "bGenerateOverlapEvents": false,
                                 "bHiddenInGame": false,
+                                "bLoopAnimation": true,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            },
-                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph"
+                            }
+                        },
+                        {
+                            "Class": "USceneComponent",
+                            "Id": 164,
+                            "Name": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": -2.1500000953674316,
+                                        "Y": 0,
+                                        "Z": 0.14000000059604645
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "Idle Reference",
                     "Properties": {
                         "ScriptPath": "Scripts/animation_lab.lua",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 143
                 },
                 {
                     "Class": "ASkeletalMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0,
-                                        "Y": 0,
-                                        "Z": 0.14
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
+                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph",
                             "BonePose": [],
                             "Class": "USkeletalMeshComponent",
+                            "Id": 147,
                             "Name": "USkeletalMeshComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Main.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.62,
-                                            "Y": 0.83,
-                                            "Z": 0.86,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.6200000047683716,
+                                            "Y": 0.8299999833106995,
+                                            "Z": 0.8600000143051147
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -191,9 +176,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -209,10 +194,10 @@
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Joints.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.065,
-                                            "Y": 0.28,
-                                            "Z": 0.27,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.06499999761581421,
+                                            "Y": 0.2800000011920929,
+                                            "Z": 0.27000001072883606
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -222,9 +207,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -237,8 +222,10 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 165,
                             "Properties": {
+                                "AnimPlayRate": 1,
+                                "AnimToPlay": null,
                                 "SkeletalMesh": "AnimationLab/Rig/SK_UAL1_Standard_root.fbxbin",
                                 "Transform": {
                                     "Location": {
@@ -260,64 +247,71 @@
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
+                                "bEnableRootMotion": false,
                                 "bGenerateOverlapEvents": false,
                                 "bHiddenInGame": false,
+                                "bLoopAnimation": true,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            },
-                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph"
+                            }
+                        },
+                        {
+                            "Class": "USceneComponent",
+                            "Id": 165,
+                            "Name": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0,
+                                        "Y": 0,
+                                        "Z": 0.14000000059604645
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "Live Graph",
                     "Properties": {
                         "ScriptPath": "Scripts/animation_lab.lua",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 147
                 },
                 {
                     "Class": "ASkeletalMeshActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 2.15,
-                                        "Y": 0,
-                                        "Z": 0.14
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
+                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph",
                             "BonePose": [],
                             "Class": "USkeletalMeshComponent",
+                            "Id": 149,
                             "Name": "USkeletalMeshComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Main.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.86,
-                                            "Y": 0.58,
-                                            "Z": 0.31,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.8600000143051147,
+                                            "Y": 0.5799999833106995,
+                                            "Z": 0.3100000023841858
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -327,9 +321,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -345,10 +339,10 @@
                                     "Base": "AnimationLab/Rig/M_UAL1_Standard_Joints.fbxbin",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.38,
-                                            "Y": 0.16,
-                                            "Z": 0.055,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.3799999952316284,
+                                            "Y": 0.1599999964237213,
+                                            "Z": 0.054999999701976776
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -358,9 +352,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -373,8 +367,10 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 166,
                             "Properties": {
+                                "AnimPlayRate": 1,
+                                "AnimToPlay": null,
                                 "SkeletalMesh": "AnimationLab/Rig/SK_UAL1_Standard_root.fbxbin",
                                 "Transform": {
                                     "Location": {
@@ -396,28 +392,61 @@
                                 "bAutoActivate": true,
                                 "bBlockComponent": false,
                                 "bCastShadow": true,
+                                "bEnableRootMotion": false,
                                 "bGenerateOverlapEvents": false,
                                 "bHiddenInGame": false,
+                                "bLoopAnimation": true,
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            },
-                            "AnimGraph": "AnimationLab/LocomotionLab.animgraph"
+                            }
+                        },
+                        {
+                            "Class": "USceneComponent",
+                            "Id": 166,
+                            "Name": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.1500000953674316,
+                                        "Y": 0,
+                                        "Z": 0.14000000059604645
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "Run Reference",
                     "Properties": {
                         "ScriptPath": "Scripts/animation_lab.lua",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 149
                 },
                 {
                     "Class": "APawn",
                     "Components": [
                         {
                             "Class": "USceneComponent",
+                            "Id": 167,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -443,14 +472,16 @@
                         },
                         {
                             "Class": "UCameraComponent",
+                            "Id": 168,
                             "Name": "CameraComponent",
-                            "Parent": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 167,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
                                         "Y": 4,
-                                        "Z": 1.24
+                                        "Z": 1.2400000095367432
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -473,49 +504,25 @@
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 167
                 },
                 {
                     "Class": "ADirectionalLightActor",
                     "Components": [
                         {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": {
-                                        "X": 0,
-                                        "Y": 0,
-                                        "Z": 0
-                                    },
-                                    "Rotation": {
-                                        "Pitch": 0,
-                                        "Roll": 0,
-                                        "Yaw": 0
-                                    },
-                                    "Scale": {
-                                        "X": 1,
-                                        "Y": 1,
-                                        "Z": 1
-                                    }
-                                },
-                                "bAutoActivate": true,
-                                "bHiddenInGame": false,
-                                "bVisible": true
-                            }
-                        },
-                        {
                             "Class": "UDirectionalLightComponent",
+                            "Id": 152,
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3,
                                 "CascadeDistributionExponent": 3,
                                 "CascadeTransitionFraction": 0.10000000149011612,
                                 "DynamicShadowCascades": 4,
                                 "DynamicShadowDistanceMovableLight": 1000,
-                                "Intensity": 1.35,
+                                "Intensity": 1.350000023841858,
                                 "LightColor": 4294967295,
                                 "ShadowBias": 0.5,
                                 "ShadowDistanceFadeoutFraction": 0.10000000149011612,
@@ -547,6 +554,7 @@
                         },
                         {
                             "Class": "UBillboardComponent",
+                            "Id": 153,
                             "Material": {
                                 "Base": "BillboardMaterial",
                                 "Instance": {
@@ -561,6 +569,7 @@
                                     "PSOType": 14,
                                     "Properties": {},
                                     "SamplerState": "LinearClamp",
+                                    "ShadingModel": "BlinnPhong",
                                     "Shininess": 32,
                                     "SpecularColor": {
                                         "X": 1,
@@ -577,7 +586,8 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Outer": 0,
+                            "Parent": 152,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -608,13 +618,15 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 156,
                             "Name": "UArrowComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 152,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -643,21 +655,13 @@
                                 "bReceivesDecals": true,
                                 "bVisible": true
                             }
-                        }
-                    ],
-                    "Name": "Key Light",
-                    "Properties": {
-                        "ScriptPath": "",
-                        "bActorEnableCollision": false
-                    }
-                },
-                {
-                    "Class": "ADirectionalLightActor",
-                    "Components": [
+                        },
                         {
                             "Class": "USceneComponent",
+                            "Id": 169,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -680,18 +684,31 @@
                                 "bHiddenInGame": false,
                                 "bVisible": true
                             }
-                        },
+                        }
+                    ],
+                    "Name": "Key Light",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": false
+                    },
+                    "RootComponent": 152
+                },
+                {
+                    "Class": "ADirectionalLightActor",
+                    "Components": [
                         {
                             "Class": "UDirectionalLightComponent",
+                            "Id": 158,
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3,
                                 "CascadeDistributionExponent": 3,
                                 "CascadeTransitionFraction": 0.10000000149011612,
                                 "DynamicShadowCascades": 4,
                                 "DynamicShadowDistanceMovableLight": 1000,
-                                "Intensity": 0.52,
+                                "Intensity": 0.5199999809265137,
                                 "LightColor": 4294967295,
                                 "ShadowBias": 0.5,
                                 "ShadowDistanceFadeoutFraction": 0.10000000149011612,
@@ -723,6 +740,7 @@
                         },
                         {
                             "Class": "UBillboardComponent",
+                            "Id": 159,
                             "Material": {
                                 "Base": "BillboardMaterial",
                                 "Instance": {
@@ -737,6 +755,7 @@
                                     "PSOType": 14,
                                     "Properties": {},
                                     "SamplerState": "LinearClamp",
+                                    "ShadingModel": "BlinnPhong",
                                     "Shininess": 32,
                                     "SpecularColor": {
                                         "X": 1,
@@ -753,7 +772,8 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Outer": 0,
+                            "Parent": 158,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -784,13 +804,15 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 161,
                             "Name": "UArrowComponent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 158,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -819,21 +841,89 @@
                                 "bReceivesDecals": true,
                                 "bVisible": true
                             }
+                        },
+                        {
+                            "Class": "USceneComponent",
+                            "Id": 170,
+                            "Name": "DefaultSceneRoot",
+                            "Outer": 0,
+                            "Parent": 0,
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0,
+                                        "Y": 0,
+                                        "Z": 0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
                         }
                     ],
                     "Name": "Fill Light",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 158
                 },
                 {
                     "Class": "AStaticMeshActor",
                     "Components": [
                         {
+                            "Class": "UStaticMeshComponent",
+                            "Id": 163,
+                            "Name": "UStaticMeshComponent",
+                            "Outer": 0,
+                            "OverrideMaterials": [],
+                            "Parent": 0,
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0,
+                                        "Y": 0,
+                                        "Z": 0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0,
+                                        "Roll": 0,
+                                        "Yaw": 0
+                                    },
+                                    "Scale": {
+                                        "X": 1,
+                                        "Y": 1,
+                                        "Z": 1
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
                             "Class": "USceneComponent",
+                            "Id": 171,
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Outer": 0,
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -859,16 +949,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 172,
                             "Name": "Floor",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.053,
-                                            "Y": 0.077,
-                                            "Z": 0.112,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.05299999937415123,
+                                            "Y": 0.07699999958276749,
+                                            "Z": 0.1120000034570694
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -878,9 +970,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -893,14 +985,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
                                         "Y": 0,
-                                        "Z": -0.12
+                                        "Z": -0.11999999731779099
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -910,7 +1002,7 @@
                                     "Scale": {
                                         "X": 19,
                                         "Y": 15,
-                                        "Z": 0.24
+                                        "Z": 0.23999999463558197
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -925,16 +1017,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 173,
                             "Name": "Backdrop",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.02,
-                                            "Y": 0.037,
-                                            "Z": 0.062,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.019999999552965164,
+                                            "Y": 0.03700000047683716,
+                                            "Z": 0.06199999898672104
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -944,9 +1038,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -959,14 +1053,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": -3.7,
-                                        "Z": 2.9
+                                        "Y": -3.700000047683716,
+                                        "Z": 2.9000000953674316
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -975,7 +1069,7 @@
                                     },
                                     "Scale": {
                                         "X": 20,
-                                        "Y": 0.3,
+                                        "Y": 0.30000001192092896,
                                         "Z": 7
                                     }
                                 },
@@ -991,16 +1085,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 174,
                             "Name": "Backdrop Bottom Rule",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.045,
-                                            "Y": 0.092,
-                                            "Z": 0.15,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.04500000178813934,
+                                            "Y": 0.09200000017881393,
+                                            "Z": 0.15000000596046448
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1010,9 +1106,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1025,14 +1121,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": -3.52,
-                                        "Z": 0.33
+                                        "Y": -3.5199999809265137,
+                                        "Z": 0.33000001311302185
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1041,8 +1137,8 @@
                                     },
                                     "Scale": {
                                         "X": 20,
-                                        "Y": 0.05,
-                                        "Z": 0.026
+                                        "Y": 0.05000000074505806,
+                                        "Z": 0.026000000536441803
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1057,16 +1153,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 175,
                             "Name": "Backdrop Top Rule",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.04,
-                                            "Y": 0.079,
-                                            "Z": 0.13,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.03999999910593033,
+                                            "Y": 0.07900000363588333,
+                                            "Z": 0.12999999523162842
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1076,9 +1174,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1091,14 +1189,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": -3.52,
-                                        "Z": 2.92
+                                        "Y": -3.5199999809265137,
+                                        "Z": 2.9200000762939453
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1107,8 +1205,8 @@
                                     },
                                     "Scale": {
                                         "X": 20,
-                                        "Y": 0.05,
-                                        "Z": 0.021
+                                        "Y": 0.05000000074505806,
+                                        "Z": 0.020999999716877937
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1123,16 +1221,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 176,
                             "Name": "Idle Reference Platform",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.12,
-                                            "Y": 0.17,
-                                            "Z": 0.23,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.11999999731779099,
+                                            "Y": 0.17000000178813934,
+                                            "Z": 0.23000000417232513
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1142,9 +1242,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1157,14 +1257,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": -2.15,
+                                        "X": -2.1500000953674316,
                                         "Y": 0,
-                                        "Z": 0.065
+                                        "Z": 0.06499999761581421
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1172,9 +1272,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.72,
-                                        "Y": 1.6,
-                                        "Z": 0.13
+                                        "X": 1.7200000286102295,
+                                        "Y": 1.600000023841858,
+                                        "Z": 0.12999999523162842
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1189,16 +1289,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 177,
                             "Name": "Idle Reference Marker",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.26,
-                                            "Y": 0.52,
-                                            "Z": 0.92,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.25999999046325684,
+                                            "Y": 0.5199999809265137,
+                                            "Z": 0.9200000166893005
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1208,9 +1310,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1223,14 +1325,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": -2.15,
-                                        "Y": 0.795,
-                                        "Z": 0.078
+                                        "X": -2.1500000953674316,
+                                        "Y": 0.7950000166893005,
+                                        "Z": 0.07800000160932541
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1238,9 +1340,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.74,
-                                        "Y": 0.016,
-                                        "Z": 0.037
+                                        "X": 1.7400000095367432,
+                                        "Y": 0.01600000075995922,
+                                        "Z": 0.03700000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1255,16 +1357,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 178,
                             "Name": "Idle Reference Back Panel",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.031,
-                                            "Y": 0.052,
-                                            "Z": 0.086,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.03099999949336052,
+                                            "Y": 0.052000001072883606,
+                                            "Z": 0.0860000029206276
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1274,9 +1378,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1289,14 +1393,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": -3.913,
-                                        "Y": -3.52,
-                                        "Z": 1.62
+                                        "X": -3.9130001068115234,
+                                        "Y": -3.5199999809265137,
+                                        "Z": 1.6200000047683716
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1304,9 +1408,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.55,
-                                        "Y": 0.07,
-                                        "Z": 2.45
+                                        "X": 3.549999952316284,
+                                        "Y": 0.07000000029802322,
+                                        "Z": 2.450000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1321,16 +1425,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 179,
                             "Name": "Idle Reference Back Accent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.10400000000000001,
-                                            "Y": 0.20800000000000002,
-                                            "Z": 0.36800000000000005,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.10400000214576721,
+                                            "Y": 0.20800000429153442,
+                                            "Z": 0.36800000071525574
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1340,9 +1446,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1355,14 +1461,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": -3.913,
-                                        "Y": -3.47,
-                                        "Z": 2.83
+                                        "X": -3.9130001068115234,
+                                        "Y": -3.4700000286102295,
+                                        "Z": 2.8299999237060547
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1370,9 +1476,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.54,
-                                        "Y": 0.025,
-                                        "Z": 0.028
+                                        "X": 3.5399999618530273,
+                                        "Y": 0.02500000037252903,
+                                        "Z": 0.02800000086426735
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1387,16 +1493,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 180,
                             "Name": "Live Graph Platform",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.12,
-                                            "Y": 0.17,
-                                            "Z": 0.23,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.11999999731779099,
+                                            "Y": 0.17000000178813934,
+                                            "Z": 0.23000000417232513
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1406,9 +1514,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1421,14 +1529,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
                                         "Y": 0,
-                                        "Z": 0.065
+                                        "Z": 0.06499999761581421
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1436,9 +1544,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.72,
-                                        "Y": 1.6,
-                                        "Z": 0.13
+                                        "X": 1.7200000286102295,
+                                        "Y": 1.600000023841858,
+                                        "Z": 0.12999999523162842
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1453,16 +1561,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 181,
                             "Name": "Live Graph Marker",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.15,
-                                            "Y": 0.85,
-                                            "Z": 0.77,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.15000000596046448,
+                                            "Y": 0.8500000238418579,
+                                            "Z": 0.7699999809265137
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1472,9 +1582,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1487,14 +1597,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": 0.795,
-                                        "Z": 0.078
+                                        "Y": 0.7950000166893005,
+                                        "Z": 0.07800000160932541
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1502,9 +1612,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.74,
-                                        "Y": 0.016,
-                                        "Z": 0.037
+                                        "X": 1.7400000095367432,
+                                        "Y": 0.01600000075995922,
+                                        "Z": 0.03700000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1519,16 +1629,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 182,
                             "Name": "Live Graph Back Panel",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.031,
-                                            "Y": 0.052,
-                                            "Z": 0.086,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.03099999949336052,
+                                            "Y": 0.052000001072883606,
+                                            "Z": 0.0860000029206276
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1538,9 +1650,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1553,14 +1665,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": -3.52,
-                                        "Z": 1.62
+                                        "Y": -3.5199999809265137,
+                                        "Z": 1.6200000047683716
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1568,9 +1680,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.55,
-                                        "Y": 0.07,
-                                        "Z": 2.45
+                                        "X": 3.549999952316284,
+                                        "Y": 0.07000000029802322,
+                                        "Z": 2.450000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1585,16 +1697,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 183,
                             "Name": "Live Graph Back Accent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.06,
-                                            "Y": 0.34,
-                                            "Z": 0.30800000000000005,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.05999999865889549,
+                                            "Y": 0.3400000035762787,
+                                            "Z": 0.30799999833106995
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1604,9 +1718,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1619,14 +1733,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
                                         "X": 0,
-                                        "Y": -3.47,
-                                        "Z": 2.83
+                                        "Y": -3.4700000286102295,
+                                        "Z": 2.8299999237060547
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1634,9 +1748,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.54,
-                                        "Y": 0.025,
-                                        "Z": 0.028
+                                        "X": 3.5399999618530273,
+                                        "Y": 0.02500000037252903,
+                                        "Z": 0.02800000086426735
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1651,16 +1765,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 184,
                             "Name": "Run Reference Platform",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.12,
-                                            "Y": 0.17,
-                                            "Z": 0.23,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.11999999731779099,
+                                            "Y": 0.17000000178813934,
+                                            "Z": 0.23000000417232513
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1670,9 +1786,9 @@
                                         "ShadingModel": "BlinnPhong",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1685,14 +1801,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 2.15,
+                                        "X": 2.1500000953674316,
                                         "Y": 0,
-                                        "Z": 0.065
+                                        "Z": 0.06499999761581421
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1700,9 +1816,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.72,
-                                        "Y": 1.6,
-                                        "Z": 0.13
+                                        "X": 1.7200000286102295,
+                                        "Y": 1.600000023841858,
+                                        "Z": 0.12999999523162842
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1717,16 +1833,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 185,
                             "Name": "Run Reference Marker",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.95,
-                                            "Y": 0.52,
-                                            "Z": 0.15,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.949999988079071,
+                                            "Y": 0.5199999809265137,
+                                            "Z": 0.15000000596046448
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1736,9 +1854,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1751,14 +1869,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 2.15,
-                                        "Y": 0.795,
-                                        "Z": 0.078
+                                        "X": 2.1500000953674316,
+                                        "Y": 0.7950000166893005,
+                                        "Z": 0.07800000160932541
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1766,9 +1884,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 1.74,
-                                        "Y": 0.016,
-                                        "Z": 0.037
+                                        "X": 1.7400000095367432,
+                                        "Y": 0.01600000075995922,
+                                        "Z": 0.03700000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1783,16 +1901,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 186,
                             "Name": "Run Reference Back Panel",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.031,
-                                            "Y": 0.052,
-                                            "Z": 0.086,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.03099999949336052,
+                                            "Y": 0.052000001072883606,
+                                            "Z": 0.0860000029206276
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1802,9 +1922,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1817,14 +1937,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 3.913,
-                                        "Y": -3.52,
-                                        "Z": 1.62
+                                        "X": 3.9130001068115234,
+                                        "Y": -3.5199999809265137,
+                                        "Z": 1.6200000047683716
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1832,9 +1952,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.55,
-                                        "Y": 0.07,
-                                        "Z": 2.45
+                                        "X": 3.549999952316284,
+                                        "Y": 0.07000000029802322,
+                                        "Z": 2.450000047683716
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1849,16 +1969,18 @@
                         },
                         {
                             "Class": "UStaticMeshComponent",
+                            "Id": 187,
                             "Name": "Run Reference Back Accent",
+                            "Outer": 0,
                             "OverrideMaterials": [
                                 {
                                     "Base": "DefaultMaterial",
                                     "Instance": {
                                         "BaseColor": {
-                                            "X": 0.38,
-                                            "Y": 0.20800000000000002,
-                                            "Z": 0.06,
-                                            "W": 1
+                                            "W": 1,
+                                            "X": 0.3799999952316284,
+                                            "Y": 0.20800000429153442,
+                                            "Z": 0.05999999865889549
                                         },
                                         "BlendState": "Opaque",
                                         "FlipNormalY": false,
@@ -1868,9 +1990,9 @@
                                         "ShadingModel": "Unlit",
                                         "Shininess": 20,
                                         "SpecularColor": {
-                                            "X": 0.09,
-                                            "Y": 0.09,
-                                            "Z": 0.09
+                                            "X": 0.09000000357627869,
+                                            "Y": 0.09000000357627869,
+                                            "Z": 0.09000000357627869
                                         },
                                         "Textures": [
                                             "WhiteTexture",
@@ -1883,14 +2005,14 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 171,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
                                     "Location": {
-                                        "X": 3.913,
-                                        "Y": -3.47,
-                                        "Z": 2.83
+                                        "X": 3.9130001068115234,
+                                        "Y": -3.4700000286102295,
+                                        "Z": 2.8299999237060547
                                     },
                                     "Rotation": {
                                         "Pitch": 0,
@@ -1898,9 +2020,9 @@
                                         "Yaw": 0
                                     },
                                     "Scale": {
-                                        "X": 3.54,
-                                        "Y": 0.025,
-                                        "Z": 0.028
+                                        "X": 3.5399999618530273,
+                                        "Y": 0.02500000037252903,
+                                        "Z": 0.02800000086426735
                                     }
                                 },
                                 "bAutoActivate": true,
@@ -1918,7 +2040,8 @@
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": 163
                 }
             ],
             "Properties": {}

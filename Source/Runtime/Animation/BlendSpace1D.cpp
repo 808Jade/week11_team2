@@ -32,6 +32,7 @@ void UBlendSpace1D::GetSamplesToBlend(const FVector& Input, std::vector<FBlendSa
 
     const float X{ClampInput(Input).X};
 
+    // 유효 샘플 범위 밖에서는 가장 가까운 끝 샘플 하나만 사용한다.
     if (X <= SampleX(*First)) {
         OutWeights.push_back({*First, 1.0f});
 
@@ -46,6 +47,7 @@ void UBlendSpace1D::GetSamplesToBlend(const FVector& Input, std::vector<FBlendSa
         return;
     }
 
+    // 정렬된 좌표의 분할점을 찾고, 에셋이 없는 샘플을 건너뛰어 양쪽 이웃을 선택한다.
     const auto Split{std::ranges::lower_bound(First, Last.base(), X, std::ranges::less{}, SampleX)};
     const int32 Low{*std::find_if(std::make_reverse_iterator(Split), Sorted.rend(), IsUsable)};
     const int32 High{*std::find_if(Split, Last.base(), IsUsable)};

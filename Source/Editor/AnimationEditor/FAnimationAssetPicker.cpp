@@ -31,6 +31,7 @@ bool DrawAnimationAssetPicker(const char* Label, FString& Path, EAssetType Type,
         const char* PayloadType{Type == EAssetType::AnimGraph ? AnimGraphPayload : Type == EAssetType::BlendSpace ? BlendSpacePayload : AnimSequencePayload};
         if (const ImGuiPayload* Payload{ImGui::AcceptDragDropPayload(PayloadType)}; Payload && Payload->DataSize > 1 && static_cast<const char*>(Payload->Data)[Payload->DataSize - 1] == 0) {
             const FString Candidate{static_cast<const char*>(Payload->Data), static_cast<std::size_t>(Payload->DataSize - 1)};
+            // 다른 UI에서 넘겨받은 파일 경로를 에셋 매니저가 사용하는 키로 정규화한다.
             Path = FAssetUtils::GetAssetKey(Candidate);
             Changed = true;
         }

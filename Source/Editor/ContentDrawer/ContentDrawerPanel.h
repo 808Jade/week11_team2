@@ -49,7 +49,9 @@ private:
 	std::function<void(const FString&)> OnCreateWidget;
 	std::function<void(const FString&)> OnOpenMesh;
 	char NewAssetName[64] = "NewWidget";
+	// 공통 생성 창에서 선택한 Widget, Anim Graph 또는 Blend Space의 저장 확장자를 유지한다.
 	FString mCreateAssetExtension{".widget"};
+	// 새 에셋 저장에 실패했을 때 생성 창 안에 표시할 메시지이다.
 	FString mCreateAssetError{};
 	char SearchText[128] = {};
 	bool bResetGridScroll = false;

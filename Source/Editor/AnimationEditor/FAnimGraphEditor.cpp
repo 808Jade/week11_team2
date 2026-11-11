@@ -7,6 +7,7 @@
 #include "Animation/AnimGraph.h"
 #include "Asset/FbxImporter/FbxPath.h"
 #include "UObject/UObjectGlobals.h"
+
 #include "Animation/AnimGraphNodeRegistry.h"
 
 #include <imgui.h>
@@ -26,10 +27,10 @@ namespace ed = ax::NodeEditor;
 namespace {
     constexpr char WindowId[]{"###AnimGraphEditor"};
     constexpr char VariablePayload[]{"MACAW_ANIM_GRAPH_VARIABLE"};
-
     constexpr std::uintptr_t OutputNode{1};
     constexpr std::uintptr_t OutputInputPin{1};
     constexpr std::uintptr_t OutputPinBits{0xFF};
+    // 상위 비트로 Get 노드와 값 입력을 구분하고, 하위 비트에는 노드와 핀 번호를 인코딩한다.
     constexpr std::uintptr_t GetterBit{std::uintptr_t{1} << 61};
     constexpr std::uintptr_t FloatInputBit{std::uintptr_t{1} << 60};
 
@@ -101,7 +102,6 @@ namespace {
     FString FormatFloat(float Value) {
         return std::format("{}", Value);
     }
-
     FString DisplayParameterValue(const FAnimGraphParameterInfo& Info, const FAnimGraphNode& Node) {
         const FString* Value{Node.FindParameter(Info.mName)};
         const FString Text{Value != nullptr ? *Value : Info.mDefault};
@@ -119,21 +119,27 @@ FAnimGraphEditor::FAnimGraphEditor() {
 
     Config.SettingsFile = nullptr;
     mEditor = ed::CreateEditor(&Config);
+    mGraphContexts.emplace("Initial", mEditor);
 }
 
 FAnimGraphEditor::~FAnimGraphEditor() {
-    ed::DestroyEditor(mEditor);
+    ClearGraphContexts();
 }
 
 bool FAnimGraphEditor::Open(const std::filesystem::path& Path, FString& Error) {
     UAnimGraph* Source{UAssetManager::GetAssetByPath<UAnimGraph>(FAssetUtils::GetAssetKey(FbxPath::ToString(Path)))};
 
     if (Source == nullptr) {
-        Error = "Cannot load animation asset: " + FbxPath::ToString(Path);
+        Error = "Cannot load animation graph: " + FbxPath::ToString(Path);
+
         return false;
     }
 
-    mEditing.reset(NewObject<UAnimGraph>());
+    mNavigation.clear();
+    ClearGraphContexts();
+    // 저장 전 편집이 현재 실행 중인 공유 에셋에 바로 반영되지 않도록 깊은 복사본을 만든다.
+    mRootEditing.reset(NewObject<UAnimGraph>());
+    mEditing = mRootEditing.get();
     mEditing->CopyFrom(*Source);
     mContextNode = 0;
 
@@ -144,17 +150,14 @@ bool FAnimGraphEditor::Open(const std::filesystem::path& Path, FString& Error) {
     mSelectedNode = -2;
     mNewVariable.fill('\0');
     mError.clear();
-
-    ed::DestroyEditor(mEditor);
-
-    ed::Config Config{};
-
-    Config.SettingsFile = nullptr;
-    mEditor = ed::CreateEditor(&Config);
+    mView = {};
+    mView.mGraph = mEditing;
+    ActivateView(mView);
     ImGui::SetWindowFocus(WindowId);
 
     return true;
 }
+
 
 bool FAnimGraphEditor::IsFocused() const {
     ImGuiWindow* Window{mOpen ? ImGui::FindWindowByName(WindowId) : nullptr};
@@ -165,7 +168,9 @@ bool FAnimGraphEditor::IsFocused() const {
 
 void FAnimGraphEditor::Close() {
     mOpen = false;
-    mEditing.reset();
+    mEditing = nullptr;
+    mNavigation.clear();
+    mRootEditing.reset();
 }
 
 bool FAnimGraphEditor::Save() {
@@ -173,7 +178,8 @@ bool FAnimGraphEditor::Save() {
         return false;
     }
 
-    if (!UAssetManager::SaveAnimGraph(FbxPath::ToString(mPath), *mEditing, mError)) {
+    // 상태 내부나 전환 규칙을 보고 있어도 저장 단위는 최상위 그래프 에셋이다.
+    if (!UAssetManager::SaveAnimGraph(FbxPath::ToString(mPath), *mRootEditing, mError)) {
         return false;
     }
 
@@ -208,10 +214,9 @@ void FAnimGraphEditor::Draw() {
         ImGui::TextColored({1.0f, 0.45f, 0.4f, 1.0f}, "%s", mError.c_str());
     }
 
-    if (Expanded && ImGui::BeginTable("AnimGraphEditorLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail())) {
+    if (Expanded && ImGui::BeginTable("AnimGraphEditorLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail())) {
         ImGui::TableSetupColumn("Variables", ImGuiTableColumnFlags_WidthFixed, 230.0f);
         ImGui::TableSetupColumn("Graph", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthFixed, 280.0f);
         ImGui::TableNextRow();
 
         ImGui::TableSetColumnIndex(0);
@@ -222,14 +227,16 @@ void FAnimGraphEditor::Draw() {
 
         ImGui::EndChild();
         ImGui::TableSetColumnIndex(1);
-        DrawGraph();
-        ImGui::TableSetColumnIndex(2);
+        DrawNavigation();
 
-        if (ImGui::BeginChild("Details")) {
-            DrawSelection();
+        if (mView.mMode == EGraphView::Machine) {
+            DrawStateMachine();
+        } else if (mView.mMode == EGraphView::Rule) {
+            DrawTransitionRule();
+        } else {
+            DrawGraph();
         }
 
-        ImGui::EndChild();
         ImGui::EndTable();
     }
 
@@ -248,23 +255,23 @@ void FAnimGraphEditor::DrawVariables(bool SaveRequested) {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, TextHeight * 0.3f);
     ImGui::TextUnformatted("Variables");
     ImGui::SameLine();
-    ImGui::TextDisabled("%zu", mEditing->GetVariables().size());
+    ImGui::TextDisabled("%zu", mRootEditing->GetVariables().size());
 
     ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x - AddWidth - Style.ItemSpacing.x));
-    const bool AddFromName{ImGui::InputTextWithHint("##NewVariable", "New variable", mNewVariable.data(), mNewVariable.size(), ImGuiInputTextFlags_EnterReturnsTrue)};
+    const bool AddFromName{ImGui::InputTextWithHint("##NewVariable", "New variable name", mNewVariable.data(), mNewVariable.size(), ImGuiInputTextFlags_EnterReturnsTrue)};
     ImGui::SameLine();
 
     bool Added{};
 
     if (ImGui::Button("+ Add", {AddWidth, 0.0f}) || AddFromName) {
-        Added = mEditing->AddVariable({mNewVariable.data(), 0.0f, EAnimGraphVariableSource::Manual});
+        Added = mRootEditing->AddVariable({mNewVariable.data(), 0.0f, EAnimGraphVariableSource::Manual});
 
         if (Added) {
             mNewVariable.fill('\0');
             mDirty = true;
             mError.clear();
         } else {
-            mError = "Enter a unique variable name.";
+            mError = "Variable names must be nonempty and unique.";
         }
     }
 
@@ -278,7 +285,7 @@ void FAnimGraphEditor::DrawVariables(bool SaveRequested) {
         ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.11f, 0.14f, 0.18f, 1.0f});
         ImGui::PushStyleColor(ImGuiCol_Border, {0.29f, 0.35f, 0.43f, 0.55f});
 
-        for (std::size_t Index{}; Index < mEditing->GetVariables().size(); ++Index) {
+        for (std::size_t Index{}; Index < mRootEditing->GetVariables().size(); ++Index) {
             if (DrawVariable(Index, SaveRequested)) {
                 Remove = static_cast<int32>(Index);
             }
@@ -296,7 +303,7 @@ void FAnimGraphEditor::DrawVariables(bool SaveRequested) {
     ImGui::PopStyleVar();
 
     if (Remove >= 0) {
-        mEditing->RemoveVariable(Remove);
+        mRootEditing->RemoveVariable(Remove);
         mDirty = true;
     }
 }
@@ -312,13 +319,12 @@ bool FAnimGraphEditor::DrawVariable(std::size_t Index, bool SaveRequested) {
         const float FrameHeight{ImGui::GetFrameHeight()};
         const float GetWidth{ImGui::CalcTextSize("Get").x + 2.0f * Style.FramePadding.x};
         const float NameWidth{std::max(1.0f, Width - FrameHeight - GetWidth - 2.0f * Style.ItemSpacing.x)};
-        FAnimGraphVariable Variable{mEditing->GetVariables()[Index]};
+        FAnimGraphVariable Variable{mRootEditing->GetVariables()[Index]};
         std::array<char, 64> Name{};
         bool Changed{};
 
         std::copy_n(Variable.mName.begin(), std::min(Variable.mName.size(), Name.size() - 1), Name.begin());
         ImGui::SetNextItemWidth(NameWidth);
-
         const bool Rename{ImGui::InputText("##Name", Name.data(), Name.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::IsItemDeactivatedAfterEdit()};
 
         if ((Rename || (SaveRequested && ImGui::IsItemActive())) && Variable.mName != Name.data()) {
@@ -338,7 +344,7 @@ bool FAnimGraphEditor::DrawVariable(std::size_t Index, bool SaveRequested) {
             ImGui::Text("Get %s", Variable.mName.c_str());
             ImGui::EndDragDropSource();
         } else {
-            ImGui::SetItemTooltip("Drag to the canvas to add Get %s", Variable.mName.c_str());
+            ImGui::SetItemTooltip("Drag onto the canvas to add Get %s", Variable.mName.c_str());
         }
 
         ImGui::SameLine();
@@ -378,14 +384,28 @@ bool FAnimGraphEditor::DrawVariable(std::size_t Index, bool SaveRequested) {
         }
 
         ImGui::SetNextItemWidth(-1.0f);
-        Changed |= ImGui::DragFloat("##Default", &Variable.mDefault, 0.01f, 0.0f, 0.0f, "%.3f");
+
+        if (Variable.mType == EAnimGraphVariableType::Bool) {
+            Changed |= ImGui::Checkbox("##Default", &Variable.mBoolDefault);
+            Variable.mSource = EAnimGraphVariableSource::Manual;
+        } else {
+            Changed |= ImGui::DragFloat("##Default", &Variable.mDefault, 0.01f, 0.0f, 0.0f, "%.3f");
+        }
+
+        int Type{static_cast<int>(Variable.mType)};
+        const char* Types[]{"Float", "Bool"};
+
+        if (ImGui::Combo("Type", &Type, Types, 2)) {
+            Variable.mType = static_cast<EAnimGraphVariableType>(Type);
+            Changed = true;
+        }
 
         if (Changed) {
-            if (mEditing->SetVariable(static_cast<int32>(Index), Variable)) {
+            if (mRootEditing->SetVariable(static_cast<int32>(Index), Variable)) {
                 mDirty = true;
                 mError.clear();
             } else {
-                mError = "Enter a unique variable name.";
+                mError = "Variable names must be nonempty and unique.";
             }
         }
     }
@@ -406,6 +426,7 @@ int32 FAnimGraphEditor::FindVariableIndex(const FString& Name) const {
 }
 
 void FAnimGraphEditor::DrawValueGetters() {
+    // 변수 정의와 Get 노드를 분리해 같은 변수도 캔버스에 여러 번 배치할 수 있게 한다.
     std::vector<int32> Bound{};
 
     for (const FAnimGraphNode& Node : mEditing->GetNodes()) {
@@ -502,7 +523,6 @@ void FAnimGraphEditor::DrawGraph() {
             return Link.mFromNode == Id;
         });
     }};
-
     FAnimGraphNodeBuilder OutputBuilder{};
 
     OutputBuilder.FitHeader("Output Pose", "Output Pose");
@@ -513,7 +533,6 @@ void FAnimGraphEditor::DrawGraph() {
     OutputBuilder.End();
 
     DrawValueGetters();
-
     for (const FAnimGraphNode& Node : mEditing->GetNodes()) {
         const FAnimGraphNodeType* Type{FAnimGraphNodeRegistry::Find(Node.mType)};
         const char* TypeTitle{Type != nullptr ? Type->mTitle.c_str() : Node.mType.c_str()};
@@ -611,7 +630,6 @@ void FAnimGraphEditor::DrawGraph() {
         ed::NavigateToContent(0.0f);
         mFitRequested = false;
     }
-
     if (ed::BeginCreate({0.98f, 0.72f, 0.2f, 1.0f}, 2.0f)) {
         ed::PinId Start{};
         ed::PinId End{};
@@ -624,6 +642,7 @@ void FAnimGraphEditor::DrawGraph() {
                 std::swap(From, To);
             }
 
+            // 값 연결은 변수 바인딩으로, 포즈 연결은 그래프 링크로 각각 저장한다.
             if (((From | To) & (GetterBit | FloatInputBit)) != 0) {
                 const FAnimGraphVariableGetter* Getter{mEditing->FindVariableGetter(DecodeGetter(From))};
                 const FPinRef Input{(To & FloatInputBit) != 0 ? DecodePin(To & ~FloatInputBit) : FPinRef{-2, -1, false}};
@@ -681,7 +700,6 @@ void FAnimGraphEditor::DrawGraph() {
 
         while (ed::QueryDeletedNode(&Node)) {
             const int32 Id{DecodeNode(Node.Get())};
-
             if (Id == UAnimGraph::OutputNodeId) {
                 ed::RejectDeletedItem();
             } else if (ed::AcceptDeletedItem()) {
@@ -699,14 +717,15 @@ void FAnimGraphEditor::DrawGraph() {
     }
 
     ed::EndDelete();
-
     const ImVec2 CanvasMouse{ImGui::GetMousePos()};
     ed::NodeId ContextNode{};
+    int32 OpenMachineId{-1};
 
     ed::Suspend();
 
     const ImRect DropArea{CanvasOrigin, {CanvasOrigin.x + CanvasSize.x, CanvasOrigin.y + CanvasSize.y}};
 
+    // 변수 목록에서 놓은 위치에 독립적인 Get 노드를 생성한다.
     if (ImGui::BeginDragDropTargetCustom(DropArea, ImGui::GetID("AnimGraphVariableDrop"))) {
         if (const ImGuiPayload* Payload{ImGui::AcceptDragDropPayload(VariablePayload)}; Payload != nullptr && Payload->Data != nullptr && Payload->DataSize > 1 && static_cast<const char*>(Payload->Data)[Payload->DataSize - 1] == '\0') {
             const FString Name{static_cast<const char*>(Payload->Data), static_cast<std::size_t>(Payload->DataSize - 1)};
@@ -715,7 +734,7 @@ void FAnimGraphEditor::DrawGraph() {
                 ed::SetNodePosition(ed::NodeId{GetterKey(Id)}, CanvasMouse);
                 mDirty = true;
             } else {
-                mError = "Cannot add the Get node.";
+                mError = "Cannot add a variable getter.";
             }
         }
 
@@ -725,6 +744,7 @@ void FAnimGraphEditor::DrawGraph() {
     if (ed::ShowNodeContextMenu(&ContextNode)) {
         mContextNode = ContextNode.Get();
         mSelectedNode = DecodeNode(mContextNode);
+        ed::SelectNode(ContextNode);
         ImGui::OpenPopup("AnimGraphNodeMenu");
     } else if (ed::ShowBackgroundContextMenu()) {
         mCreateX = CanvasMouse.x;
@@ -745,7 +765,7 @@ void FAnimGraphEditor::DrawGraph() {
                     mSelectedNode = Id;
                     mDirty = true;
                 } else {
-                    mError = "Node limit reached.";
+                    mError = "The graph node limit has been reached.";
                 }
             }
         }
@@ -753,17 +773,37 @@ void FAnimGraphEditor::DrawGraph() {
         ImGui::EndPopup();
     }
 
+    ImGui::SetNextWindowSizeConstraints({360.0f, 0.0f}, {500.0f, ImGui::GetIO().DisplaySize.y});
+
     if (ImGui::BeginPopup("AnimGraphNodeMenu")) {
         const int32 Id{DecodeNode(mContextNode)};
         const int32 Getter{DecodeGetter(mContextNode)};
         const bool CanDelete{mEditing->FindVariableGetter(Getter) != nullptr || mEditing->FindNode(Id) != nullptr};
+        mSelectedNode = Id;
+        ImGui::PushItemWidth(220.0f);
+
+        if (const auto* Variable{mEditing->FindVariableGetter(Getter)}) {
+            ImGui::SeparatorText("Variable Getter");
+            ImGui::Text("Variable: %s", Variable->mVariable.c_str());
+        } else if (Id == UAnimGraph::OutputNodeId) {
+            ImGui::SeparatorText("Output Pose");
+        } else {
+            DrawSelection();
+        }
+
+        ImGui::PopItemWidth();
+        ImGui::Separator();
+
+        if (const auto* Node{mEditing->FindNode(Id)}; Node != nullptr && Node->mType == "StateMachine" && ImGui::MenuItem("Open State Machine")) {
+            OpenMachineId = Id;
+        }
 
         if (ImGui::MenuItem("Delete", "Delete", false, CanDelete)) {
             mDirty |= Getter >= 0 ? mEditing->RemoveVariableGetter(Getter) : mEditing->RemoveNode(Id);
             mSelectedNode = -2;
         }
 
-        if (ImGui::MenuItem("Disconnect inputs", nullptr, false, Id != -2)) {
+        if (ImGui::MenuItem("Disconnect Inputs", nullptr, false, Id != -2)) {
             for (int32 Pin{}; Pin < 255; ++Pin) {
                 mDirty |= mEditing->Disconnect(Id, Pin);
             }
@@ -790,7 +830,7 @@ void FAnimGraphEditor::DrawGraph() {
     } else if (SelectedCount == 0 && !ImGui::IsPopupOpen("AnimGraphNodeMenu")) {
         mSelectedNode = -2;
     }
-
+    // 최초 복원 프레임 이후에만 캔버스 좌표를 에셋으로 되써 초기 배치가 덮이지 않게 한다.
     if (!mApplyPositions) {
         const ImVec2 Output{ed::GetNodePosition(ed::NodeId{OutputNode})};
 
@@ -820,12 +860,21 @@ void FAnimGraphEditor::DrawGraph() {
         mFitRequested = true;
     }
 
+    const std::uintptr_t DoubleClickedKey{ed::GetDoubleClickedNode().Get()};
+    const int32 DoubleClicked{DecodeNode(DoubleClickedKey)};
+    const auto* OpenNode{mEditing->FindNode(DoubleClicked)};
+    const bool OpenMachine{(DoubleClickedKey & GetterBit) == 0 && OpenNode != nullptr && OpenNode->mType == "StateMachine"};
     ed::End();
     ed::SetCurrentEditor(nullptr);
+
+    // Node Editor의 현재 캔버스를 닫은 뒤 컨텍스트를 바꿔 중첩 그래프로 이동한다.
+    if (OpenMachineId >= 0 || OpenMachine) {
+        OpenStateMachine(OpenMachineId >= 0 ? OpenMachineId : DoubleClicked);
+    }
 }
 
 void FAnimGraphEditor::DrawSelection() {
-    ImGui::SeparatorText("Details");
+    ImGui::SeparatorText("Node Properties");
 
     FAnimGraphNode* Node{mEditing->FindNode(mSelectedNode)};
 
@@ -853,7 +902,9 @@ void FAnimGraphEditor::DrawSelection() {
         return;
     }
 
-    ImGui::SeparatorText("Parameters");
+    if (!Type->mParameters.empty()) {
+        ImGui::SeparatorText("Parameters");
+    }
 
     for (const FAnimGraphParameterInfo& Info : Type->mParameters) {
         const FString* Stored{Node->FindParameter(Info.mName)};
@@ -881,7 +932,7 @@ void FAnimGraphEditor::DrawSelection() {
                         }
 
                         for (const FAnimGraphVariable& Variable : mEditing->GetVariables()) {
-                            if (ImGui::Selectable(Variable.mName.c_str(), SelectedBinding == Variable.mName) && SelectedBinding != Variable.mName) {
+                            if (Variable.mType == EAnimGraphVariableType::Float && ImGui::Selectable(Variable.mName.c_str(), SelectedBinding == Variable.mName) && SelectedBinding != Variable.mName) {
                                 Node->SetParameter(BindingKey, Variable.mName);
                                 mDirty = true;
                             }

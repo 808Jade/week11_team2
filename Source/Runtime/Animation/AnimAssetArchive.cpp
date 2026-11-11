@@ -29,6 +29,7 @@ bool FAnimAssetArchive::Load(const FString& Path) {
 }
 
 bool FAnimAssetArchive::Save(const FString& Path) {
+    // 같은 디렉터리의 임시 파일에 완전히 쓴 뒤 교체해 저장 실패 시 기존 에셋을 보호한다.
     const auto Target{FbxPath::FromString(Path)};
     auto Temporary{Target};
     Temporary += FbxPath::FromString("." + FGuid::NewGuid().ToString() + ".tmp");
@@ -95,6 +96,22 @@ void FAnimAssetArchive::EndArray() {
 
 bool FAnimAssetArchive::BeginObject(const FString& Name) {
     auto& Array{*mStack.back()};
+    if (Array.is_object()) {
+        if (!IsLoading()) {
+            mStack.push_back(&(Array[Name] = nlohmann::json::object()));
+            return true;
+        }
+
+        const auto Found{Array.find(Name)};
+        if (Found == Array.end() || !Found->is_object()) {
+            SetError("Invalid animation asset object: " + Name);
+            return false;
+        }
+
+        mStack.push_back(&*Found);
+        return true;
+    }
+
     if (!IsLoading()) {
         Array.push_back(nlohmann::json::object());
         mStack.push_back(&Array.back());

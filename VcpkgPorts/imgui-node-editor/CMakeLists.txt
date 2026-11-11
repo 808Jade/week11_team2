@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(imgui CONFIG REQUIRED)
 
+# 엔진의 ImGui와 함께 링크할 노드 캔버스 구현을 정적 라이브러리로 구성한다.
 add_library(imgui-node-editor STATIC crude_json.cpp imgui_canvas.cpp imgui_node_editor.cpp imgui_node_editor_api.cpp)
 target_link_libraries(imgui-node-editor PRIVATE imgui::imgui)
 

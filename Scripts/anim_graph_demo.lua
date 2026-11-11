@@ -1,4 +1,5 @@
-local ActionNode <const> = 1
+-- 입력과 이동은 Lua가 처리하고, Speed와 JumpWeight를 전달해 C++ 포즈 그래프를 구동한다.
+local ActionNode <const> = "Air Action"
 local JumpDuration <const> = 0.7
 local Mesh = nil
 local Origin = nil
@@ -23,6 +24,7 @@ function Tick(DeltaTime)
         Y = Y / Magnitude
     end
 
+    -- 목표 속도에 부드럽게 접근해 Idle, Walk와 Run 사이의 블렌딩을 확인한다.
     Speed = Speed + (TargetSpeed - Speed) * math.min(DeltaTime * 8.0, 1.0)
     Mesh:SetAnimGraphFloat("Speed", Speed)
 
@@ -33,6 +35,7 @@ function Tick(DeltaTime)
 
     JumpTime = math.min(JumpTime + DeltaTime, JumpDuration)
     local Phase = JumpTime / JumpDuration
+    -- 동작 시작과 끝은 0, 중간은 1인 곡선으로 점프 포즈와 높이를 함께 조절한다.
     local JumpWeight = 4.0 * Phase * (1.0 - Phase)
     Mesh:SetAnimGraphFloat("JumpWeight", JumpWeight)
 
