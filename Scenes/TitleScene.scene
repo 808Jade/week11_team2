@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -10,7 +10,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -37,12 +37,14 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         },
                         {
                             "Class": "UAudioComponent",
                             "Name": "UAudioComponent_1",
-                            "Parent": "UStaticMeshComponent",
+                            "Parent": 1,
                             "Properties": {
                                 "AttenuationFalloffDistance": 3600.0,
                                 "AttenuationInnerRadius": 400.0,
@@ -72,14 +74,17 @@
                                 "bIsUISound": false,
                                 "bLooping": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_0",
                     "Properties": {
                         "ScriptPath": "Scripts/TitleScene.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

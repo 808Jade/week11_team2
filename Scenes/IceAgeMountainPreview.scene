@@ -1,5 +1,5 @@
 {
-  "Version": 4,
+  "Version": 5,
   "World": {
     "PersistentLevel": {
       "Actors": [
@@ -9,7 +9,7 @@
             {
               "Class": "USceneComponent",
               "Name": "DefaultSceneRoot",
-              "Parent": "",
+              "Parent": 0,
               "Properties": {
                 "Transform": {
                   "Location": {
@@ -31,7 +31,9 @@
                 "bAutoActivate": true,
                 "bHiddenInGame": false,
                 "bVisible": true
-              }
+              },
+              "Id": 1,
+              "Outer": 0
             },
             {
               "Class": "UStaticMeshComponent",
@@ -68,7 +70,7 @@
                   }
                 }
               ],
-              "Parent": "DefaultSceneRoot",
+              "Parent": 1,
               "Properties": {
                 "StaticMesh": "Models/IceAgeMountain/IceAgeMountain_HQ.obj",
                 "Transform": {
@@ -95,14 +97,17 @@
                 "bHiddenInGame": false,
                 "bReceiveShadow": true,
                 "bVisible": true
-              }
+              },
+              "Id": 2,
+              "Outer": 0
             }
           ],
           "Name": "IceAgeMountain_HQ",
           "Properties": {
             "ScriptPath": "",
             "bActorEnableCollision": false
-          }
+          },
+          "RootComponent": null
         },
         {
           "Class": "AActor",
@@ -110,7 +115,7 @@
             {
               "Class": "USceneComponent",
               "Name": "DefaultSceneRoot",
-              "Parent": "",
+              "Parent": 0,
               "Properties": {
                 "Transform": {
                   "Location": {
@@ -132,12 +137,14 @@
                 "bAutoActivate": true,
                 "bHiddenInGame": false,
                 "bVisible": true
-              }
+              },
+              "Id": 3,
+              "Outer": 0
             },
             {
               "Class": "UDirectionalLightComponent",
               "Name": "Mountain_Sun",
-              "Parent": "DefaultSceneRoot",
+              "Parent": 3,
               "Properties": {
                 "LightColor": 4294967295,
                 "bAutoActivate": true,
@@ -163,14 +170,17 @@
                     "Z": 1.0
                   }
                 }
-              }
+              },
+              "Id": 4,
+              "Outer": 0
             }
           ],
           "Name": "Mountain_Sun",
           "Properties": {
             "ScriptPath": "",
             "bActorEnableCollision": false
-          }
+          },
+          "RootComponent": null
         },
         {
           "Class": "AActor",
@@ -178,7 +188,7 @@
             {
               "Class": "USceneComponent",
               "Name": "DefaultSceneRoot",
-              "Parent": "",
+              "Parent": 0,
               "Properties": {
                 "Transform": {
                   "Location": {
@@ -200,12 +210,14 @@
                 "bAutoActivate": true,
                 "bHiddenInGame": false,
                 "bVisible": true
-              }
+              },
+              "Id": 5,
+              "Outer": 0
             },
             {
               "Class": "USkyLightComponent",
               "Name": "Mountain_SkyFill",
-              "Parent": "DefaultSceneRoot",
+              "Parent": 5,
               "Properties": {
                 "LightColor": 4294967295,
                 "bAutoActivate": true,
@@ -230,14 +242,17 @@
                     "Z": 1.0
                   }
                 }
-              }
+              },
+              "Id": 6,
+              "Outer": 0
             }
           ],
           "Name": "Mountain_SkyFill",
           "Properties": {
             "ScriptPath": "",
             "bActorEnableCollision": false
-          }
+          },
+          "RootComponent": null
         },
         {
           "Class": "APawn",
@@ -245,7 +260,7 @@
             {
               "Class": "USceneComponent",
               "Name": "DefaultSceneRoot",
-              "Parent": "",
+              "Parent": 0,
               "Properties": {
                 "Transform": {
                   "Location": {
@@ -267,12 +282,14 @@
                 "bAutoActivate": true,
                 "bHiddenInGame": false,
                 "bVisible": true
-              }
+              },
+              "Id": 7,
+              "Outer": 0
             },
             {
               "Class": "UCameraComponent",
               "Name": "MountainCamera",
-              "Parent": "DefaultSceneRoot",
+              "Parent": 7,
               "Properties": {
                 "Transform": {
                   "Location": {
@@ -294,14 +311,17 @@
                 "bAutoActivate": true,
                 "bHiddenInGame": false,
                 "bVisible": true
-              }
+              },
+              "Id": 8,
+              "Outer": 0
             }
           ],
           "Name": "MountainPreviewCamera",
           "Properties": {
             "ScriptPath": "",
             "bActorEnableCollision": false
-          }
+          },
+          "RootComponent": null
         }
       ],
       "Properties": {}

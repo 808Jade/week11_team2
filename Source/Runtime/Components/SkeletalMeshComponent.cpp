@@ -3,6 +3,7 @@
 
 #include "Animation/AnimSingleNodeInstance.h"
 #include "GameFramework/Actor.h"
+#include "Script/LuaScriptInstance.h"
 #include "Serialization/MathSerialization.h"
 
 #include <memory>
@@ -13,16 +14,52 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
     delete std::exchange(AnimScriptInstance, nullptr);
 }
 
+void USkeletalMeshComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    if (!AnimToPlay) return;
+
+    FString Error;
+    if (!PlayAnimation(AnimToPlay, bLoopAnimation, AnimPlayRate, Error))
+        HTR_LOG(Warning, "AnimToPlay '{}' could not play on {}: {}", AnimToPlay->GetPath(), GetName(), Error);
+}
+
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     if (AnimScriptInstance)
     {
+        // Details에서 재생 중에 바꿔도 바로 반영되도록 매 Tick 넘긴다.
+        if (auto* SingleNode = Cast<UAnimSingleNodeInstance>(AnimScriptInstance))
+            SingleNode->SetRootMotionEnabled(bEnableRootMotion);
         AnimScriptInstance->UpdateAnimation(DeltaTime);
         ApplyRootMotion(AnimScriptInstance->GetRootMotionDelta());
         if (AnimScriptInstance->EvaluateAnimation(BoneSpaceTransforms))
             MarkBoneTransformsDirty();
+        DispatchAnimNotifies();
     }
     Super::TickComponent(DeltaTime);
+}
+
+void USkeletalMeshComponent::DispatchAnimNotifies()
+{
+    if (!AnimScriptInstance) return;
+
+    // 받는 쪽(Lua)이 PlayAnimation·메시 교체로 인스턴스를 바꿔도 안전하도록 목록을 먼저 꺼냅니다.
+    const TArray<FAnimNotifyDispatch> Notifies = AnimScriptInstance->TakePendingNotifies();
+    for (const FAnimNotifyDispatch& Notify : Notifies)
+    {
+        OnAnimNotify.Broadcast(this, Notify.Event, Notify.Type);
+
+        AActor* Owner = GetOwner();
+        if (!Owner || !Owner->Script) continue;
+        switch (Notify.Type)
+        {
+        case EAnimNotifyEventType::Notify:     Owner->Script->Call("OnAnimNotify", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateBegin: Owner->Script->Call("OnAnimNotifyBegin", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateEnd:   Owner->Script->Call("OnAnimNotifyEnd", Notify.Event.NotifyName); break;
+        case EAnimNotifyEventType::StateTick:  break;
+        }
+    }
 }
 
 bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool bLooping,
@@ -52,10 +89,16 @@ bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 
     if (NewInstance)
         delete std::exchange(AnimScriptInstance, NewInstance.release());
+    SingleNode->SetRootMotionEnabled(bEnableRootMotion);
     SingleNode->PlayAnim();
     SingleNode->EvaluateAnimation(BoneSpaceTransforms);
     RefreshBoneTransformsNow();
     return true;
+}
+
+UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
+{
+    return Cast<UAnimSingleNodeInstance>(AnimScriptInstance);
 }
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const

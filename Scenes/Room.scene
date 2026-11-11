@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -10,7 +10,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -35,13 +35,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_1",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -49,7 +52,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -71,12 +74,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Intensity": 1.0,
                                 "LightColor": 4294967295,
@@ -100,7 +105,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -134,7 +141,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -158,7 +165,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -168,7 +177,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -193,13 +202,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADirectionalLightActor_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -208,7 +220,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Models/Hitori/Hitori.obj",
                                 "Transform": {
@@ -233,13 +245,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_7",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -248,7 +263,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Models/Shiba/Shiba.obj",
                                 "Transform": {
@@ -273,13 +288,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_8",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

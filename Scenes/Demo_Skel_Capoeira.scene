@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -1343,7 +1343,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Imported/X Bot/SK_X Bot_mixamorig_Hips.fbxbin",
                                 "Transform": {
@@ -1371,14 +1371,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         }
                     ],
                     "Name": "X Bot",
                     "Properties": {
                         "ScriptPath": "Scripts/x_bot_capoeira.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APawn",
@@ -1386,7 +1389,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1408,12 +1411,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UCameraComponent",
                             "Name": "CameraComponent",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 2,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1435,14 +1440,17 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         }
                     ],
                     "Name": "CapoeiraCamera",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -1450,7 +1458,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1472,12 +1480,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3.0,
                                 "CascadeDistributionExponent": 3.0,
@@ -1512,7 +1522,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1546,7 +1558,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 5,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1573,7 +1585,9 @@
                                 "bReceiveShadow": false,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1583,7 +1597,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 5,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1611,14 +1625,17 @@
                                 "bReceiveShadow": false,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         }
                     ],
                     "Name": "CapoeiraKeyLight",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -1643,7 +1660,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -1671,14 +1688,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 8,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Floor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

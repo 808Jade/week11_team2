@@ -2,6 +2,8 @@
 #include "Editor/AssetEditor/EditorManager.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
+#include "Editor/AnimSequenceEditor/AnimSequenceEditor.h"
+#include "Animation/AnimSequenceBase.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
 #include "Asset/FbxImporter/FbxAssetBake.h"
@@ -38,7 +40,7 @@ FAssetEditor* FEditorManager::FindEditor(const FString& Path) const
 {
 	for (const auto& Editor : Editors)
 	{
-		if (Editor->GetAssetPath() == Path)
+		if (Editor->IsEditingAsset(Path))
 		{
 			return Editor.get();
 		}
@@ -52,6 +54,7 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
 	// 이미 열려 있는 에디터가 있으면 활성화
 	if (FAssetEditor* Existing = FindEditor(AssetPath))
 	{
+		Existing->OnReopenAsset(AssetPath);
 		Existing->Activate();
 		return;
 	}
@@ -112,6 +115,24 @@ void FEditorManager::CreateEditor(const FString& AssetPath)
 	{
 		USkeletalMesh* MeshAsset = Cast<USkeletalMesh>(Asset);
 		Editor = MakeUnique<FSkeletalMeshEditor>(EditorEngine, *this, AssetPath, *MeshAsset);
+	}
+
+	// 애니메이션은 같은 Skeleton을 쓰는 Skeletal Mesh를 프리뷰 메시로 골라 엽니다. (UE Skeleton Preview Mesh)
+	if (UAnimSequenceBase* Sequence = Cast<UAnimSequenceBase>(Asset))
+	{
+		USkeletalMesh* PreviewMesh = nullptr;
+		for (const FString& MeshPath : FAnimSequenceEditor::FindPreviewMeshPaths(*Sequence))
+		{
+			PreviewMesh = UAssetManager::GetAssetByPath<USkeletalMesh>(MeshPath);
+			if (PreviewMesh && PreviewMesh->GetSkeleton() == Sequence->GetSkeleton()) break;
+			PreviewMesh = nullptr;
+		}
+		if (!PreviewMesh)
+		{
+			HTR_LOG(Warning, "No skeletal mesh uses the Skeleton of this animation: {}", AssetPath.c_str());
+			return;
+		}
+		Editor = MakeUnique<FAnimSequenceEditor>(EditorEngine, *this, AssetPath, *Sequence, *PreviewMesh);
 	}
 
 	// 지원하지 않는 타입

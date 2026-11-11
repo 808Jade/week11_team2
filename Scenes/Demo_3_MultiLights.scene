@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -10,7 +10,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -35,13 +35,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Floor_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -49,7 +52,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -71,12 +74,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 0.5,
                                 "Intensity": 0.35,
@@ -106,7 +111,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -140,7 +147,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -164,7 +171,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -174,7 +183,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -199,13 +208,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         }
                     ],
                     "Name": "DirectionalLight_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -214,7 +226,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -239,13 +251,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -254,7 +269,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -279,13 +294,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_1",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -294,7 +312,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -319,13 +337,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 8,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_2",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -334,7 +355,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -359,13 +380,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 9,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_3",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -374,7 +398,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -399,13 +423,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 10,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_4",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -414,7 +441,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -439,13 +466,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 11,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_5",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -454,7 +484,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -479,13 +509,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 12,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_6",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -494,7 +527,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -519,13 +552,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 13,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_7",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -534,7 +570,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -559,13 +595,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 14,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_8",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -574,7 +613,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -599,13 +638,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 15,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_9",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -614,7 +656,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -639,13 +681,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 16,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_10",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -654,7 +699,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -679,13 +724,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 17,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_11",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -694,7 +742,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cylinder",
                                 "Transform": {
@@ -719,13 +767,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 18,
+                            "Outer": 0
                         }
                     ],
                     "Name": "GridPillar_12",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -734,7 +785,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Sphere",
                                 "Transform": {
@@ -759,13 +810,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 19,
+                            "Outer": 0
                         }
                     ],
                     "Name": "CenterBall_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APointLightActor",
@@ -773,7 +827,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -795,12 +849,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 20,
+                            "Outer": 0
                         },
                         {
                             "Class": "UPointLightComponent",
                             "Name": "UPointLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 16,
                                 "Intensity": 3,
@@ -831,7 +887,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 21,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -865,7 +923,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UPointLightComponent",
+                            "Parent": 21,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -889,13 +947,16 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 22,
+                            "Outer": 0
                         }
                     ],
                     "Name": "PointLight_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APointLightActor",
@@ -903,7 +964,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -925,12 +986,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 23,
+                            "Outer": 0
                         },
                         {
                             "Class": "UPointLightComponent",
                             "Name": "UPointLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 16,
                                 "Intensity": 3,
@@ -961,7 +1024,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 24,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -995,7 +1060,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UPointLightComponent",
+                            "Parent": 24,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1019,13 +1084,16 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 25,
+                            "Outer": 0
                         }
                     ],
                     "Name": "PointLight_1",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APointLightActor",
@@ -1033,7 +1101,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1055,12 +1123,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 26,
+                            "Outer": 0
                         },
                         {
                             "Class": "UPointLightComponent",
                             "Name": "UPointLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 16,
                                 "Intensity": 3,
@@ -1091,7 +1161,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 27,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1125,7 +1197,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UPointLightComponent",
+                            "Parent": 27,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1149,13 +1221,16 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 28,
+                            "Outer": 0
                         }
                     ],
                     "Name": "PointLight_2",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APointLightActor",
@@ -1163,7 +1238,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1185,12 +1260,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 29,
+                            "Outer": 0
                         },
                         {
                             "Class": "UPointLightComponent",
                             "Name": "UPointLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 16,
                                 "Intensity": 3,
@@ -1221,7 +1298,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 30,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1255,7 +1334,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UPointLightComponent",
+                            "Parent": 30,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1279,13 +1358,16 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 31,
+                            "Outer": 0
                         }
                     ],
                     "Name": "PointLight_3",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASpotLightActor",
@@ -1293,7 +1375,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1315,12 +1397,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 32,
+                            "Outer": 0
                         },
                         {
                             "Class": "USpotLightComponent",
                             "Name": "USpotLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 32,
                                 "InnerConeAngle": 18,
@@ -1353,7 +1437,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 33,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1387,7 +1473,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "USpotLightComponent",
+                            "Parent": 33,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1411,7 +1497,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 34,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1421,7 +1509,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "USpotLightComponent",
+                            "Parent": 33,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1446,13 +1534,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 35,
+                            "Outer": 0
                         }
                     ],
                     "Name": "SpotLight_0",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASpotLightActor",
@@ -1460,7 +1551,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1482,12 +1573,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 36,
+                            "Outer": 0
                         },
                         {
                             "Class": "USpotLightComponent",
                             "Name": "USpotLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 32,
                                 "InnerConeAngle": 18,
@@ -1520,7 +1613,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 37,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1554,7 +1649,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "USpotLightComponent",
+                            "Parent": 37,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1578,7 +1673,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 38,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1588,7 +1685,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "USpotLightComponent",
+                            "Parent": 37,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1613,13 +1710,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 39,
+                            "Outer": 0
                         }
                     ],
                     "Name": "SpotLight_1",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASpotLightActor",
@@ -1627,7 +1727,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1649,12 +1749,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 40,
+                            "Outer": 0
                         },
                         {
                             "Class": "USpotLightComponent",
                             "Name": "USpotLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 32,
                                 "InnerConeAngle": 18,
@@ -1687,7 +1789,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 41,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1721,7 +1825,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "USpotLightComponent",
+                            "Parent": 41,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1745,7 +1849,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 42,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1755,7 +1861,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "USpotLightComponent",
+                            "Parent": 41,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1780,13 +1886,16 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 43,
+                            "Outer": 0
                         }
                     ],
                     "Name": "SpotLight_2",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

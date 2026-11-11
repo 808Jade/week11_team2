@@ -8,6 +8,9 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimationAsset.h"
+#include "Animation/Skeleton.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/ParticleSubUVComponent.h"
 #include "Components/SpotLightComponent.h"
@@ -110,6 +113,12 @@ namespace
 					}
 				}
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Choose Script..."))
+			{
+				const FString Selected = FEditorFileUtils::ChooseLuaScriptFile();
+				if (!Selected.empty()) Actor->ScriptPath = Selected;   // 리플렉션 프로퍼티라 씬 저장 때 같이 저장된다
+			}
 			return;
 		}
 
@@ -117,6 +126,12 @@ namespace
 		if (ImGui::Button("Edit Script"))
 		{
 			FLuaScriptManager::Get().OpenScriptInEditor(Actor->ScriptPath);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Change..."))
+		{
+			const FString Selected = FEditorFileUtils::ChooseLuaScriptFile();
+			if (!Selected.empty()) Actor->ScriptPath = Selected;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Detach"))
@@ -403,6 +418,71 @@ namespace
 			FComponentReregisterContext Reregister(Component);
 			Component->SetSkeletalMesh(Picked);
 		}
+	}
+
+	// 애니메이션 에셋 선택. Owner가 SkeletalMeshComponent면 메시와 같은 Skeleton의 애니메이션만 보여 준다
+	// (재생 시 UAnimSingleNodeInstance가 같은 Skeleton 에셋인지 검사하므로 다른 것은 골라도 재생되지 않는다).
+	bool DrawAnimationSlot(UObject* Owner, UAnimationAsset** AnimPtr)
+	{
+		const USkeletalMeshComponent* MeshComponent = Cast<USkeletalMeshComponent>(Owner);
+		const USkeletalMesh* Mesh = MeshComponent ? MeshComponent->GetSkeletalMesh() : nullptr;
+		const USkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+		auto IsCompatible = [MeshComponent, Skeleton](const UAnimationAsset* Anim)
+		{
+			return !MeshComponent || (Skeleton && Anim->GetSkeleton() == Skeleton);
+		};
+
+		UAnimationAsset* Current = *AnimPtr;
+		const FString CurrentPath = Current ? Current->GetPath() : "";
+		const FString CurrentName = Current ? GetAssetDisplayName(CurrentPath) : "None";
+		bool bChanged = false;
+
+		ImGui::SetNextItemWidth(-1.0f);
+		const bool bOpen = ImGui::BeginCombo("##AnimToPlay", CurrentName.c_str());
+		if (ImGui::IsItemHovered() && Current) ImGui::SetTooltip("%s", CurrentPath.c_str());
+		if (bOpen)
+		{
+			if (ImGui::Selectable("None", Current == nullptr))
+			{
+				*AnimPtr = nullptr;
+				bChanged = true;
+			}
+			if (MeshComponent && !Skeleton)
+			{
+				ImGui::TextDisabled("Set a skeletal mesh first.");
+			}
+			else
+			{
+				// Skeleton은 파일을 읽어야 알 수 있으므로, 목록을 열 때 아직 로드되지 않은 애니메이션을 로드한다.
+				for (const FString& ItemPath : UAssetManager::GetUnloadedAssetPaths(EAssetType::AnimSequence))
+					UAssetManager::GetAssetByPath<UAnimationAsset>(ItemPath);
+
+				int32 Shown = 0;
+				for (TObjectIterator<UAnimationAsset> Itr; Itr; ++Itr)
+				{
+					const FString Path = Itr->GetPath();
+					if (Path.empty() || UAssetManager::FindLoadedAsset(Path) != *Itr || !IsCompatible(*Itr)) continue;
+					const bool bSelected = *Itr == Current;
+					ImGui::PushID(*Itr);
+					if (ImGui::Selectable(GetAssetDisplayName(Path).c_str(), bSelected))
+					{
+						*AnimPtr = *Itr;
+						bChanged = true;
+					}
+					if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", Path.c_str());
+					if (bSelected) ImGui::SetItemDefaultFocus();
+					ImGui::PopID();
+					++Shown;
+				}
+				if (Shown == 0) ImGui::TextDisabled("No animation uses this mesh's Skeleton.");
+			}
+			ImGui::EndCombo();
+		}
+
+		// 메시를 바꿔 Skeleton이 달라졌으면 알려 준다.
+		if (*AnimPtr && !IsCompatible(*AnimPtr))
+			ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "Animation uses a different Skeleton; it will not play.");
+		return bChanged;
 	}
 
 	UStaticMesh* DrawMeshSlot(UStaticMesh* Current)
@@ -1031,6 +1111,14 @@ namespace
 							*ObjPtr = Picked;
 					});
 				}
+			}
+			else if (PropertyClass == UAnimationAsset::StaticClass())
+			{
+				// main의 지연 적용 방식(FPropertyEdit)에 맞춘다: 복사본에 고른 뒤 Changes로 반영한다.
+				Edit.DrawValue(*reinterpret_cast<UAnimationAsset**>(ObjPtr), [&](UAnimationAsset*& Value)
+				{
+					return DrawAnimationSlot(Object, &Value);
+				});
 			}
 			else if (PropertyClass == UTexture2D::StaticClass())
 			{

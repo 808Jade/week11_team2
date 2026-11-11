@@ -156,6 +156,12 @@ void FLevelEditorTab::DrawFbxImportDialog()
 		ImGui::TextUnformatted("Select an existing Skeleton for animation-only import.");
 	else if (FbxOptions.AnimationSkeletonKey.empty())
 		ImGui::TextDisabled("None uses the Skeleton of the imported mesh for each rig.");
+	ImGui::BeginDisabled(FbxOptions.AnimationSkeletonKey.empty());
+	ImGui::Checkbox("Retarget (Humanoid)", &FbxOptions.bRetargetHumanoid);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Bake the animation onto the selected Skeleton even when bone names or hierarchy differ.\n"
+			"Bones are matched by humanoid names (Hips, Spine chain, Neck, Head, arms, legs) and rotate by their change from the reference pose.");
+	ImGui::EndDisabled();
 	int Range = static_cast<int>(FbxOptions.AnimationRange);
 	if (ImGui::Combo("Animation Length", &Range, "Timeline\0Animated Time\0Set Range\0"))
 		FbxOptions.AnimationRange = static_cast<EFbxAnimationRange>(Range);

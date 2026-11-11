@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -10,7 +10,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -37,14 +37,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Floor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -52,7 +55,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -74,12 +77,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 0.5,
                                 "Intensity": 0.8,
@@ -109,7 +114,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -143,7 +150,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -169,7 +176,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -179,7 +188,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 3,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -206,14 +215,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Sun",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APointLightActor",
@@ -221,7 +233,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -243,12 +255,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         },
                         {
                             "Class": "UPointLightComponent",
                             "Name": "UPointLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AttenuationRadius": 20.0,
                                 "Intensity": 4.0,
@@ -280,7 +294,9 @@
                                 "bCastShadows": false,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -314,7 +330,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UPointLightComponent",
+                            "Parent": 7,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -340,14 +356,17 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 8,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Fill_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASkeletalMeshActor",
@@ -357,7 +376,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Assets/FBX/Wheezy/SK_Wheezy.fbxbin",
                                 "Transform": {
@@ -384,14 +403,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 9,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wheezy",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ATextRenderActor",
@@ -399,7 +421,7 @@
                         {
                             "Class": "UTextRenderComponent",
                             "Name": "TextRenderComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Font": "Assets/Fonts/Pretendard.json",
                                 "Text": "Wheezy · 31 Bones",
@@ -424,13 +446,16 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 10,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Label_Wheezy",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASkeletalMeshActor",
@@ -440,7 +465,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Assets/FBX/Mixamo_Idle/SK_Mixamo_Idle.fbxbin",
                                 "Transform": {
@@ -467,14 +492,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 11,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Mixamo",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ATextRenderActor",
@@ -482,7 +510,7 @@
                         {
                             "Class": "UTextRenderComponent",
                             "Name": "TextRenderComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Font": "Assets/Fonts/Pretendard.json",
                                 "Text": "Mixamo · 65 Bones",
@@ -507,13 +535,16 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 12,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Label_Mixamo",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASkeletalMeshActor",
@@ -523,7 +554,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Assets/FBX/Marine/SK_Marine.fbxbin",
                                 "Transform": {
@@ -550,14 +581,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 13,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Marine",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ATextRenderActor",
@@ -565,7 +599,7 @@
                         {
                             "Class": "UTextRenderComponent",
                             "Name": "TextRenderComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Font": "Assets/Fonts/Pretendard.json",
                                 "Text": "Marine · 84 Bones",
@@ -590,13 +624,16 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 14,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Label_Marine",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASkeletalMeshActor",
@@ -606,7 +643,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Assets/FBX/SKM_DKM_Full/SK_DKM_Full.fbxbin",
                                 "Transform": {
@@ -633,14 +670,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 15,
+                            "Outer": 0
                         }
                     ],
                     "Name": "DKM",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ATextRenderActor",
@@ -648,7 +688,7 @@
                         {
                             "Class": "UTextRenderComponent",
                             "Name": "TextRenderComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Font": "Assets/Fonts/Pretendard.json",
                                 "Text": "DKM · 89 Bones",
@@ -673,13 +713,16 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 16,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Label_DKM",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ASkeletalMeshActor",
@@ -689,7 +732,7 @@
                             "Class": "USkeletalMeshComponent",
                             "Name": "USkeletalMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "SkeletalMesh": "Assets/FBX/LumaSketchfab/SK_LumaSketchfab.fbxbin",
                                 "Transform": {
@@ -716,14 +759,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 17,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Luma",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ATextRenderActor",
@@ -731,7 +777,7 @@
                         {
                             "Class": "UTextRenderComponent",
                             "Name": "TextRenderComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Font": "Assets/Fonts/Pretendard.json",
                                 "Text": "Luma · 22 Bones",
@@ -756,13 +802,16 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 18,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Label_Luma",
                     "Properties": {
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

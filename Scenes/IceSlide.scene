@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -9,7 +9,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -31,12 +31,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         },
                         {
                             "Class": "USphereComponent",
                             "Name": "PlayerCollider",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 1,
                             "Properties": {
                                 "ShapeColor": 4286105710,
                                 "SphereRadius": 0.5,
@@ -65,13 +67,15 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
                             "Name": "PlayerMesh",
                             "OverrideMaterials": [],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 1,
                             "Properties": {
                                 "StaticMesh": "Models/Shiba/Shiba.obj",
                                 "Transform": {
@@ -98,12 +102,14 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         },
                         {
                             "Class": "USlidingMovementComponent",
                             "Name": "SlidingMovement",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Acceleration": 100000000.0,
                                 "CollisionRadius": 0.5,
@@ -114,14 +120,17 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         }
                     ],
                     "Name": "IcePlayer",
                     "Properties": {
                         "ScriptPath": "Scripts/ice_player.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -129,7 +138,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -151,7 +160,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -188,7 +199,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 5,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -215,14 +226,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         }
                     ],
                     "Name": "StartFloor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -230,7 +244,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -252,7 +266,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -289,7 +305,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 7,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -316,12 +332,14 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 8,
+                            "Outer": 0
                         },
                         {
                             "Class": "UIceVolumeComponent",
                             "Name": "IceLeft",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 7,
                             "Properties": {
                                 "BoxExtent": {
                                     "X": 4.0,
@@ -355,12 +373,14 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 9,
+                            "Outer": 0
                         },
                         {
                             "Class": "UIceVolumeComponent",
                             "Name": "IceRight",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 7,
                             "Properties": {
                                 "BoxExtent": {
                                     "X": 4.0,
@@ -394,14 +414,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 10,
+                            "Outer": 0
                         }
                     ],
                     "Name": "IceFloor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -409,7 +432,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -431,7 +454,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 11,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -468,7 +493,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 11,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -495,14 +520,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 12,
+                            "Outer": 0
                         }
                     ],
                     "Name": "EndFloor",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -510,7 +538,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -532,7 +560,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 13,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -569,7 +599,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 13,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -596,14 +626,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 14,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wall_Far",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -611,7 +644,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -633,7 +666,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 15,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -670,7 +705,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 15,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -697,14 +732,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 16,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wall_Start",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -712,7 +750,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -734,7 +772,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 17,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -771,7 +811,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 17,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -798,14 +838,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 18,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wall_Left",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -813,7 +856,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -835,7 +878,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 19,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -872,7 +917,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 19,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -899,14 +944,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 20,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wall_Right",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AActor",
@@ -914,7 +962,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -936,7 +984,9 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 21,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -973,7 +1023,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 21,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -1000,12 +1050,14 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 22,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBoxComponent",
                             "Name": "WallCollider",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 21,
                             "Properties": {
                                 "BoxExtent": {
                                     "X": 0.10000000149011612,
@@ -1038,14 +1090,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 23,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Wall_Obstacle",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -1053,7 +1108,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1075,12 +1130,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 24,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3.0,
                                 "Intensity": 1.5,
@@ -1110,7 +1167,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 25,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1144,7 +1203,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 25,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1170,7 +1229,9 @@
                                 "bHiddenInGame": true,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 26,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1180,7 +1241,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 25,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1207,14 +1268,17 @@
                                 "bHiddenInGame": false,
                                 "bReceiveShadow": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 27,
+                            "Outer": 0
                         }
                     ],
                     "Name": "Sun",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "APawn",
@@ -1222,7 +1286,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1244,12 +1308,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 28,
+                            "Outer": 0
                         },
                         {
                             "Class": "UCameraComponent",
                             "Name": "UCameraComponent_0",
-                            "Parent": "DefaultSceneRoot",
+                            "Parent": 28,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1271,14 +1337,17 @@
                                 "bAutoActivate": false,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 29,
+                            "Outer": 0
                         }
                     ],
                     "Name": "PlayerCamera",
                     "Properties": {
                         "ScriptPath": "Scripts/IceSlide_PlayerCamera.lua",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AParticleActor",
@@ -1286,20 +1355,23 @@
                         {
                             "Class": "UParticleSubUVComponent",
                             "Name": "UParticleSubUVComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "ColSize": 4,
                                 "RowSize": 4,
                                 "FrameRate": 16.0,
                                 "bAutoActivate": false
-                            }
+                            },
+                            "Id": 30,
+                            "Outer": 0
                         }
                     ],
                     "Name": "DeathParticle",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": false
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}

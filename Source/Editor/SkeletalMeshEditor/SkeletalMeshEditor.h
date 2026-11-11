@@ -97,6 +97,7 @@ public:
 
 	const char* GetEditorTypeName() const override { return "SkeletalMesh"; }
 	USkeletalMesh* GetMesh() const { return Mesh; }
+	class USkeletalMeshComponent* GetPreviewComponent() const { return MeshComponent; }
 	const FGizmo* GetPreviewGizmo() const override { return BoneGizmo.GetTarget() ? &BoneGizmo : nullptr; }
 	EGizmoMode GetGizmoMode() const { return BoneGizmo.GetMode(); }
 	EGizmoSpace GetGizmoSpace() const { return BoneGizmo.GetSpace(); }
@@ -122,6 +123,9 @@ protected:
 
 	// UI, 에디터에서 사용할 수 있도록 BoneItems를 빌드합니다.
 	void BuildBoneItems();
+
+	// 프리뷰 메시를 교체합니다. (Animation 에디터의 Preview Mesh 선택)
+	bool SetPreviewMesh(USkeletalMesh& NewMesh);
 
 private:
 	// 기즈모 조작과 본 피킹에 공통으로 필요한 뷰포트 입력 상태를 확인합니다.

@@ -4,6 +4,8 @@
 #include <sol/sol.hpp>
 
 #include "Animation/AnimationAsset.h"
+#include "Animation/AnimSequenceBase.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Components/MovementComponent.h"
 #include "Components/SlidingMovementComponent.h"
 #include "Components/IceVolumeComponent.h"
@@ -481,6 +483,21 @@ namespace
 				return sol::nullopt;
 			});
 
+		// 클래스로 컴포넌트를 찾습니다. (UE GetComponentByClass) 이름이 바뀌어도 찾을 수 있습니다. 예: GetComponentByClass("USkeletalMeshComponent")
+		Lua.set_function("GetComponentByClass", [](sol::this_environment Env, const std::string& ClassName) -> sol::optional<FLuaComponentRef>
+			{
+				AActor* Owner = OwnerFromEnv(Env);
+				if (!Owner) throw sol::error("GetComponentByClass needs an Actor script context.");
+				const UClass* Class = FindClass(ClassName);
+				if (!Class) throw sol::error("GetComponentByClass: unknown class " + ClassName);
+				for (UActorComponent* Component : Owner->GetComponents())
+				{
+					if (Component && Component->GetClass() && Component->GetClass()->IsChildOf(Class))
+						return FLuaComponentRef::Make(Component);
+				}
+				return sol::nullopt;
+			});
+
 		Lua.set_function("SetViewTargetWithBlend",
 			[](sol::this_environment Env,
 				const FLuaActorRef& Target,
@@ -575,6 +592,36 @@ namespace
 				FString Error;
 				if (!Mesh->PlayAnimation(Asset, Looping.value_or(false), PlayRate.value_or(1.f), Error))
 					throw sol::error("PlayAnimation failed for " + Path + ": " + Error);
+			},
+			// 지금 재생 중인 애니메이션의 배속·루프를 바꾸고 처음부터 다시 재생합니다. 배속이 음수면 끝에서 역재생합니다.
+			"RestartAnimation", [](const FLuaComponentRef& Ref, sol::optional<float> PlayRate, sol::optional<bool> Looping)
+			{
+				auto* Mesh = Cast<USkeletalMeshComponent>(&Deref(Ref));
+				if (!Mesh) throw sol::error("RestartAnimation requires a SkeletalMeshComponent.");
+				auto* Player = Mesh->GetSingleNodeInstance();
+				if (!Player || !Player->GetAnimationAsset()) throw sol::error("RestartAnimation: call PlayAnimation first.");
+				if (PlayRate && !Player->SetPlayRate(*PlayRate)) throw sol::error("RestartAnimation: invalid play rate.");
+				if (Looping) Player->SetLooping(*Looping);
+				Player->PlayAnim();
+			},
+			// 지금 재생 중인 애니메이션 애셋에 Notify를 추가합니다. Duration > 0이면 NotifyState.
+			// 메모리의 애셋만 바뀌고 저장되지 않습니다. (에디터 Notify 트랙·저장이 생기기 전 테스트용)
+			"AddAnimNotify", [](const FLuaComponentRef& Ref, const FString& Name, float Time, sol::optional<float> Duration)
+			{
+				auto* Mesh = Cast<USkeletalMeshComponent>(&Deref(Ref));
+				if (!Mesh) throw sol::error("AddAnimNotify requires a SkeletalMeshComponent.");
+				auto* Player = Mesh->GetSingleNodeInstance();
+				auto* Sequence = Player ? Cast<UAnimSequenceBase>(Player->GetAnimationAsset()) : nullptr;
+				if (!Sequence) throw sol::error("AddAnimNotify: call PlayAnimation first.");
+
+				FAnimNotifyEvent Notify;
+				Notify.NotifyName = Name;
+				Notify.TriggerTime = Time;
+				Notify.Duration = std::max(0.0f, Duration.value_or(0.0f));
+				// 애셋은 PIE를 다시 시작해도 메모리에 남아 있으므로, 같은 Notify를 또 넣지 않습니다.
+				for (const FAnimNotifyEvent& Existing : Sequence->Notifies)
+					if (Existing == Notify) return;
+				Sequence->Notifies.Add(Notify);
 			},
 			"Location", sol::property(
 				// Getter

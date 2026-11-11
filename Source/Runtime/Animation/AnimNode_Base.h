@@ -3,13 +3,19 @@
 #include "Animation/BoneContainer.h"
 #include "Math/Quat.h"
 
+struct FAnimNotifyQueue;
+
 struct FAnimationUpdateContext
 {
-	explicit FAnimationUpdateContext(float InDeltaTime) : DeltaTime(InDeltaTime) {}
+	explicit FAnimationUpdateContext(float InDeltaTime, FAnimNotifyQueue* InNotifyQueue = nullptr)
+		: DeltaTime(InDeltaTime), NotifyQueue(InNotifyQueue) {}
 	float GetDeltaTime() const { return DeltaTime; }
+	// 노드가 이번 Update에 지나간 구간의 Notify를 넣는 곳. nullptr면 Notify를 모으지 않습니다.
+	FAnimNotifyQueue* GetNotifyQueue() const { return NotifyQueue; }
 
 private:
 	float DeltaTime;
+	FAnimNotifyQueue* NotifyQueue = nullptr;
 };
 
 struct FPoseContext

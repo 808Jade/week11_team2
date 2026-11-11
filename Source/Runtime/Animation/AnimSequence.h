@@ -15,6 +15,7 @@ public:
 	void GetAnimationPose(FAnimationPoseData& OutPoseData,
 		const FAnimExtractContext& ExtractionContext) const override;
 
+	bool HasRootTrack() const override { return FindRootTrack() != nullptr; }
 	FVector GetRootLocationAtTime(double Time) const override;
 	FQuat GetRootRotationAtTime(double Time) const override;
 

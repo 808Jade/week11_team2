@@ -4,6 +4,9 @@
 
 #include <filesystem>
 #include <functional>
+#include <unordered_map>
+
+enum class EFbxAssetType : uint32;
 
 namespace fs = std::filesystem;
 
@@ -31,6 +34,16 @@ private:
 	void NavigateToFolder(const fs::path& Path);
 	void RenderPathBar();
 	void RenderFolderTree(const fs::path& Path, const fs::path& FolderToReveal);
+	// .fbxbin의 에셋 타입(파일 헤더). 매 프레임 파일을 열지 않도록 수정 시각과 함께 캐시한다. 읽지 못하면 false.
+	bool GetBakedAssetType(const fs::path& Path, const FString& PathString, EFbxAssetType& OutType);
+
+	struct FBakedTypeEntry
+	{
+		fs::file_time_type WriteTime;
+		bool bValid = false;
+		EFbxAssetType Type{};
+	};
+	std::unordered_map<FString, FBakedTypeEntry> BakedTypeCache;
 
 	std::function<void(const FString&)> OnOpenWidget;
 	std::function<void(const FString&)> OnCreateWidget;

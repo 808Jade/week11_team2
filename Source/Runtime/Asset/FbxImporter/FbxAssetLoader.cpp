@@ -138,6 +138,11 @@ public:
 			auto* Sequence = Allocate<UAnimSequence>();
 			if (!Sequence || !Sequence->Initialize(Skeleton, Asset.Animation.NumberOfKeys,
 				Asset.Animation.FrameRate, std::move(Tracks), Error)) return nullptr;
+			// Notify는 옆의 사이드카 파일(AS_X.notifies.json)에 있다. 재임포트로 .fbxbin이 바뀌어도 그대로 다시 붙는다.
+			// 읽지 못해도 애니메이션 자체는 쓸 수 있으므로 경고만 남긴다.
+			FString NotifyError;
+			if (!Sequence->LoadNotifiesFromFile(Key, NotifyError) || !NotifyError.empty())
+				HTR_LOG(Warning, "{}", NotifyError);
 			Object = Sequence;
 		}
 		else if (Asset.Type == EFbxAssetType::Material)

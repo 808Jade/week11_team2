@@ -1,5 +1,5 @@
 {
-    "Version": 4,
+    "Version": 5,
     "World": {
         "PersistentLevel": {
             "Actors": [
@@ -9,7 +9,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -31,12 +31,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 1,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 1.0,
@@ -71,7 +73,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 2,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -105,7 +109,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 2,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -132,14 +136,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 3,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADecalActor_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -148,7 +155,7 @@
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
                             "OverrideMaterials": [],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -176,14 +183,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 4,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADecalActor",
@@ -191,7 +201,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -213,12 +223,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 5,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 1.0,
@@ -253,7 +265,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 6,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -287,7 +301,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 6,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -314,14 +328,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 7,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADecalActor_1",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADecalActor",
@@ -329,7 +346,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -351,12 +368,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 8,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 1.0,
@@ -391,7 +410,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 9,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -425,7 +446,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 9,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -452,14 +473,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 10,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADecalActor_2",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADecalActor",
@@ -467,7 +491,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -489,12 +513,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 11,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 0.0,
@@ -529,7 +555,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 12,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -563,7 +591,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 12,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -590,14 +618,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 13,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADecalActor_3",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AStaticMeshActor",
@@ -637,7 +668,7 @@
                                     }
                                 }
                             ],
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
@@ -665,14 +696,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 14,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AStaticMeshActor_1",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADecalActor",
@@ -680,7 +714,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -702,12 +736,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 15,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 1.0,
@@ -742,7 +778,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 16,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -776,7 +814,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 16,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -803,14 +841,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 17,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADecalActor_4",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -818,7 +859,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -840,12 +881,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 18,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -880,7 +923,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 19,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -914,7 +959,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 19,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -941,7 +986,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 20,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -975,7 +1022,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 19,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1002,14 +1049,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 21,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -1017,7 +1067,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1039,12 +1089,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 22,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -1079,7 +1131,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 23,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1113,7 +1167,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 23,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1140,7 +1194,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 24,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1174,7 +1230,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 23,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1201,14 +1257,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 25,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_1",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -1216,7 +1275,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1238,12 +1297,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 26,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -1278,7 +1339,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 27,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1312,7 +1375,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 27,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1339,7 +1402,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 28,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1373,7 +1438,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 27,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1400,14 +1465,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 29,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_2",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "ADirectionalLightActor",
@@ -1415,7 +1483,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1437,12 +1505,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 30,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "AngularRadiusDegrees": 3.0,
                                 "CascadeDistributionExponent": 3.0,
@@ -1477,7 +1547,9 @@
                                 "bCastShadows": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 31,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1511,7 +1583,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 31,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1538,7 +1610,9 @@
                                 "bReceiveShadow": false,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 32,
+                            "Outer": 0
                         },
                         {
                             "Class": "UStaticMeshComponent",
@@ -1548,7 +1622,7 @@
                                     "Asset": "EditorArrowMaterial"
                                 }
                             ],
-                            "Parent": "UDirectionalLightComponent",
+                            "Parent": 31,
                             "Properties": {
                                 "StaticMesh": "Arrow",
                                 "Transform": {
@@ -1576,14 +1650,17 @@
                                 "bReceiveShadow": false,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 33,
+                            "Outer": 0
                         }
                     ],
                     "Name": "ADirectionalLightActor_0",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -1591,7 +1668,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1613,12 +1690,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 34,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -1653,7 +1732,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 35,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1687,7 +1768,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 35,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1714,7 +1795,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 36,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1748,7 +1831,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 35,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1775,14 +1858,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 37,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_3",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -1790,7 +1876,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1812,12 +1898,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 38,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -1852,7 +1940,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 39,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1886,7 +1976,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 39,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1913,7 +2003,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 40,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -1947,7 +2039,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 39,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -1974,14 +2066,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 41,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_4",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -1989,7 +2084,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2011,12 +2106,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 42,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -2051,7 +2148,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 43,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2085,7 +2184,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 43,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2112,7 +2211,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 44,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2146,7 +2247,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 43,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2173,14 +2274,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 45,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_5",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -2188,7 +2292,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2210,12 +2314,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 46,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/SpotLight_Warm.png",
                                 "Delay": 0.0,
@@ -2250,7 +2356,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 47,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2284,7 +2392,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 47,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2311,7 +2419,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 48,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2345,7 +2455,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 47,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2372,14 +2482,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 49,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_6",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -2387,7 +2500,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2409,12 +2522,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 50,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 0.0,
@@ -2449,7 +2564,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 51,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2483,7 +2600,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 51,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2510,7 +2627,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 52,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2544,7 +2663,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 51,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2571,14 +2690,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 53,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_7",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -2586,7 +2708,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2608,12 +2730,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 54,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 0.0,
@@ -2648,7 +2772,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 55,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2682,7 +2808,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 55,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2709,7 +2835,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 56,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2743,7 +2871,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 55,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2770,14 +2898,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 57,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_8",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 },
                 {
                     "Class": "AFakeSpotLightActor",
@@ -2785,7 +2916,7 @@
                         {
                             "Class": "USceneComponent",
                             "Name": "DefaultSceneRoot",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2807,12 +2938,14 @@
                                 "bAutoActivate": true,
                                 "bHiddenInGame": false,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 58,
+                            "Outer": 0
                         },
                         {
                             "Class": "UDecalComponent",
                             "Name": "UDecalComponent",
-                            "Parent": "",
+                            "Parent": 0,
                             "Properties": {
                                 "DecalTexture": "Assets/textures/DecalTest_BulletHole.png",
                                 "Delay": 0.0,
@@ -2847,7 +2980,9 @@
                                 "bHiddenInGame": false,
                                 "bPerspective": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 59,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2881,7 +3016,7 @@
                                 }
                             },
                             "Name": "UBillboardComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 59,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2908,7 +3043,9 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 60,
+                            "Outer": 0
                         },
                         {
                             "Class": "UBillboardComponent",
@@ -2942,7 +3079,7 @@
                                 }
                             },
                             "Name": "GlowComponent",
-                            "Parent": "UDecalComponent",
+                            "Parent": 59,
                             "Properties": {
                                 "Transform": {
                                     "Location": {
@@ -2969,14 +3106,17 @@
                                 "bReceiveShadow": true,
                                 "bReceivesDecals": true,
                                 "bVisible": true
-                            }
+                            },
+                            "Id": 61,
+                            "Outer": 0
                         }
                     ],
                     "Name": "AFakeSpotLightActor_9",
                     "Properties": {
                         "ScriptPath": "",
                         "bActorEnableCollision": true
-                    }
+                    },
+                    "RootComponent": null
                 }
             ],
             "Properties": {}
