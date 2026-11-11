@@ -1,0 +1,99 @@
+{
+    "FormatVersion": 1,
+    "OutputX": 690,
+    "OutputY": 120,
+    "Variables": [
+        {
+            "Name": "Speed",
+            "Default": 0,
+            "Source": 0
+        },
+        {
+            "Name": "JumpWeight",
+            "Default": 0,
+            "Source": 0
+        }
+    ],
+    "VariableGetters": [
+        {
+            "Id": 0,
+            "Variable": "Speed",
+            "X": -370,
+            "Y": 140
+        },
+        {
+            "Id": 1,
+            "Variable": "JumpWeight",
+            "X": -370,
+            "Y": 530
+        }
+    ],
+    "Nodes": [
+        {
+            "Id": 0,
+            "Type": "BlendSpacePlayer",
+            "Name": "Movement",
+            "X": -110,
+            "Y": 0,
+            "Parameters": [
+                {
+                    "Name": "BlendSpace",
+                    "Value": "AnimationGraphDemo/XBotMovement.blendspace"
+                },
+                {
+                    "Name": "X.Binding",
+                    "Value": "Speed",
+                    "Getter": 0
+                }
+            ]
+        },
+        {
+            "Id": 1,
+            "Type": "SequencePlayer",
+            "Name": "Air Action",
+            "X": -110,
+            "Y": 400,
+            "Parameters": [
+                {
+                    "Name": "Sequence",
+                    "Value": "Imported/X Bot/AS_Capoeira_mixamo.com.fbxbin"
+                },
+                {
+                    "Name": "Loop",
+                    "Value": "false"
+                }
+            ]
+        },
+        {
+            "Id": 2,
+            "Type": "TwoWayBlend",
+            "Name": "Ground / Air",
+            "X": 360,
+            "Y": 75,
+            "Parameters": [
+                {
+                    "Name": "Alpha.Binding",
+                    "Value": "JumpWeight",
+                    "Getter": 1
+                }
+            ]
+        }
+    ],
+    "Links": [
+        {
+            "From": 0,
+            "To": 2,
+            "Pin": 0
+        },
+        {
+            "From": 1,
+            "To": 2,
+            "Pin": 1
+        },
+        {
+            "From": 2,
+            "To": -1,
+            "Pin": 0
+        }
+    ]
+}

@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <vector>
 
 #include "AssetManager.generated.h"
 
@@ -19,9 +20,13 @@ enum class EAssetType
 	SkeletalMesh,
 	Skeleton,
 	Material,
-	AnimSequence
+	AnimSequence,
+	BlendSpace,
+	AnimGraph
 };
 
+class UAnimGraph;
+class UBlendSpace;
 class UStaticMesh;
 class USoundWave;
 struct FSkeletalMaterialSlot;
@@ -33,6 +38,14 @@ UCLASS()
 class UAssetManager : public UObject
 {
 	GENERATED_BODY()
+private:
+	struct FAssetFile {
+		// 정규화된 에셋 키에 대응하는 실제 로드 대상 파일 경로이다.
+		FString mPath{};
+		// 파일 확장자 또는 FBX 바이너리 메타데이터에서 판별한 에셋 종류이다.
+		EAssetType mType{EAssetType::None};
+	};
+
 private:
 	UAssetManager() = default;
 
@@ -75,6 +88,12 @@ public:
 	// 스캔으로 등록됐지만 아직 로드되지 않은 에셋의 타입. 그 외에는 None
 	static EAssetType GetUnloadedAssetType(const FString& Path);
 	static TArray<FString> GetUnloadedAssetPaths(EAssetType Type);
+	// 로드 여부와 관계없이 애니메이션 에셋 선택기에 사용할 정렬된 키 목록을 제공한다.
+	static std::vector<FString> GetAnimationAssetPaths(EAssetType Type);
+	// 저장 성공 후 캐시된 에셋 내용도 갱신해 편집 결과를 기존 참조에 반영한다.
+	static bool SaveAnimGraph(const FString& Path, UAnimGraph& Graph, FString& OutError);
+	// 축과 샘플 배치를 파일에 기록하고 이미 로드된 Blend Space 객체에도 반영한다.
+	static bool SaveBlendSpace(const FString& Path, UBlendSpace& BlendSpace, FString& OutError);
 
 	void RegisterAsset(const FString& Key, URenderAsset* Asset);
 	TMap<FString, URenderAsset*> PrepareAssetRegistration(const TMap<FString, URenderAsset*>& Replacements) const;
@@ -102,13 +121,11 @@ public:
 
 private:
 	URenderAsset* FindOrLoadAsset(const FString& Path);
+	// 파일 인덱스를 조회하고 누락된 애니메이션 에셋은 실제 경로에서 발견해 등록한다.
+	const FAssetFile* FindOrDiscoverAssetFile(const FString& Key);
+	// 그래프 또는 Blend Space JSON을 검증한 뒤 로드 캐시에 소유권을 등록한다.
+	void LoadAnimationEditorAsset(const FString& Key, const FString& Path, EAssetType Type);
 
-	// 키는 Assets 기준 상대 경로. 로드 가능한 파일의 키 -> 실제 파일 경로
-	struct FAssetFile
-	{
-		FString Path;
-		EAssetType Type = EAssetType::None;
-	};
 	TMap<FString, FAssetFile> AssetPathMap;
 	TMap<FString, URenderAsset*> AssetMap;
 	TMap<FString, USoundWave*> SoundMap;

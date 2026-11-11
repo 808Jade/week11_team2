@@ -369,6 +369,7 @@ namespace
 			"SetParticleFrameRate", [](const FLuaActorRef& Ref, float FPS) { ParticleComponent(Ref).SetFrameRate(FPS); },
 			"PlayParticle", [](const FLuaActorRef& Ref, sol::optional<float> Scale) { ParticleComponent(Ref).PlayOnce(Scale.value_or(1.0f)); },
 
+
 			"Location", sol::property(
 				// Getter
 				[](const FLuaActorRef& Ref) { return Deref(Ref).GetActorLocation(); },
@@ -623,6 +624,34 @@ namespace
 					if (Existing == Notify) return;
 				Sequence->Notifies.Add(Notify);
 			},
+            // 그래프 선택은 경로로, 런타임 변수와 플레이어 제어는 이름으로 C++ 재생기에 전달한다.
+            "SetAnimGraph", [](const FLuaComponentRef& Ref, const FString& Path) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                if (!Mesh) {
+                    throw sol::error("SetAnimGraph requires a SkeletalMeshComponent.");
+                }
+
+                FString Error{};
+                if (!Mesh->SetAnimGraph(Path, Error)) {
+                    throw sol::error(Error);
+                }
+            },
+            "SetAnimGraphFloat", [](const FLuaComponentRef& Ref, const FString& Name, float Value) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                return Mesh && Mesh->SetAnimGraphFloat(Name, Value);
+            },
+            "RestartAnimGraphPlayer", [](const FLuaComponentRef& Ref, const FString& Name) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                return Mesh && Mesh->RestartAnimGraphPlayer(Name);
+            },
+            "SetAnimGraphBool", [](const FLuaComponentRef& Ref, const FString& Name, bool Value) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                return Mesh && Mesh->SetAnimGraphBool(Name, Value);
+            },
+            "IsAnimGraphPlayerFinished", [](const FLuaComponentRef& Ref, const FString& Name) {
+                const auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                return Mesh && Mesh->IsAnimGraphPlayerFinished(Name);
+            },
 			"Location", sol::property(
 				// Getter
 				[](const FLuaComponentRef& Ref)

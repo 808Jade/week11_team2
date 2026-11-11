@@ -170,6 +170,10 @@ public:
 	virtual void PostInitProperties() {}
 	virtual void PostLoad() {}
 	virtual void PostDuplicate(bool bDuplicateForPIE) {}
+protected:
+	// shared_ptr 등으로 수명을 별도 관리할 객체를 전역 객체 및 클래스 인스턴스 목록에서 분리한다.
+	void DetachFromObjectRegistry();
+
 private:
 	void SerializeScriptProperties(FStructuredArchive::FSlot Slot);
 

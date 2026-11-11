@@ -1,4 +1,9 @@
 #include "EnginePCH.h"
+#include "Animation/AnimGraph.h"
+#include "Animation/AnimSequenceBase.h"
+#include "Animation/BlendSpace1D.h"
+#include "Asset/FbxImporter/FbxPath.h"
+#include "Editor/AnimationEditor/FAnimationAssetPicker.h"
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
 #include "Asset/AssetManager.h"
 #include "Asset/FbxImporter/FbxAssetBake.h"
@@ -275,57 +280,86 @@ void FContentDrawerPanel::RenderAssetPane()
 
 	if (ImGui::BeginChild("AssetGridView"))
 	{
-		RenderCreateWidgetPopup();
+		RenderCreateAssetPopup();
 		RenderAssetGrid();
 	}
 	ImGui::EndChild();
 	ImGui::EndGroup();
 }
 
-void FContentDrawerPanel::RenderCreateWidgetPopup()
-{
-	bool bOpenCreateWidget = false;
-	// 빈 곳 우클릭 (항목 위 우클릭은 제외)
-	if (ImGui::BeginPopupContextWindow("##DrawerContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
-	{
-		if (ImGui::MenuItem("Create Widget"))
-		{
-			strcpy_s(NewAssetName, "NewWidget");
-			bOpenCreateWidget = true;
-		}
-		ImGui::EndPopup();
-	}
-	if (bOpenCreateWidget)
-	{
-		ImGui::OpenPopup("Create Widget");
-	}
+void FContentDrawerPanel::RenderCreateAssetPopup() {
+    // 에셋 종류별 기본 이름을 정한 뒤 공통 이름 입력 및 중복 검사 창으로 연결한다.
+    bool OpenCreate{};
+    if (ImGui::BeginPopupContextWindow("##DrawerContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+        if (ImGui::MenuItem("Create Widget")) {
+            strcpy_s(NewAssetName, "NewWidget");
+            mCreateAssetExtension = ".widget";
+            OpenCreate = true;
+        }
+        if (ImGui::MenuItem("Create Anim Graph")) {
+            strcpy_s(NewAssetName, "NewAnimGraph");
+            mCreateAssetExtension = ".animgraph";
+            OpenCreate = true;
+        }
+        if (ImGui::MenuItem("Create Blend Space 1D")) {
+            strcpy_s(NewAssetName, "NewBlendSpace");
+            mCreateAssetExtension = ".blendspace";
+            OpenCreate = true;
+        }
+        ImGui::EndPopup();
+    }
+    if (OpenCreate) {
+        mCreateAssetError.clear();
+        ImGui::OpenPopup("Create Asset");
+    }
 
-	if (!ImGui::BeginPopupModal("Create Widget", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		return;
-	}
+    if (!ImGui::BeginPopupModal("Create Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        return;
+    }
 
-	ImGui::InputText("Name", NewAssetName, sizeof(NewAssetName));
-	const fs::path Target = CurrentPath / (FString(NewAssetName) + ".widget");
-	const bool bExists = fs::exists(Target);
-	if (bExists)
-	{
-		ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "A file with this name already exists.");
-	}
+    ImGui::InputText("Name", NewAssetName, sizeof(NewAssetName));
+    const FString Name{NewAssetName};
+    const fs::path Target{CurrentPath / FbxPath::FromString(Name + mCreateAssetExtension)};
+    std::error_code Error{};
+    const bool Exists{fs::exists(Target, Error)};
+    if (Exists) {
+        ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "A file with this name already exists.");
+    }
+    if (!mCreateAssetError.empty()) {
+        ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", mCreateAssetError.c_str());
+    }
 
-	ImGui::BeginDisabled(bExists || NewAssetName[0] == '\0');
-	if (ImGui::Button("Create") && OnCreateWidget)
-	{
-		OnCreateWidget(Target.generic_string());
-		ImGui::CloseCurrentPopup();
-	}
-	ImGui::EndDisabled();
-	ImGui::SameLine();
-	if (ImGui::Button("Cancel"))
-	{
-		ImGui::CloseCurrentPopup();
-	}
-	ImGui::EndPopup();
+    ImGui::BeginDisabled(Exists || Error || Name.empty() || FbxPath::FileName(Name) != Name);
+    if (ImGui::Button("Create")) {
+        const FString Path{FbxPath::ToString(Target)};
+        if (mCreateAssetExtension == ".widget") {
+            if (OnCreateWidget) {
+                OnCreateWidget(Path);
+            }
+            ImGui::CloseCurrentPopup();
+        } else {
+            bool Created{};
+            if (mCreateAssetExtension == ".animgraph") {
+                std::unique_ptr<UAnimGraph> Asset{NewObject<UAnimGraph>()};
+                Created = UAssetManager::SaveAnimGraph(Path, *Asset, mCreateAssetError);
+            } else {
+                std::unique_ptr<UBlendSpace1D> Asset{NewObject<UBlendSpace1D>()};
+                Created = UAssetManager::SaveBlendSpace(Path, *Asset, mCreateAssetError);
+            }
+            if (Created) {
+                if (OnOpenMesh) {
+                    OnOpenMesh(Path);
+                }
+                ImGui::CloseCurrentPopup();
+            }
+        }
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 void FContentDrawerPanel::RenderAssetGrid()
@@ -520,6 +554,25 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 		ImGui::EndDragDropSource();
 	}
 
+    if (!bIsDirectory) {
+        const auto Extension{Path.extension()};
+        // 타입별 페이로드를 사용해 애니메이션 선택기와 Blend Space 캔버스에 드롭할 수 있게 한다.
+        const char* PayloadType{};
+        if (Extension == L".animgraph") {
+            PayloadType = AnimGraphPayload;
+        } else if (Extension == L".blendspace") {
+            PayloadType = BlendSpacePayload;
+        } else if (UAssetManager::GetUnloadedAssetType(PathString) == EAssetType::AnimSequence || Cast<UAnimSequenceBase>(UAssetManager::FindLoadedAsset(PathString))) {
+            PayloadType = AnimSequencePayload;
+        }
+        if (PayloadType && ImGui::BeginDragDropSource()) {
+            const FString DragPath{FbxPath::ToString(Path)};
+            ImGui::SetDragDropPayload(PayloadType, DragPath.c_str(), DragPath.size() + 1);
+            ImGui::TextUnformatted(FilenameString.c_str());
+            ImGui::EndDragDropSource();
+        }
+    }
+
 	const bool bOpenItem = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	if (bOpenItem && !bIsDirectory)
 	{
@@ -534,7 +587,7 @@ bool FContentDrawerPanel::RenderAssetTile(const fs::path& Path, const FString& F
 			EFbxAssetType Type;
 			const bool bFbxOpenable = GetBakedAssetType(Path, PathString, Type)
 				&& (Type == EFbxAssetType::StaticMesh || Type == EFbxAssetType::SkeletalMesh || Type == EFbxAssetType::AnimSequence);
-			if (Path.extension() == ".obj" || bFbxOpenable) OnOpenMesh(PathString);
+			if (Path.extension() == ".obj" || bFbxOpenable || Path.extension() == ".animgraph" || Path.extension() == ".blendspace") OnOpenMesh(PathString);
 		}
 	}
 

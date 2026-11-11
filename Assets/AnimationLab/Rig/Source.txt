@@ -1,0 +1,6 @@
+Universal Animation Library [Standard] by Quaternius
+CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Week11 assets baked from UAL1_Standard.fbx at 30 Hz.
+Animation selection: Idle_Loop, Walk_Loop, Sprint_Loop, Punch_Cross.
