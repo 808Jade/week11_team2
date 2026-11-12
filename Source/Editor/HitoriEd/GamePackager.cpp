@@ -96,6 +96,14 @@ bool FGamePackager::StartCopyOnly(const std::filesystem::path& Root)
 				fs::copy(Root / Folder, Out / Folder, fs::copy_options::recursive | fs::copy_options::overwrite_existing, Ec);
 				if (Ec) { CopyResult = Folder; bCopyFailed = true; }
 			}
+            const fs::path Controls{Root / "Config" / "Controls.txt"};
+            if (!bCopyFailed && fs::exists(Controls, Ec)) {
+                fs::copy_file(Controls, Out / "Controls.txt", fs::copy_options::overwrite_existing, Ec);
+                if (Ec) {
+                    CopyResult = "Controls.txt";
+                    bCopyFailed = true;
+                }
+            }
 			bCopyDone = true;
 		});
 	return true;

@@ -1,0 +1,462 @@
+[
+    {
+        "Id": "modular_urban_apartments_facade",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/modular_urban_apartments_facade",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "James Ray Cock": "All"
+        },
+        "Input": "Build/DevilDuelSources/modular_urban_apartments_facade/modular_urban_apartments_facade.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_1k.gltf",
+                "MD5": "81f4252c7816d0e93149c1ca814134ff"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_plaster_arm_1k.jpg",
+                "MD5": "4c5089bcf37a8dffce54b08dbbd18277"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_plaster_nor_gl_1k.jpg",
+                "MD5": "17cd57b1af85612484e1d5c04f3ae98c"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_objects_nor_gl_1k.jpg",
+                "MD5": "e946b86448a627db9d7672a6d2cd3430"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_objects_diff_1k.jpg",
+                "MD5": "f37a2e4d64b5d31e35c95b96f1346472"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_01_diff_1k.jpg",
+                "MD5": "065bcc1f7e4e9bb0cd79573f7cd6b5f3"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_01_arm_1k.jpg",
+                "MD5": "4275d3cc004e0475c2ab0b8fcdac88d6"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_02_nor_gl_1k.jpg",
+                "MD5": "613735836878414de4b3b1a8d07d53b9"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_01_nor_gl_1k.jpg",
+                "MD5": "a9b1ec2e41fa1b3e2c857109ced93963"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_objects_arm_1k.jpg",
+                "MD5": "0e4c15b0cea8d5ffec1fef80f3398736"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_02_diff_1k.jpg",
+                "MD5": "6541ee4a6a9877338a54e70834ee620e"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/modular_urban_apartments_facade/modular_urban_apartments_facade.bin",
+                "MD5": "e54b1de59041da0f44db64efb8bda8f6"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_trim_02_arm_1k.jpg",
+                "MD5": "b99d29cde37713e4cc19d65c7a13cf63"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_urban_apartments_facade/modular_urban_apartments_facade_plaster_diff_1k.jpg",
+                "MD5": "04dc48f9569357117f07dcd811dffe99"
+            }
+        ]
+    },
+    {
+        "Id": "rollershutter_door",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/rollershutter_door",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "MP": "All"
+        },
+        "Input": "Build/DevilDuelSources/rollershutter_door/rollershutter_door.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/rollershutter_door/rollershutter_door_1k.gltf",
+                "MD5": "e8ad4c4ea26db990d32301cd1f7481cf"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/rollershutter_door/rollershutter_door.bin",
+                "MD5": "9df2ea3372b84dca7959d81cd5818d29"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rollershutter_door/rollershutter_door_arm_1k.jpg",
+                "MD5": "5fc759f9776f232e6039ec5f847073df"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rollershutter_door/rollershutter_door_diff_1k.jpg",
+                "MD5": "2903cbe74c5d9d434951ec8625725458"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rollershutter_door/rollershutter_door_nor_gl_1k.jpg",
+                "MD5": "bd6f336490c10bdb6ca1a527981054a3"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rollershutter_door/rollershutter_door_graffiti_diff_1k.jpg",
+                "MD5": "1985c43406b33a7a874ea78041dd44db"
+            }
+        ]
+    },
+    {
+        "Id": "modular_industrial_pipes_01",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/modular_industrial_pipes_01",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "Jorge Camacho": "All"
+        },
+        "Input": "Build/DevilDuelSources/modular_industrial_pipes_01/modular_industrial_pipes_01.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_1k.gltf",
+                "MD5": "cb30fdf4d471374ba439bfd5a0c8105d"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group02_arm_1k.jpg",
+                "MD5": "088f90ba0d60c13ff0d6fc43cf734372"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group01_diff_1k.jpg",
+                "MD5": "28678434837d64476cb8d75d0314166e"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group02_nor_gl_1k.jpg",
+                "MD5": "282735667b3cd6e2d0ef058f2c260740"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/modular_industrial_pipes_01/modular_industrial_pipes_01.bin",
+                "MD5": "a18d063dc719e19b9c20d2f8c0a8bec4"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group01_nor_gl_1k.jpg",
+                "MD5": "a5d4deb3ea6772c0af1275edeab7dc94"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group01_arm_1k.jpg",
+                "MD5": "2ab8f10dc9ca832af70cd48183281f97"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_industrial_pipes_01/modular_industrial_pipes_01_group02_diff_1k.jpg",
+                "MD5": "d3d951f471cfcd15e89cedcd43d28606"
+            }
+        ]
+    },
+    {
+        "Id": "modular_electric_cables",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/modular_electric_cables",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "Kuutti Siitonen": "All"
+        },
+        "Input": "Build/DevilDuelSources/modular_electric_cables/modular_electric_cables.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/modular_electric_cables/modular_electric_cables_1k.gltf",
+                "MD5": "452d8189381a17d02467785ec1691f2b"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_nor_gl_1k.jpg",
+                "MD5": "089c0dda6a7b06fc587eb23a9367fda2"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_diff_1k.jpg",
+                "MD5": "bf807ef977dc49143dd8ed97c0ffec3c"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_arm_1k.jpg",
+                "MD5": "196560790b8dcb085c569a7755648d7b"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_boxes_nor_gl_1k.jpg",
+                "MD5": "cf66abe69419fdaac4afc36c940502d4"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_boxes_diff_1k.jpg",
+                "MD5": "b561a3ec8790af4033504609e70baa12"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/modular_electric_cables/modular_electric_cables_boxes_arm_1k.jpg",
+                "MD5": "a0c541de1da2bd138152e45be9383e72"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/modular_electric_cables/modular_electric_cables.bin",
+                "MD5": "1444b0e21d201c344a99e86937bbe5fc"
+            }
+        ]
+    },
+    {
+        "Id": "exterior_aircon_unit",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/exterior_aircon_unit",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "Monsta3D": "All"
+        },
+        "Input": "Build/DevilDuelSources/exterior_aircon_unit/exterior_aircon_unit.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/exterior_aircon_unit/exterior_aircon_unit_1k.gltf",
+                "MD5": "10beccfb1bf0c973a0729be8970532a9"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_01_nor_gl_1k.jpg",
+                "MD5": "244025f2008cbdc8c8680f0c962ed26f"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_01_opacity_1k.jpg",
+                "MD5": "f253dbcb057612371dd1b6d37095c6ba"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_01_arm_1k.jpg",
+                "MD5": "f1c2653ac0fb58e8641f9076a2af8a67"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_01_arm_1k.jpg",
+                "MD5": "9af3805e7371643962ffe6079d547b00"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_02_arm_1k.jpg",
+                "MD5": "98b44ba240f832fe4fa94e90d1887c6a"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_02_arm_1k.jpg",
+                "MD5": "6e2bee1569b55a3b01d18799e942a6af"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/exterior_aircon_unit/exterior_aircon_unit.bin",
+                "MD5": "971c2cfcbc29256d7872eafe74352279"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_02_nor_gl_1k.jpg",
+                "MD5": "e00f9c963e9f3dc798d84f7ebcc4185a"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_01_nor_gl_1k.jpg",
+                "MD5": "5b9df77429c9010ea389aef30fd7d460"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_01_diff_1k.jpg",
+                "MD5": "7b9fba8819918dc388c49f05b5522575"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_01_diff_1k.jpg",
+                "MD5": "81003ea4afe59ed4dac090791e41f562"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_02_opacity_1k.jpg",
+                "MD5": "0540ff18330b76e4e55053d5bd21f59e"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/exterior_aircon_unit/exterior_aircon_unit_rusted_02_nor_gl_1k.jpg",
+                "MD5": "53f4890e3c9b9fb2efcd96f3143f579b"
+            }
+        ]
+    },
+    {
+        "Id": "street_lamp_01",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/street_lamp_01",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "Josh Dean": "All"
+        },
+        "Input": "Build/DevilDuelSources/street_lamp_01/street_lamp_01.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/street_lamp_01/street_lamp_01_1k.gltf",
+                "MD5": "d29d1fc30bbdad99a58371754f144e65"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/street_lamp_01/street_lamp_01_arm_1k.jpg",
+                "MD5": "63d980174db10cf22a1b175743c465c9"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/street_lamp_01/street_lamp_01_diff_1k.jpg",
+                "MD5": "82efb7531a25cda3ef8af2aff8ecccf7"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/street_lamp_01/street_lamp_01_nor_gl_1k.jpg",
+                "MD5": "c27d8102c7e851a8f0f654bb959b9d67"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/street_lamp_01/street_lamp_01.bin",
+                "MD5": "324bc6295e3962322514ddcfc7037b23"
+            }
+        ]
+    },
+    {
+        "Id": "metal_trash_can",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/metal_trash_can",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "GurJas Studios": "All"
+        },
+        "Input": "Build/DevilDuelSources/metal_trash_can/metal_trash_can.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/metal_trash_can/metal_trash_can_1k.gltf",
+                "MD5": "c322802832a61ad7b17711dfbbc52e6b"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_diff_1k.jpg",
+                "MD5": "55d375d8d51b268b6ed8a4308155959c"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_rust_diff_1k.jpg",
+                "MD5": "8b90447d250cb790ca537748a2b16691"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_arm_1k.jpg",
+                "MD5": "af676572c13fae2bb584538f03175efc"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_rust_nor_gl_1k.jpg",
+                "MD5": "25187818d1236815d4a34fd743cadc29"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_nor_gl_1k.jpg",
+                "MD5": "fa6db04e021f6335ae2d9ad501120cae"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/metal_trash_can/metal_trash_can.bin",
+                "MD5": "fbde1679a66ea644223b97ebc8336a77"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/metal_trash_can/metal_trash_can_rust_arm_1k.jpg",
+                "MD5": "ed9f635917cde411f235d4585c90b310"
+            }
+        ]
+    },
+    {
+        "Id": "trashbag",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/trashbag",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "Benny Weimer": "All"
+        },
+        "Input": "Build/DevilDuelSources/trashbag/trashbag.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/trashbag/trashbag_1k.gltf",
+                "MD5": "c29158e170beeeb6bb518fe8d4407fe5"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/trashbag/trashbag_nor_gl_1k.jpg",
+                "MD5": "e576356779a07ac478126012544ab7b7"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/trashbag/trashbag_diff_1k.jpg",
+                "MD5": "255360a490bf3838f55e7f21c7ab57ab"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/trashbag/trashbag_arm_1k.jpg",
+                "MD5": "1efc021580dd12ef73a27b5d974056aa"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/trashbag/trashbag.bin",
+                "MD5": "ad6ebbf5b9aa0179feeea87a4bd289a3"
+            }
+        ]
+    },
+    {
+        "Id": "plastic_crate_01",
+        "Kind": "Model",
+        "Source": "https://polyhaven.com/a/plastic_crate_01",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Authors": {
+            "PierreB3D": "All"
+        },
+        "Input": "Build/DevilDuelSources/plastic_crate_01/plastic_crate_01.gltf",
+        "Files": [
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/plastic_crate_01/plastic_crate_01_1k.gltf",
+                "MD5": "af44f97630da80a640c5e6d70e72c56b"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_nor_gl_1k.jpg",
+                "MD5": "95f73143467ebbf4c55fb599269edc7b"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_diff_1k.jpg",
+                "MD5": "0250b2750da634e95ef44b6ffb11681e"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/plastic_crate_01/plastic_crate_01_arm_1k.jpg",
+                "MD5": "a0c021fba58dc9fb16df94b1fdda2308"
+            },
+            {
+                "URL": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/plastic_crate_01/plastic_crate_01.bin",
+                "MD5": "68c6e126a29ad4b72c21aa85f89a48c1"
+            }
+        ]
+    },
+    {
+        "Id": "worn_asphalt",
+        "Kind": "Texture",
+        "Source": "https://polyhaven.com/a/worn_asphalt",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Input": {
+            "Diffuse": "Build/DevilDuelSources/worn_asphalt/worn_asphalt_Diffuse.jpg",
+            "Normal": "Build/DevilDuelSources/worn_asphalt/worn_asphalt_Normal.jpg"
+        }
+    },
+    {
+        "Id": "concrete_floor_worn_001",
+        "Kind": "Texture",
+        "Source": "https://polyhaven.com/a/concrete_floor_worn_001",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Input": {
+            "Diffuse": "Build/DevilDuelSources/concrete_floor_worn_001/concrete_floor_worn_001_Diffuse.jpg",
+            "Normal": "Build/DevilDuelSources/concrete_floor_worn_001/concrete_floor_worn_001_Normal.jpg"
+        }
+    },
+    {
+        "Id": "modern_buildings_night",
+        "Kind": "Sky",
+        "Source": "https://polyhaven.com/a/modern_buildings_night",
+        "License": "CC0-1.0",
+        "LicenseURL": "https://polyhaven.com/license",
+        "Input": "Build/DevilDuelSources/modern_buildings_night/modern_buildings_night.jpg"
+    },
+    {
+        "Id": "Pretendard",
+        "Kind": "Font",
+        "Source": "https://github.com/orioncactus/pretendard",
+        "License": "OFL-1.1",
+        "LicenseURL": "https://raw.githubusercontent.com/orioncactus/pretendard/7aeb0698819be2b4097dae8ec8fe6a795e5cf3ae/LICENSE",
+        "Authors": {
+            "Kil Hyung-jin": "Font"
+        },
+        "Input": "Build/DevilDuelSources/Pretendard/Pretendard-Bold.otf",
+        "Files": [
+            {
+                "URL": "https://raw.githubusercontent.com/orioncactus/pretendard/7aeb0698819be2b4097dae8ec8fe6a795e5cf3ae/packages/pretendard/dist/public/static/Pretendard-Bold.otf",
+                "MD5": "f8a9b84216af5155ffe0e8661203f36f"
+            },
+            {
+                "URL": "https://raw.githubusercontent.com/orioncactus/pretendard/7aeb0698819be2b4097dae8ec8fe6a795e5cf3ae/LICENSE",
+                "MD5": "eb9bdd8a4abced4876ee0e2a99a62938"
+            }
+        ]
+    }
+]

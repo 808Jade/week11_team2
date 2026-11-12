@@ -1,0 +1,1332 @@
+{
+    "Version": 2,
+    "ParentClass": "UUserWidget",
+    "DesignSize": [
+        1920,
+        1080
+    ],
+    "Root": {
+        "Class": "UCanvasPanel",
+        "Properties": {
+            "WidgetName": "Root",
+            "Anchors": {
+                "X": 0,
+                "Y": 0,
+                "Z": 1,
+                "W": 1
+            },
+            "Offsets": {
+                "X": 0,
+                "Y": 0,
+                "Z": 0,
+                "W": 0
+            },
+            "AlignmentX": 0,
+            "AlignmentY": 0,
+            "RenderOpacity": 1,
+            "Visibility": 3,
+            "ZOrder": 1,
+            "bAutoSize": false
+        },
+        "Children": [
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerFrame",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 61,
+                        "Y": 63,
+                        "Z": 726,
+                        "W": 38
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 1,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerWell",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 62,
+                        "Y": 64,
+                        "Z": 724,
+                        "W": 36
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerTrail",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.49,
+                        "G": 0.12,
+                        "B": 0.09,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerBar",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerDanger",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.68,
+                        "G": 0.14,
+                        "B": 0.09,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerSheen",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 3
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 6,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 1,
+                        "G": 0.96,
+                        "B": 0.82,
+                        "A": 0.43
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerFlash",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 7,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 1,
+                        "G": 0.97,
+                        "B": 0.85,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerGuardWell",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 106,
+                        "Z": 210,
+                        "W": 3
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.03,
+                        "G": 0.032,
+                        "B": 0.038,
+                        "A": 0.85
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerGuard",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 106,
+                        "Z": 210,
+                        "W": 2
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.49,
+                        "G": 0.51,
+                        "B": 0.53,
+                        "A": 0.8
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "PlayerName",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 63,
+                        "Y": 27,
+                        "Z": 350,
+                        "W": 30
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 8,
+                    "bAutoSize": false,
+                    "Text": "DEVIL JIN",
+                    "FontSize": 27,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.94,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Justification": 0
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "PlayerRole",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 65,
+                        "Y": 117,
+                        "Z": 100,
+                        "W": 20
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 8,
+                    "bAutoSize": false,
+                    "Text": "P1",
+                    "FontSize": 15,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.66,
+                        "G": 0.64,
+                        "B": 0.59,
+                        "A": 1
+                    },
+                    "Justification": 0
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerRoundWell1",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 737,
+                        "Y": 109,
+                        "Z": 20,
+                        "W": 9
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerRoundEmpty1",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 738,
+                        "Y": 110,
+                        "Z": 18,
+                        "W": 7
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerWin1",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 739,
+                        "Y": 111,
+                        "Z": 16,
+                        "W": 5
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerRoundWell2",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 763,
+                        "Y": 109,
+                        "Z": 20,
+                        "W": 9
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerRoundEmpty2",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 764,
+                        "Y": 110,
+                        "Z": 18,
+                        "W": 7
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PlayerWin2",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 765,
+                        "Y": 111,
+                        "Z": 16,
+                        "W": 5
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalFrame",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -61,
+                        "Y": 63,
+                        "Z": 726,
+                        "W": 38
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 1,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalWell",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -62,
+                        "Y": 64,
+                        "Z": 724,
+                        "W": 36
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalTrail",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.49,
+                        "G": 0.12,
+                        "B": 0.09,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalBar",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalDanger",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.68,
+                        "G": 0.14,
+                        "B": 0.09,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalSheen",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 3
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 6,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 1,
+                        "G": 0.96,
+                        "B": 0.82,
+                        "A": 0.43
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalFlash",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 68,
+                        "Z": 718,
+                        "W": 27
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 7,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 1,
+                        "G": 0.97,
+                        "B": 0.85,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalGuardWell",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 106,
+                        "Z": 210,
+                        "W": 3
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.03,
+                        "G": 0.032,
+                        "B": 0.038,
+                        "A": 0.85
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalGuard",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 106,
+                        "Z": 210,
+                        "W": 2
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.49,
+                        "G": 0.51,
+                        "B": 0.53,
+                        "A": 0.8
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "RivalName",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -63,
+                        "Y": 27,
+                        "Z": 350,
+                        "W": 30
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 8,
+                    "bAutoSize": false,
+                    "Text": "DEVIL JIN",
+                    "FontSize": 27,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.94,
+                        "G": 0.92,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Justification": 2
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "RivalRole",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -65,
+                        "Y": 117,
+                        "Z": 100,
+                        "W": 20
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 8,
+                    "bAutoSize": false,
+                    "Text": "CPU",
+                    "FontSize": 15,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.66,
+                        "G": 0.64,
+                        "B": 0.59,
+                        "A": 1
+                    },
+                    "Justification": 2
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalRoundWell1",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -737,
+                        "Y": 109,
+                        "Z": 20,
+                        "W": 9
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalRoundEmpty1",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -738,
+                        "Y": 110,
+                        "Z": 18,
+                        "W": 7
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalWin1",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -739,
+                        "Y": 111,
+                        "Z": 16,
+                        "W": 5
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalRoundWell2",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -763,
+                        "Y": 109,
+                        "Z": 20,
+                        "W": 9
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 2,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalRoundEmpty2",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -764,
+                        "Y": 110,
+                        "Z": 18,
+                        "W": 7
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 3,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.017,
+                        "G": 0.016,
+                        "B": 0.02,
+                        "A": 0.93
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "RivalWin2",
+                    "Anchors": {
+                        "X": 1,
+                        "Y": 0,
+                        "Z": 1,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": -765,
+                        "Y": 111,
+                        "Z": 16,
+                        "W": 5
+                    },
+                    "AlignmentX": 1,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 4,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.87,
+                        "G": 0.81,
+                        "B": 0.66,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "TimerShadow",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 2,
+                        "Y": 29,
+                        "Z": 150,
+                        "W": 79
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 5,
+                    "bAutoSize": false,
+                    "Text": "60",
+                    "FontSize": 67,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.005,
+                        "G": 0.005,
+                        "B": 0.008,
+                        "A": 0.8
+                    },
+                    "Justification": 1
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Timer",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 27,
+                        "Z": 150,
+                        "W": 79
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 6,
+                    "bAutoSize": false,
+                    "Text": "60",
+                    "FontSize": 67,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.97,
+                        "G": 0.94,
+                        "B": 0.86,
+                        "A": 1
+                    },
+                    "Justification": 1
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "TimerRule",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 111,
+                        "Z": 49,
+                        "W": 1
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 1,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0.5,
+                        "G": 0.43,
+                        "B": 0.31,
+                        "A": 1
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "RoundNumber",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 119,
+                        "Z": 60,
+                        "W": 18
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 8,
+                    "bAutoSize": false,
+                    "Text": "1",
+                    "FontSize": 14,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.66,
+                        "G": 0.64,
+                        "B": 0.59,
+                        "A": 1
+                    },
+                    "Justification": 1
+                }
+            },
+            {
+                "Class": "UImage",
+                "Properties": {
+                    "WidgetName": "PauseShade",
+                    "Anchors": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 0,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 0,
+                        "Z": 1920,
+                        "W": 1080
+                    },
+                    "AlignmentX": 0,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 15,
+                    "bAutoSize": false,
+                    "ColorAndOpacity": {
+                        "R": 0,
+                        "G": 0,
+                        "B": 0,
+                        "A": 0.22
+                    },
+                    "TexturePath": ""
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "BannerShadow",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 2,
+                        "Y": 374,
+                        "Z": 1100,
+                        "W": 122
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 20,
+                    "bAutoSize": false,
+                    "Text": "",
+                    "FontSize": 103,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0,
+                        "G": 0,
+                        "B": 0,
+                        "A": 0.65
+                    },
+                    "Justification": 1
+                }
+            },
+            {
+                "Class": "UTextBlock",
+                "Properties": {
+                    "WidgetName": "Banner",
+                    "Anchors": {
+                        "X": 0.5,
+                        "Y": 0,
+                        "Z": 0.5,
+                        "W": 0
+                    },
+                    "Offsets": {
+                        "X": 0,
+                        "Y": 372,
+                        "Z": 1100,
+                        "W": 122
+                    },
+                    "AlignmentX": 0.5,
+                    "AlignmentY": 0,
+                    "RenderOpacity": 1,
+                    "Visibility": 3,
+                    "ZOrder": 21,
+                    "bAutoSize": false,
+                    "Text": "",
+                    "FontSize": 103,
+                    "FontPath": "Assets/Fonts/Pretendard.json",
+                    "ColorAndOpacity": {
+                        "R": 0.97,
+                        "G": 0.94,
+                        "B": 0.85,
+                        "A": 1
+                    },
+                    "Justification": 1
+                }
+            }
+        ]
+    }
+}

@@ -93,6 +93,8 @@ public:
 	bool HasBegunPlay() const { return bBegunPlay; }
 	APawn* GetPlayerPawn() const { return PlayerPawn; }
 	APlayerController* GetPlayerController() const { return PlayerController; }
+	APlayerController* EnsurePlayerController();
+	float GetUnscaledDeltaTime() const;
 	bool IsPaused() const { return bIsPaused; }
 	void SetPaused(bool bPaused) { bIsPaused = bPaused; }
 
@@ -127,7 +129,7 @@ public:
 
 private:
 
-	void GameWorldTick(float DeltaTime);
+	void GameWorldTick(float DeltaTime, float RealDeltaTime);
 	void EditorWorldTick(float DeltaTime);
 	void PreviewWorldTick(float DeltaTime);
 
@@ -179,6 +181,7 @@ private:
 	float HitStopDilation = 1.0f;
 	float TimeSeconds = 0.0f;			// 게임 시간 (dilated 누적)
 	float RealTimeSeconds = 0.0f;		// 실제 시간 누적
+	float mUnscaledDeltaTime{};
 
 	static constexpr float MinTimeDilation = 0.0001f;
 	static constexpr float MaxTimeDilation = 20.0f;

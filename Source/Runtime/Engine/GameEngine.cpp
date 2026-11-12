@@ -13,6 +13,8 @@
 #include "Render/Swapchain.h"
 #include "Render/Texture2D.h"
 #include "Audio/AudioDevice.h"
+#include <shellapi.h>
+#include <filesystem>
 namespace
 {
 	constexpr const char* GameConfigPath = "Config/DefaultGame.ini";
@@ -21,6 +23,18 @@ namespace
 FEngineConfig UGameEngine::GetConfig() const
 {
 	Settings = FGameSettings::Load(GameConfigPath);
+
+    int ArgumentCount{};
+    wchar_t** Arguments{CommandLineToArgvW(GetCommandLineW(), &ArgumentCount)};
+    if (Arguments) {
+        for (int Index{1}; Index < ArgumentCount; ++Index) {
+            const std::wstring Argument{Arguments[Index]};
+            if (Argument.starts_with(L"-Map=")) {
+                Settings.StartupMap = std::filesystem::path{Argument.substr(5)}.generic_string();
+            }
+        }
+        LocalFree(Arguments);
+    }
 
 	FEngineConfig Desc;
 	Desc.Title = Settings.WindowTitle.c_str();   // GEngine이 살아 있는 동안 유효하다.

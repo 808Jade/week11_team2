@@ -1,0 +1,6 @@
+newmtl Material_0
+Kd 1.0 1.0 1.0
+d 1
+Ns 48
+map_Kd ../Textures/worn_asphalt_Diffuse.jpg
+map_bump ../Textures/worn_asphalt_Normal.jpg

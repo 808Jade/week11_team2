@@ -1,0 +1,12 @@
+newmtl Material_0
+Kd 1.0 1.0 1.0
+d 1
+Ns 48
+map_Kd ../Textures/exterior_aircon_unit_01_diff_1k.jpg
+map_bump ../Textures/exterior_aircon_unit_01_nor_gl_1k.jpg
+newmtl Material_1
+Kd 1.0 1.0 1.0
+d 1
+Ns 48
+map_Kd ../Textures/exterior_aircon_unit_01_opacity_1k.jpg
+map_bump ../Textures/exterior_aircon_unit_02_nor_gl_1k.jpg

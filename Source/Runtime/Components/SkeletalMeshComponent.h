@@ -32,7 +32,7 @@ public:
 	// 재생 상태와 본 로컬 포즈를 평가한 뒤 상위 스키닝 갱신을 수행한다.
 	void TickComponent(float DeltaTime) override;
 	// 단일 시퀀스 재생 인스턴스를 준비해 재생하고 초기 포즈를 즉시 반영한다.
-	bool PlayAnimation(UAnimationAsset* NewAnimToPlay, bool Looping, float PlayRate, FString& OutError);
+	bool PlayAnimation(UAnimationAsset* NewAnimToPlay, bool Looping, float PlayRate, FString& OutError, float BlendTime = 0.0f, float StartTime = 0.0f);
 	// 그래프 경로는 직렬화하고, 실행 인스턴스는 메시마다 별도로 생성한다.
 	bool SetAnimGraph(const FString& Path, FString& OutError);
 	// 컴포넌트에 저장한 그래프 에셋 경로를 반환한다.
@@ -40,6 +40,8 @@ public:
 	// 현재 컴포넌트가 소유한 애니메이션 인스턴스의 비소유 포인터를 반환한다.
 	UAnimInstance* GetAnimInstance() const;
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
+    void SetRootMotionEnabled(bool Enabled, bool ApplyToActor = true);
+    FVector ConsumeRootMotionTranslation();
 	// Lua와 디버그 UI에서 인스턴스 변수 및 이름이 유일한 재생 노드를 제어하는 진입점이다.
 	bool SetAnimGraphFloat(const FString& Name, float Value);
 	// 현재 그래프 인스턴스에서 지정 Bool 변수의 값을 변경한다.
@@ -84,6 +86,7 @@ private:
 	void RestoreAnimGraph();
     void ApplyRootMotion(const FRootMotionDelta& Delta);
     void DispatchAnimNotifies();
+    void ApplyAnimationBlend(float DeltaTime);
 
 private:
 	// 단일 시퀀스 또는 그래프 재생을 수행하며 이 컴포넌트가 소유하는 인스턴스이다.
@@ -99,10 +102,18 @@ private:
     UPROPERTY(EditAnywhere)
     bool bEnableRootMotion{};
 
+    UPROPERTY(EditAnywhere)
+    bool mApplyRootMotionToActor{true};
+
 	UAnimInstance* mAnimScriptInstance{};
 	// 현재 메시의 본 인덱스 순서로 보관하는 로컬 포즈 배열이다.
 	TArray<FTransform> mBoneSpaceTransforms{};
 	// 씬 저장 및 메시 변경 후 실행 복원에 사용할 그래프 에셋 경로이다.
 	FString mAnimGraphPath{};
+
+    TArray<FTransform> mBlendSourcePose{};
+    float mAnimationBlendTime{};
+    float mAnimationBlendElapsed{};
+    FVector mPendingRootMotionTranslation{};
 
 };

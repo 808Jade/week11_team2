@@ -3,11 +3,14 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/AnimGraphInstance.h"
 #include "Animation/AnimNode_AssetPlayerBase.h"
+#include "Animation/AnimationRuntime.h"
 #include "Serialization/MathSerialization.h"
 #include "GameFramework/Actor.h"
 #include "Script/LuaScriptInstance.h"
 #include <memory>
 #include <utility>
+#include <algorithm>
+#include <cmath>
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
@@ -60,6 +63,7 @@ bool USkeletalMeshComponent::SetAnimGraph(const FString& Path, FString& OutError
 
     // 새 인스턴스 초기화가 성공한 뒤에만 기존 재생기를 교체한다.
     mAnimGraphPath = Instance->GetAnimGraph();
+    mBlendSourcePose.Empty();
     delete std::exchange(mAnimScriptInstance, Instance.release());
     // 에디터에서 Tick을 기다리지 않고 연결 직후의 초기 포즈를 메시와 렌더링에 반영한다.
     mAnimScriptInstance->SetRootMotionEnabled(bEnableRootMotion);
@@ -76,6 +80,19 @@ const FString& USkeletalMeshComponent::GetAnimGraph() const {
 
 UAnimInstance* USkeletalMeshComponent::GetAnimInstance() const {
     return mAnimScriptInstance;
+}
+
+void USkeletalMeshComponent::SetRootMotionEnabled(bool Enabled, bool ApplyToActor) {
+    bEnableRootMotion = Enabled;
+    mApplyRootMotionToActor = ApplyToActor;
+    mPendingRootMotionTranslation = FVector{};
+    if (mAnimScriptInstance) {
+        mAnimScriptInstance->SetRootMotionEnabled(Enabled);
+    }
+}
+
+FVector USkeletalMeshComponent::ConsumeRootMotionTranslation() {
+    return std::exchange(mPendingRootMotionTranslation, FVector{});
 }
 
 bool USkeletalMeshComponent::SetAnimGraphFloat(const FString& Name, float Value) {
@@ -112,6 +129,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime) {
         ApplyRootMotion(mAnimScriptInstance->GetRootMotionDelta());
 
         if (mAnimScriptInstance->EvaluateAnimation(mBoneSpaceTransforms)) {
+            ApplyAnimationBlend(DeltaTime);
             MarkBoneTransformsDirty();
         }
 
@@ -121,8 +139,13 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime) {
     Super::TickComponent(DeltaTime);
 }
 
-bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool Looping, float PlayRate, FString& OutError) {
+bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool Looping, float PlayRate, FString& OutError, float BlendTime, float StartTime) {
     OutError.clear();
+
+    if (!std::isfinite(BlendTime) || !std::isfinite(StartTime) || BlendTime < 0.0f || StartTime < 0.0f) {
+        OutError = "Animation blend and start times must be finite and nonnegative";
+        return false;
+    }
 
     if (GetSkeletalMesh() == nullptr || NewAnimToPlay == nullptr) {
         OutError = "Set a skeletal mesh and animation asset first";
@@ -147,6 +170,8 @@ bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
         SingleNode = NewInstance.get();
     }
 
+    TArray<FTransform> PreviousPose{mBoneSpaceTransforms};
+
     if (!SingleNode->SetAnimationAsset(NewAnimToPlay, Looping, PlayRate, OutError)) {
         return false;
     }
@@ -157,9 +182,31 @@ bool USkeletalMeshComponent::PlayAnimation(UAnimationAsset* NewAnimToPlay, bool 
 
     SingleNode->SetRootMotionEnabled(bEnableRootMotion);
     SingleNode->PlayAnim();
+    if (StartTime > 0.0f) {
+        SingleNode->SetPosition(StartTime);
+    }
+    mBlendSourcePose = BlendTime > 0.0f ? std::move(PreviousPose) : TArray<FTransform>{};
+    mAnimationBlendTime = BlendTime;
+    mAnimationBlendElapsed = 0.0f;
     SingleNode->EvaluateAnimation(mBoneSpaceTransforms);
+    ApplyAnimationBlend(0.0f);
     RefreshBoneTransformsNow();
     return true;
+}
+
+void USkeletalMeshComponent::ApplyAnimationBlend(float DeltaTime) {
+    if (mBlendSourcePose.Num() == 0 || mBlendSourcePose.Num() != mBoneSpaceTransforms.Num() || mAnimationBlendTime <= 0.0f) {
+        mBlendSourcePose.Empty();
+        return;
+    }
+
+    mAnimationBlendElapsed += std::max(DeltaTime, 0.0f);
+    const float Alpha{std::clamp(mAnimationBlendElapsed / mAnimationBlendTime, 0.0f, 1.0f)};
+    FAnimationRuntime::BlendTwoPosesTogether(mBlendSourcePose, mBoneSpaceTransforms, 1.0f - Alpha, mBoneSpaceTransforms);
+
+    if (Alpha >= 1.0f) {
+        mBlendSourcePose.Empty();
+    }
 }
 
 const TArray<FBoneInfo>& USkeletalMeshComponent::GetBones() const
@@ -265,6 +312,8 @@ void USkeletalMeshComponent::Serialize(FStructuredArchive::FRecord Record)
 
 void USkeletalMeshComponent::OnSkeletalMeshChanged()
 {
+    mBlendSourcePose.Empty();
+    mPendingRootMotionTranslation = FVector{};
     delete std::exchange(mAnimScriptInstance, nullptr);
     mBoneSpaceTransforms.Reset();
     for (const FBoneInfo& Bone : GetBones())
@@ -316,6 +365,11 @@ void USkeletalMeshComponent::ApplyRootMotion(const FRootMotionDelta& Delta) {
     // 이동량은 이번 프레임에 회전하기 전의 컴포넌트 방향을 기준으로 계산한다.
     const FMatrix ComponentToWorld{GetWorldMatrix()};
     FVector WorldDelta{ComponentToWorld.TransformVector(T)};
+
+    if (!mApplyRootMotionToActor) {
+        mPendingRootMotionTranslation += WorldDelta;
+        return;
+    }
 
     // 컴포넌트 공간 회전을 월드 공간 회전으로 바꾼 뒤(C * R * C⁻¹) Actor 회전 앞에 곱한다
     if (HasRotation) {

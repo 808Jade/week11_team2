@@ -91,6 +91,11 @@ for %%D in (Assets Resources Scenes Scripts Config) do (
     )
 )
 
+if exist "%ROOT%Config\Controls.txt" (
+    copy /y "%ROOT%Config\Controls.txt" "%OUT%\Controls.txt" >nul
+    if errorlevel 1 exit /b 1
+)
+
 echo [Package] Done: %OUT%
 endlocal
 rem setlocal로 만든 변수 범위 종료

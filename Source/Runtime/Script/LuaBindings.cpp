@@ -2,6 +2,7 @@
 #include "LuaBindings.h"
 
 #include <sol/sol.hpp>
+#include <cmath>
 
 #include "Animation/AnimationAsset.h"
 #include "Animation/AnimSequenceBase.h"
@@ -130,6 +131,18 @@ namespace
 			"RemoveFromViewport", [](const FLuaWidgetRef& R) { DerefWidget<UUserWidget>(R).RemoveFromViewport(); },
 			"Destroy", [](const FLuaWidgetRef& R) { DerefWidget<UUserWidget>(R).Destroy(); },
 			"SetText", [](const FLuaWidgetRef& R, const std::string& T) { DerefWidget<UTextBlock>(R).SetText(T); },
+            "SetWidth", [](const FLuaWidgetRef& Ref, float Width) {
+                if (!std::isfinite(Width) || Width < 0.0f) {
+                    throw sol::error("SetWidth requires a finite nonnegative width.");
+                }
+                DerefWidget<UWidget>(Ref).Offsets.Z = Width;
+            },
+            "SetOpacity", [](const FLuaWidgetRef& Ref, float Opacity) {
+                if (!std::isfinite(Opacity)) {
+                    throw sol::error("SetOpacity requires a finite value.");
+                }
+                DerefWidget<UWidget>(Ref).RenderOpacity = std::clamp(Opacity, 0.0f, 1.0f);
+            },
 			"BindClick", [](sol::this_environment Env, const FLuaWidgetRef& R, sol::protected_function Fn)
 			{
 				AActor* Owner = OwnerFromEnv(Env);
@@ -235,6 +248,19 @@ namespace
 	{
 		Lua.new_usertype<FLuaActorRef>("Actor",
 			sol::no_constructor, // 액터는 Lua에서 생성할 수 없음
+
+            "GetComponentByClass", [](const FLuaActorRef& Ref, const FString& ClassName) -> sol::optional<FLuaComponentRef> {
+                const UClass* Class{FindClass(ClassName)};
+                if (!Class) {
+                    throw sol::error("GetComponentByClass: unknown class " + ClassName);
+                }
+                for (UActorComponent* Component : Deref(Ref).GetComponents()) {
+                    if (Component && Component->GetClass()->IsChildOf(Class)) {
+                        return FLuaComponentRef::Make(Component);
+                    }
+                }
+                return sol::nullopt;
+            },
 
 			"PlaySequence", [](const FLuaActorRef& Ref) { if (ULevelSequencePlayer* P = SequencePlayerOf(Ref)) P->Play(); },
 			"PauseSequence", [](const FLuaActorRef& Ref) { if (ULevelSequencePlayer* P = SequencePlayerOf(Ref)) P->Pause(); },
@@ -508,12 +534,15 @@ namespace
 			{
 				AActor* Owner = OwnerFromEnv(Env);
 				UWorld* World = Owner ? Owner->GetWorld() : nullptr;
-				APlayerController* PC = World ? World->GetPlayerController() : nullptr;
-				APlayerCameraManager* PCM = PC ? PC->GetCameraManager() : nullptr;
-
 				AActor* TargetActor = Target.Get();
-				if (!PCM || !TargetActor || TargetActor->GetWorld() != World)
+				if (!TargetActor || TargetActor->GetWorld() != World)
 					return false;
+
+                APlayerController* PC{World ? World->EnsurePlayerController() : nullptr};
+                APlayerCameraManager* PCM{PC ? PC->GetCameraManager() : nullptr};
+                if (!PCM) {
+                    return false;
+                }
 
 				FViewTargetTransitionParams Params;
 				Params.BlendTime = Time.value_or(0.0f);
@@ -549,6 +578,16 @@ namespace
 
 				return PCM->IsBlending();
 			});
+        Lua.set_function("SetCameraInputEnabled", [](const FLuaActorRef& Ref, bool Enabled) {
+            for (UActorComponent* Component : Deref(Ref).GetComponents()) {
+                if (auto* Camera{Cast<UCameraComponent>(Component)}) {
+                    Camera->SetExternalInputManaged(!Enabled);
+                    return;
+                }
+            }
+            throw sol::error("SetCameraInputEnabled requires a camera component.");
+        });
+
 		Lua.set_function("SetCameraRelativeTransform",
 			[](const FLuaActorRef& Ref,
 				const FVector& RelativeLocation,
@@ -581,19 +620,53 @@ namespace
 			"IsValid", [](const FLuaComponentRef& R) { return R.Get() != nullptr; },
 			"Name", sol::property([](const FLuaComponentRef& R) { return Deref(R).GetName(); }),
 			"Owner", sol::property([](const FLuaComponentRef& R) { return FLuaActorRef::Make(Deref(R).GetOwner()); }),
-			"PlayAnimation", [](const FLuaComponentRef& Ref, const FString& Path,
-				sol::optional<bool> Looping, sol::optional<float> PlayRate)
-			{
-				auto* Mesh = Cast<USkeletalMeshComponent>(&Deref(Ref));
-				if (!Mesh) throw sol::error("PlayAnimation requires a SkeletalMeshComponent.");
+			"PlayAnimation", [](const FLuaComponentRef& Ref, const FString& Path, sol::optional<bool> Looping, sol::optional<float> PlayRate, sol::optional<float> BlendTime, sol::optional<float> StartTime) {
+				auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+				if (!Mesh) {
+                    throw sol::error("PlayAnimation requires a SkeletalMeshComponent.");
+                }
 
-				auto* Asset = UAssetManager::GetAssetByPath<UAnimationAsset>(Path);
-				if (!Asset) throw sol::error("PlayAnimation could not load an animation asset: " + Path);
+				auto* Asset{UAssetManager::GetAssetByPath<UAnimationAsset>(Path)};
+				if (!Asset) {
+                    throw sol::error("PlayAnimation could not load an animation asset: " + Path);
+                }
 
-				FString Error;
-				if (!Mesh->PlayAnimation(Asset, Looping.value_or(false), PlayRate.value_or(1.f), Error))
+				FString Error{};
+				if (!Mesh->PlayAnimation(Asset, Looping.value_or(false), PlayRate.value_or(1.0f), Error, BlendTime.value_or(0.0f), StartTime.value_or(0.0f))) {
 					throw sol::error("PlayAnimation failed for " + Path + ": " + Error);
+                }
 			},
+            "GetAnimationLength", [](const FLuaComponentRef& Ref) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                auto* Player{Mesh ? Mesh->GetSingleNodeInstance() : nullptr};
+                return Player ? Player->GetLength() : 0.0f;
+            },
+            "IsAnimationFinished", [](const FLuaComponentRef& Ref) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                auto* Player{Mesh ? Mesh->GetSingleNodeInstance() : nullptr};
+                return Player && !Player->IsLooping() && (Player->GetPlayRate() < 0.0f ? Player->GetCurrentTime() <= 0.0001f : Player->GetCurrentTime() >= Player->GetLength() - 0.0001f);
+            },
+            "SetAnimationPlaying", [](const FLuaComponentRef& Ref, bool Playing) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                auto* Player{Mesh ? Mesh->GetSingleNodeInstance() : nullptr};
+                if (Player) {
+                    Player->SetPlaying(Playing);
+                }
+            },
+            "SetRootMotionEnabled", [](const FLuaComponentRef& Ref, bool Enabled, sol::optional<bool> ApplyToActor) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                if (!Mesh) {
+                    throw sol::error("SetRootMotionEnabled requires a SkeletalMeshComponent.");
+                }
+                Mesh->SetRootMotionEnabled(Enabled, ApplyToActor.value_or(true));
+            },
+            "ConsumeRootMotionTranslation", [](const FLuaComponentRef& Ref) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                if (!Mesh) {
+                    throw sol::error("ConsumeRootMotionTranslation requires a SkeletalMeshComponent.");
+                }
+                return Mesh->ConsumeRootMotionTranslation();
+            },
 			// 지금 재생 중인 애니메이션의 배속·루프를 바꾸고 처음부터 다시 재생합니다. 배속이 음수면 끝에서 역재생합니다.
 			"RestartAnimation", [](const FLuaComponentRef& Ref, sol::optional<float> PlayRate, sol::optional<bool> Looping)
 			{
@@ -941,6 +1014,19 @@ namespace
 
 	void RegisterCameraAction(sol::state& Lua)
 	{
+        Lua.set_function("GetUnscaledDeltaTime", [](sol::this_environment Env) {
+            return WorldFromEnv(Env, "GetUnscaledDeltaTime")->GetUnscaledDeltaTime();
+        });
+        Lua.set_function("SetCameraPresentation", [](sol::this_environment Env, float Vignette, float LetterboxAspect, float BlendTime) {
+            APlayerController* PC{WorldFromEnv(Env, "SetCameraPresentation")->GetPlayerController()};
+            APlayerCameraManager* PCM{PC ? PC->GetCameraManager() : nullptr};
+            if (!PCM || !std::isfinite(Vignette) || !std::isfinite(LetterboxAspect) || !std::isfinite(BlendTime)) {
+                return false;
+            }
+            PCM->VignetteIntensity = std::clamp(Vignette, 0.0f, 1.0f);
+            PCM->SetLetterbox(LetterboxAspect, std::max(0.0f, BlendTime));
+            return true;
+        });
 		Lua.set_function("StartHitStop",
 			[](sol::this_environment Env, float Duration, float Dilation)
 			{
@@ -948,7 +1034,7 @@ namespace
 			});
 
 		Lua.set_function("StartCameraShake",
-			[](sol::this_environment Env, float Scale) -> bool
+			[](sol::this_environment Env, float Scale, sol::optional<float> Duration) -> bool
 			{
 				UWorld* World = WorldFromEnv(Env, "StartCameraShake");
 				APlayerController* PC = World->GetPlayerController();
@@ -963,13 +1049,21 @@ namespace
 				if (!Settings) return false;
 
 				// Lua에서는 Scale로 세기를 조절한다.
-				Settings->Duration = 1.0f;
-				Settings->BlendInTime = 0.05f;
-				Settings->BlendOutTime = 0.3f;
+                Settings->Duration = Duration.value_or(1.0f);
+                Settings->BlendInTime = Duration ? 0.008f : 0.05f;
+                Settings->BlendOutTime = Duration ? std::max(0.01f, *Duration * 0.85f) : 0.3f;
 				Settings->RotationPitch.Amplitude = 2.0f;
 				Settings->RotationPitch.Frequency = 10.0f;
 				Settings->RotationYaw.Amplitude = 1.0f;
 				Settings->RotationYaw.Frequency = 13.0f;
+				Settings->LocationX.Amplitude = Duration ? 0.040f : 0.0f;
+				Settings->LocationX.Frequency = 19.0f;
+				Settings->LocationY.Amplitude = Duration ? 0.025f : 0.0f;
+				Settings->LocationY.Frequency = 16.0f;
+				Settings->LocationZ.Amplitude = Duration ? 0.018f : 0.0f;
+				Settings->LocationZ.Frequency = 23.0f;
+				Settings->RotationRoll.Amplitude = Duration ? 0.30f : 0.0f;
+				Settings->RotationRoll.Frequency = 11.0f;
 
 				return PCM->StartCameraShake(ShakeClass, Scale) != nullptr;
 			});

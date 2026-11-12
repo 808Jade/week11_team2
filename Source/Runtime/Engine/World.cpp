@@ -136,6 +136,7 @@ AActor* UWorld::SpawnActor(UClass* Class, FName InName, const FTransform* Transf
 
 void UWorld::Tick(float RealDeltaTime)
 {
+	mUnscaledDeltaTime = RealDeltaTime;
 	// Hit Stop 시간 흐름
 	if (HitStopTimeRemaining > 0.0f)
 	{
@@ -159,7 +160,7 @@ void UWorld::Tick(float RealDeltaTime)
 
 	if (IsGameWorld())
 	{
-		GameWorldTick(DeltaTime);
+		GameWorldTick(DeltaTime, RealDeltaTime);
 	}
 
 	if (WorldType == EWorldType::Editor)
@@ -179,8 +180,7 @@ void UWorld::Tick(float RealDeltaTime)
 	}
 }
 
-void UWorld::GameWorldTick(float DeltaTime)
-{
+void UWorld::GameWorldTick(float DeltaTime, float RealDeltaTime) {
 	// 새로운 Actor들의 BeginPlay 실행
 	while (!BeginPlayList.IsEmpty())
 	{
@@ -217,7 +217,7 @@ void UWorld::GameWorldTick(float DeltaTime)
 	// 플레이어 카메라 업데이트
 	if (PlayerController)
 	{
-		PlayerController->UpdateCameraManager(DeltaTime);
+		PlayerController->UpdateCameraManager(RealDeltaTime);
 	}
 }
 
@@ -865,6 +865,23 @@ bool UWorld::LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
 	return OutHit.HitComponent != nullptr;
 }
 
+APlayerController* UWorld::EnsurePlayerController() {
+    if (!IsGameWorld()) {
+        return nullptr;
+    }
+    if (!PlayerController) {
+        PlayerController = SpawnActor<APlayerController>();
+    }
+    if (PlayerController) {
+        PlayerController->SpawnPlayerCameraManager();
+    }
+    return PlayerController;
+}
+
+float UWorld::GetUnscaledDeltaTime() const {
+    return mUnscaledDeltaTime;
+}
+
 void UWorld::BeginPlay()
 {
 	if (!IsGameWorld() || bBegunPlay) return;
@@ -1121,6 +1138,11 @@ float UWorld::GetEffectiveTimeDilation() const
 
 void UWorld::StartHitStop(float Duration, float Dilation)
 {
+    if (Duration <= 0.0f) {
+        HitStopTimeRemaining = 0.0f;
+        HitStopDilation = 1.0f;
+        return;
+    }
 	HitStopTimeRemaining = std::max(HitStopTimeRemaining, Duration);
 	HitStopDilation = Dilation;
 }
