@@ -94,6 +94,7 @@ local function SyncFighters()
             local Blend = (Fighter.State == "Hit" or Fighter.State == "KO") and 0.035 or (Fighter.State == "Walk" or Fighter.State == "Idle") and 0.14 or 0.085
             Meshes[Index]:PlayAnimation(Clip.Path, Pose.Loop, Rate, Blend, Start)
             Fighter.AnimationFinished = false
+            Fighter.PendingRootX, Fighter.PendingRootY = 0.0, 0.0
             Revisions[Index], VisualFighters[Index] = Fighter.Revision, Fighter
         end
     end
@@ -125,20 +126,21 @@ local function Effects()
             local Move = Attacker.Attack and Attacker.Attack.Move
             local Heavy = Event.Value >= 14 or Event.Kind ~= "Hit" or Match.Fighters[Event.Target].State == "Air" or Move and (Move.Launch or Move.Knockdown)
             local Strength = Clamp(Event.Value / 24.0, 0.35, 1.2)
+            local StopTime = Event.Kind == "GuardBreak" and 0.23 or Event.Kind == "Counter" and 0.21 or Move and Move.Launch and 0.185 or Heavy and 0.17 or 0.11
             PlaySound2D("Assets/Sounds/Hit.wav", Heavy and 0.60 or 0.42, Heavy and 0.86 or 1.05)
-            StartHitStop(Heavy and 0.085 or 0.050, 0.001)
+            StartHitStop(StopTime, 0.0)
             assert(StartCameraShake(Heavy and 0.95 + Strength * 0.50 or 0.50 + Strength * 0.25, Heavy and 0.27 or 0.19))
             assert(PlayFOVPunch(Heavy and -7.5 or -3.2, 0.018, 0.030, Heavy and 0.30 or 0.19))
         elseif Event.Kind == "Block" then
             PlaySound2D("Assets/Sounds/Click.wav", 0.28, 0.72)
-            StartHitStop(0.028, 0.08)
+            StartHitStop(0.06, 0.0)
             StartCameraShake(0.25, 0.13)
             PlayFOVPunch(-1.0, 0.015, 0.010, 0.12)
         elseif Event.Kind == "Finish" then
             PlaySound2D("Assets/Sounds/Clear.mp3", 0.38)
             if Match.Fighters[1].Health <= 0 or Match.Fighters[2].Health <= 0 then
-                StartHitStop(0.14, 0.001)
-                SlowMotionDelay = 0.14
+                StartHitStop(0.28, 0.0)
+                SlowMotionDelay = 0.28
                 StartCameraShake(1.90, 0.40)
                 PlayFOVPunch(-10.0, 0.035, 0.15, 0.65)
             end
@@ -227,8 +229,13 @@ function Tick(DeltaTime)
     for Index = 1, 2 do
         local Delta = Meshes[Index]:ConsumeRootMotionTranslation()
         if VisualFighters[Index] == Match.Fighters[Index] then
-            Rules.ApplyRootMotion(Match, Index, Delta.x, Delta.y)
-            Match.Fighters[Index].AnimationFinished = Meshes[Index]:IsAnimationFinished()
+            local Fighter = Match.Fighters[Index]
+            Fighter.PendingRootX, Fighter.PendingRootY = Fighter.PendingRootX + Delta.x, Fighter.PendingRootY + Delta.y
+            if DeltaTime > 0.0 and not Match.Paused then
+                Rules.ApplyRootMotion(Match, Index, Fighter.PendingRootX, Fighter.PendingRootY)
+                Fighter.PendingRootX, Fighter.PendingRootY = 0.0, 0.0
+            end
+            Fighter.AnimationFinished = Meshes[Index]:IsAnimationFinished()
         end
     end
     ReadInput()

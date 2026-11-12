@@ -135,6 +135,20 @@ namespace {
         return nullptr;
     }
 
+    void TestHitStopClock(UWorld* World, USkeletalMeshComponent* Mesh) {
+        const float StartTime{Mesh->GetSingleNodeInstance()->GetCurrentTime()};
+        World->StartHitStop(0.125f, 0.0f);
+        World->Tick(0.20f);
+        Check(std::abs(Mesh->GetSingleNodeInstance()->GetCurrentTime() - StartTime - 0.075f) < 0.0001f, "A long render frame advances only the time after hitstop expires");
+        const float FrozenTime{Mesh->GetSingleNodeInstance()->GetCurrentTime()};
+        World->StartHitStop(0.12f, 0.0f);
+        World->StartHitStop(0.40f, 0.25f);
+        World->Tick(0.10f);
+        Check(World->GetEffectiveTimeDilation() == 0.0f && Mesh->GetSingleNodeInstance()->GetCurrentTime() == FrozenTime, "A weaker slowdown cannot replace or extend a full impact freeze");
+        World->Tick(0.05f);
+        Check(World->GetEffectiveTimeDilation() == 1.0f && std::abs(Mesh->GetSingleNodeInstance()->GetCurrentTime() - FrozenTime - 0.03f) < 0.0001f, "The simulation resumes automatically after the exact remaining freeze time");
+    }
+
     void Capture(UWorld* World, FGameViewportClient& Viewport, const wchar_t* Path) {
         FRenderer Renderer{};
         Check(Renderer.Init(), "Initialize offscreen rendering");
@@ -196,6 +210,7 @@ namespace {
         AActor* Rival{FindActor(World, "Duel Rival")};
         auto* Mesh{FindMesh(Player)};
         Check(Mesh && FindMesh(Rival) && Mesh->GetAnimInstance(), "Both Devil Jin meshes play compatible animations");
+        TestHitStopClock(World, Mesh);
         auto* Step{UAssetManager::GetAssetByPath<UAnimationAsset>("DevilDuel/Motion/Long Step Forward.fbxbin")};
         const FVector RootStart{Player->GetActorLocation()};
         FString RootError{};
@@ -254,13 +269,20 @@ namespace {
         Press(World, 'J');
         Until(World, "DevilDuel.Fighters[2].Health == 133");
         RunLua("assert(DevilDuel.Fighters[2].Health == 133, 'Actual J input lands one jab')");
-        Check(World->GetEffectiveTimeDilation() < 0.01f, "A confirmed hit starts a near-frozen impact frame");
+        Check(World->GetEffectiveTimeDilation() == 0.0f, "A confirmed hit completely stops simulation time");
         Check(PCM->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass()) && PCM->FindCameraModifierByClass(UCameraModifier_FOVPunch::StaticClass()), "Hits use the existing shake and FOV modifiers");
         Check(PCM->GetCameraCachePOV().FOV < 57.5f, "A light hit produces a visible FOV punch on the rendered camera");
         const float ImpactAnimationTime{Mesh->GetSingleNodeInstance()->GetCurrentTime()};
+        auto* RivalMesh{FindMesh(Rival)};
+        const float RivalImpactTime{RivalMesh->GetSingleNodeInstance()->GetCurrentTime()};
+        const FVector PlayerImpactPosition{Player->GetActorLocation()};
+        const FVector RivalImpactPosition{Rival->GetActorLocation()};
+        RunLua("FrozenDuelTime = DevilDuel.Time; FrozenAttackAge = DevilDuel.Fighters[1].Age");
         const float ImpactFOV{PCM->GetCameraCachePOV().FOV};
-        Tick(World, 1);
-        Check(std::abs(Mesh->GetSingleNodeInstance()->GetCurrentTime() - ImpactAnimationTime) < 0.001f, "Hitstop freezes skeletal playback");
+        Tick(World, 5);
+        Check(Mesh->GetSingleNodeInstance()->GetCurrentTime() == ImpactAnimationTime && RivalMesh->GetSingleNodeInstance()->GetCurrentTime() == RivalImpactTime, "Both fighters retain the exact impact frame for at least five render frames");
+        Check((Player->GetActorLocation() - PlayerImpactPosition).Length() < 0.00001f && (Rival->GetActorLocation() - RivalImpactPosition).Length() < 0.00001f, "Hitstop also freezes root movement and knockback");
+        RunLua("assert(DevilDuel.Time == FrozenDuelTime and DevilDuel.Fighters[1].Age == FrozenAttackAge, 'Hitstop preserves the round timer and combat windows')");
         Check(std::abs(PCM->GetCameraCachePOV().FOV - ImpactFOV) > 0.005f, "Camera modifiers continue on real time during hitstop");
         Capture(World, *Context.GameViewport, L"Build/DevilDuelTests/hit.png");
         Tick(World, 65);
@@ -268,9 +290,11 @@ namespace {
         RunLua("local R=dofile('Scripts/devil_duel_rules.lua'); R.ResetRound(DevilDuel); DevilDuel.Phase='Fight'; DevilDuel.AI=false; DevilDuel.Fighters[1].X=-0.7; DevilDuel.Fighters[2].X=0.7");
         Tick(World, 2);
         Press(World, 'J');
-        Tick(World, 10);
+        Until(World, "DevilDuel.Fighters[2].Health < 140");
+        Check(World->GetEffectiveTimeDilation() == 0.0f, "Combo input can be buffered during a full impact freeze");
         Press(World, 'J');
-        Tick(World, 10);
+        RunLua("assert(DevilDuel.Fighters[1].Attack.Name == 'Jab' and DevilDuel.Fighters[1].Buffer.Button == 'J', 'Frozen frames retain the buffered follow-up')");
+        Until(World, "DevilDuel.Fighters[1].Attack and DevilDuel.Fighters[1].Attack.Name == 'Cross'");
         Press(World, 'K');
         Until(World, "DevilDuel.Fighters[2].Combo == 3");
         RunLua("assert(DevilDuel.Fighters[2].Combo == 3, 'Actual J J K inputs perform a three-hit string')");

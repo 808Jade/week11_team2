@@ -134,16 +134,13 @@ AActor* UWorld::SpawnActor(UClass* Class, FName InName, const FTransform* Transf
 	return NewActor;
 }
 
-void UWorld::Tick(float RealDeltaTime)
-{
+void UWorld::Tick(float RealDeltaTime) {
 	mUnscaledDeltaTime = RealDeltaTime;
 	// Hit Stop 시간 흐름
-	if (HitStopTimeRemaining > 0.0f)
-	{
-		HitStopTimeRemaining = std::max(HitStopTimeRemaining - RealDeltaTime, 0.0f);
-	}
-
-	const float DeltaTime = RealDeltaTime * GetEffectiveTimeDilation();
+    const float HitStopDeltaTime{std::min(RealDeltaTime, HitStopTimeRemaining)};
+    const float HitStopScale{GetEffectiveTimeDilation()};
+    HitStopTimeRemaining = std::max(HitStopTimeRemaining - HitStopDeltaTime, 0.0f);
+    const float DeltaTime{HitStopDeltaTime * HitStopScale + (RealDeltaTime - HitStopDeltaTime) * GetEffectiveTimeDilation()};
 	RealTimeSeconds += RealDeltaTime;
 
 	// World 시간 흐름
@@ -1133,20 +1130,28 @@ void UWorld::UpdateOverlaps()
 	}
 }
 
-float UWorld::GetEffectiveTimeDilation() const
-{
+float UWorld::GetEffectiveTimeDilation() const {
+    if (HitStopTimeRemaining > 0.0f && HitStopDilation == 0.0f) {
+        return 0.0f;
+    }
 	const float HitStop = (HitStopTimeRemaining > 0.0f) ? HitStopDilation : 1.0f;
 	// UE AWorldSettings::GetEffectiveTimeDilation: TimeDilation * CinematicTimeDilation (* DemoPlay)
 	return FMath::Clamp(GlobalTimeDilation * CinematicTimeDilation * HitStop, MinTimeDilation, MaxTimeDilation);
 }
 
-void UWorld::StartHitStop(float Duration, float Dilation)
-{
+void UWorld::StartHitStop(float Duration, float Dilation) {
+    if (!std::isfinite(Duration) || !std::isfinite(Dilation)) {
+        return;
+    }
     if (Duration <= 0.0f) {
         HitStopTimeRemaining = 0.0f;
         HitStopDilation = 1.0f;
         return;
     }
-	HitStopTimeRemaining = std::max(HitStopTimeRemaining, Duration);
-	HitStopDilation = Dilation;
+    const float NewDilation{std::clamp(Dilation, 0.0f, MaxTimeDilation)};
+    if (HitStopTimeRemaining > 0.0001f && NewDilation > HitStopDilation) {
+        return;
+    }
+    HitStopTimeRemaining = std::max(HitStopTimeRemaining, Duration);
+    HitStopDilation = NewDilation;
 }
