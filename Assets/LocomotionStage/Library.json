@@ -1,0 +1,1159 @@
+{
+  "InPlace": [
+    {
+      "Key": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Object": "Skeleton:/Armature[0]/root[0]/",
+      "Type": 3
+    },
+    {
+      "Key": "LocomotionStage/InPlace/M_UAL1_Standard_Main.fbxbin",
+      "Object": "Material:M_Main[0]",
+      "Type": 4
+    },
+    {
+      "Key": "LocomotionStage/InPlace/M_UAL1_Standard_Joints.fbxbin",
+      "Object": "Material:M_Joints[1]",
+      "Type": 4
+    },
+    {
+      "Key": "LocomotionStage/InPlace/SK_UAL1_Standard_root.fbxbin",
+      "Object": "Skeletal:/Armature[0]/root[0]/Combined",
+      "Type": 2
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_A_TPose.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|A_TPose[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Crouch_Fwd_Loop.fbxbin",
+      "Length": 2.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Crouch_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Crouch_Idle_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Crouch_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Dance_Loop.fbxbin",
+      "Length": 1.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Dance_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Death01.fbxbin",
+      "Length": 2.4000000953674316,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Death01[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Driving_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Driving_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Fixing_Kneeling.fbxbin",
+      "Length": 5.199999809265137,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Fixing_Kneeling[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Hit_Chest.fbxbin",
+      "Length": 0.3333333432674408,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Hit_Chest[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Hit_Head.fbxbin",
+      "Length": 0.4333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Hit_Head[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Idle_Loop.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Idle_Talking_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Talking_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Idle_Torch_Loop.fbxbin",
+      "Length": 1.2666666507720947,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Torch_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Interact.fbxbin",
+      "Length": 2.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Interact[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Jog_Fwd_Loop.fbxbin",
+      "Length": 0.9333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jog_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Jump_Land.fbxbin",
+      "Length": 1.2666666507720947,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Land[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Jump_Loop.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Jump_Start.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Start[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_PickUp_Table.fbxbin",
+      "Length": 0.8333333134651184,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|PickUp_Table[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Aim_Down.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Down[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Aim_Neutral.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Neutral[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Aim_Up.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Up[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Idle_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Reload.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Reload[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Pistol_Shoot.fbxbin",
+      "Length": 0.6333333253860474,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Shoot[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Punch_Cross.fbxbin",
+      "Length": 1.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Punch_Cross[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Punch_Jab.fbxbin",
+      "Length": 0.8666666746139526,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Punch_Jab[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Push_Loop.fbxbin",
+      "Length": 2.6666667461395264,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Push_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Roll.fbxbin",
+      "Length": 1.4666666984558105,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Roll[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sitting_Enter.fbxbin",
+      "Length": 1.2999999523162842,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Enter[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sitting_Exit.fbxbin",
+      "Length": 1.0333333015441895,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Exit[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sitting_Idle_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sitting_Talking_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Talking_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Spell_Simple_Enter.fbxbin",
+      "Length": 0.5333333611488342,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Enter[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Spell_Simple_Exit.fbxbin",
+      "Length": 0.4333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Exit[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Spell_Simple_Idle_Loop.fbxbin",
+      "Length": 2.0999999046325684,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Spell_Simple_Shoot.fbxbin",
+      "Length": 0.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Shoot[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sprint_Loop.fbxbin",
+      "Length": 0.6666666865348816,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sprint_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Swim_Fwd_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Swim_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Swim_Idle_Loop.fbxbin",
+      "Length": 3.3333332538604736,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Swim_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sword_Attack.fbxbin",
+      "Length": 1.5333333015441895,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sword_Attack[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Sword_Idle.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sword_Idle[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Walk_Formal_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Walk_Formal_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/InPlace/AS_UAL1_Standard_Armature_Walk_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Walk_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    }
+  ],
+  "RootMotion": [
+    {
+      "Key": "LocomotionStage/RootMotion/M_UAL1_Standard_RM_Main.fbxbin",
+      "Object": "Material:M_Main[0]",
+      "Type": 4
+    },
+    {
+      "Key": "LocomotionStage/RootMotion/M_UAL1_Standard_RM_Joints.fbxbin",
+      "Object": "Material:M_Joints[1]",
+      "Type": 4
+    },
+    {
+      "Key": "LocomotionStage/RootMotion/SK_UAL1_Standard_RM_root.fbxbin",
+      "Object": "Skeletal:/Armature[0]/root[0]/Combined",
+      "Type": 2
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_A_TPose.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|A_TPose[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Crouch_Fwd_Loop.fbxbin",
+      "Length": 2.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Crouch_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -1.5,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Crouch_Idle_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Crouch_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Dance_Loop.fbxbin",
+      "Length": 1.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Dance_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Death01.fbxbin",
+      "Length": 2.4000000953674316,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Death01[0]",
+      "RootDelta": [
+        0.0,
+        0.6499999761581421,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Driving_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Driving_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Fixing_Kneeling.fbxbin",
+      "Length": 5.199999809265137,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Fixing_Kneeling[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Hit_Chest.fbxbin",
+      "Length": 0.3333333432674408,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Hit_Chest[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Hit_Head.fbxbin",
+      "Length": 0.4333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Hit_Head[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Loop.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Talking_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Talking_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Idle_Torch_Loop.fbxbin",
+      "Length": 1.2666666507720947,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Idle_Torch_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Interact.fbxbin",
+      "Length": 2.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Interact[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jog_Fwd_Loop.fbxbin",
+      "Length": 0.9333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jog_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -5.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Land.fbxbin",
+      "Length": 1.2666666507720947,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Land[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Loop.fbxbin",
+      "Length": 2.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Jump_Start.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Jump_Start[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_PickUp_Table.fbxbin",
+      "Length": 0.8333333134651184,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|PickUp_Table[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Down.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Down[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Neutral.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Neutral[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Aim_Up.fbxbin",
+      "Length": 0.1666666716337204,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Aim_Up[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Idle_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Reload.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Reload[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Pistol_Shoot.fbxbin",
+      "Length": 0.6333333253860474,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Pistol_Shoot[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Punch_Cross.fbxbin",
+      "Length": 1.0,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Punch_Cross[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Punch_Jab.fbxbin",
+      "Length": 0.8666666746139526,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Punch_Jab[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Push_Loop.fbxbin",
+      "Length": 2.6666667461395264,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Push_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -0.800000011920929,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Roll.fbxbin",
+      "Length": 1.4666666984558105,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Roll[0]",
+      "RootDelta": [
+        0.0,
+        -4.9914326667785645,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Enter.fbxbin",
+      "Length": 1.2999999523162842,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Enter[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Exit.fbxbin",
+      "Length": 1.0333333015441895,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Exit[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Idle_Loop.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sitting_Talking_Loop.fbxbin",
+      "Length": 2.933333396911621,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sitting_Talking_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Enter.fbxbin",
+      "Length": 0.5333333611488342,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Enter[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Exit.fbxbin",
+      "Length": 0.4333333373069763,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Exit[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Idle_Loop.fbxbin",
+      "Length": 2.0999999046325684,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Spell_Simple_Shoot.fbxbin",
+      "Length": 0.5,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Spell_Simple_Shoot[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sprint_Loop.fbxbin",
+      "Length": 0.6666666865348816,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sprint_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -5.5,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Fwd_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Swim_Fwd_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -2.9000000953674316,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Swim_Idle_Loop.fbxbin",
+      "Length": 3.3333332538604736,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Swim_Idle_Loop[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sword_Attack.fbxbin",
+      "Length": 1.5333333015441895,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sword_Attack[0]",
+      "RootDelta": [
+        0.0,
+        -1.5005059242248535,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Sword_Idle.fbxbin",
+      "Length": 1.6666666269302368,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Sword_Idle[0]",
+      "RootDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Walk_Formal_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Walk_Formal_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -1.2999999523162842,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    },
+    {
+      "HasRootTrack": true,
+      "Key": "LocomotionStage/RootMotion/AS_UAL1_Standard_RM_Armature_Walk_Loop.fbxbin",
+      "Length": 1.3333333730697632,
+      "Object": "Animation:/Armature[0]/root[0]/Armature|Walk_Loop[0]",
+      "RootDelta": [
+        0.0,
+        -1.2999999523162842,
+        0.0
+      ],
+      "Skeleton": "LocomotionStage/InPlace/SKEL_UAL1_Standard_root.fbxbin",
+      "Type": 6
+    }
+  ]
+}

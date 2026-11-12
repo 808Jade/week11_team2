@@ -31,8 +31,12 @@ int32 FBoneContainer::GetMeshPoseIndexFromSkeletonPoseIndex(int32 SkeletonBoneIn
 	return SkeletonToPoseBoneIndexArray[SkeletonBoneIndex];
 }
 
-void FBoneContainer::FillWithRefPose(TArray<FTransform>& OutPose) const
-{
+void FBoneContainer::FillWithRefPose(TArray<FTransform>& OutPose) const {
+	if (!AssetSkeletalMesh) {
+		OutPose.Empty();
+		return;
+	}
+
 	const auto& MeshBones = AssetSkeletalMesh->GetRefSkeleton();
 	OutPose.SetNum(MeshBones.Num());
 	for (int32 I = 0; I < MeshBones.Num(); ++I)

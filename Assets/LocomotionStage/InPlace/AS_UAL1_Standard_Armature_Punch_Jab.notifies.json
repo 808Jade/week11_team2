@@ -1,0 +1,17 @@
+{
+    "Version": 1,
+    "Notifies": [
+        {
+            "Name": "AttackWindow",
+            "Time": 0.208,
+            "Duration": 0.208,
+            "Track": 1
+        },
+        {
+            "Name": "Impact",
+            "Time": 0.29467,
+            "Duration": 0,
+            "Track": 0
+        }
+    ]
+}

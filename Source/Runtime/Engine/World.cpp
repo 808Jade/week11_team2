@@ -767,15 +767,19 @@ bool UWorld::SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, 
 	return OutHit.bBlockingHit;
 }
 
-bool UWorld::LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
-	FBillboardTraceTransform ResolveBillboard, const void* ViewContext)
-{
+bool UWorld::LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit, FBillboardTraceTransform ResolveBillboard, const void* ViewContext, const AActor* IgnoreActor, bool BlockingOnly) {
 	SCOPE_CYCLE_COUNTER_ALWAYS(EditorStats::STAT_PickingTime_Name);
-	OutHit = FHitResult();
-	float NearestT = std::numeric_limits<float>::max();
+	OutHit = FHitResult{};
+	float NearestT{std::numeric_limits<float>::max()};
 
-	const auto TraceComponent = [&](FPrimitiveSceneProxy* Proxy, float& InOutNearestT)
-		{
+	const auto TraceComponent{[&](FPrimitiveSceneProxy* Proxy, float& InOutNearestT) {
+			const UPrimitiveComponent* Candidate{Proxy != nullptr ? Proxy->GetComponent() : nullptr};
+			const AActor* Owner{Candidate != nullptr ? Candidate->GetOwner() : nullptr};
+
+			if ((IgnoreActor != nullptr && Owner == IgnoreActor) || (BlockingOnly && (Candidate == nullptr || !Candidate->bBlockComponent || Owner == nullptr || !Owner->GetActorEnableCollision()))) {
+				return false;
+			}
+
 			if (UStaticMesh* Mesh = Proxy ? Proxy->GetMesh() : nullptr)
 			{
 				if (!Proxy->IsVisible())
@@ -853,7 +857,7 @@ bool UWorld::LineTraceSingle(const FRay& WorldRay, FHitResult& OutHit,
 			OutHit.ImpactPoint = WorldRay.Origin + WorldRay.Direction * T;
 			InOutNearestT = T;
 			return true;
-		};
+		}};
 
 	const FPreparedRay PreparedRay(WorldRay);
 

@@ -64,6 +64,7 @@ public:
 private:
     // 상태 정의 ID를 실행 상태 배열의 인덱스로 변환한다.
     int32 FindStateIndex(int32 Id) const;
+    bool TryStartTransition(const FAnimationUpdateContext& Context, int32 FromIndex, bool Interrupt);
 
 private:
     // 상태별 실행 포즈 링크와 경과 시간을 가진 이 인스턴스의 상태 목록이다.
@@ -86,6 +87,10 @@ private:
     float mBlendElapsed{};
     // 현재 전환을 완료할 때까지 사용할 전체 블렌딩 시간이다.
     float mBlendDuration{};
+
+    TArray<FTransform> mLastOutputPose{};
+    TArray<FTransform> mSnapshotPose{};
+    bool mBlendFromSnapshot{false};
 };
 
 // 전환 규칙을 인스턴스 변수와 현재 상태의 재생 정보로 평가한다.

@@ -193,53 +193,47 @@ void FAnimNode_StateMachine::Initialize(UAnimInstance& AnimInstance) {
     mBlendElapsed = 0.0f;
     mBlendDuration = 0.0f;
     mRuleDebugValues.clear();
+    mLastOutputPose.Empty();
+    mSnapshotPose.Empty();
+    mBlendFromSnapshot = false;
 
     for (auto& State : mStates) {
         State.mElapsed = 0.0f;
     }
 }
 
-void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context) {
-    if (mCurrent < 0) {
-        return;
-    }
-
-    const float Delta{std::isfinite(Context.GetDeltaTime()) ? std::max(Context.GetDeltaTime(), 0.0f) : 0.0f};
-    auto& Current{mStates[static_cast<std::size_t>(mCurrent)]};
-    Current.mPose.Update(Context);
-    Current.mElapsed += Delta;
-
-    // 블렌딩 중에는 두 상태의 시간을 함께 진행하고, 완료될 때까지 새 전환 검사를 보류한다.
-    if (mTarget >= 0) {
-        auto& Target{mStates[static_cast<std::size_t>(mTarget)]};
-        Target.mPose.Update(Context);
-        Target.mElapsed += Delta;
-        mBlendElapsed += Delta;
-
-        if (mBlendElapsed >= mBlendDuration) {
-            mCurrent = mTarget;
-            mTarget = -1;
-            mActiveTransition = -1;
-        }
-
-        return;
-    }
-
+bool FAnimNode_StateMachine::TryStartTransition(const FAnimationUpdateContext& Context, int32 FromIndex, bool Interrupt) {
+    auto& From{mStates[static_cast<std::size_t>(FromIndex)]};
     mRuleDebugValues.clear();
 
     for (const auto& Transition : mTransitions) {
         const int32 TargetIndex{FindStateIndex(Transition.mToState)};
         const bool AnyState{Transition.mFromState == FAnimStateMachineData::AnyStateId};
 
-        if ((!AnyState && Transition.mFromState != Current.mId) || TargetIndex < 0 || (AnyState && TargetIndex == mCurrent)) {
+        if ((!AnyState && Transition.mFromState != From.mId) || TargetIndex < 0 || (AnyState && TargetIndex == FromIndex)) {
             continue;
         }
 
-        const bool Allowed{FAnimTransitionEvaluator::Evaluate(Transition.mRule, Context, Current.mPose.mLinkedNode, Current.mElapsed)};
+        if (Interrupt && TargetIndex == mTarget) {
+            continue;
+        }
+
+        const bool Allowed{FAnimTransitionEvaluator::Evaluate(Transition.mRule, Context, From.mPose.mLinkedNode, From.mElapsed)};
         mRuleDebugValues.push_back({std::format("Rule -> {} ({})", mStates[static_cast<std::size_t>(TargetIndex)].mName, Transition.mPriority), FString{Allowed ? "true" : "false"}});
 
         if (!Allowed) {
             continue;
+        }
+
+        if (Interrupt) {
+            mBlendFromSnapshot = mLastOutputPose.Num() > 0;
+            if (mBlendFromSnapshot) {
+                mSnapshotPose = mLastOutputPose;
+            }
+            mCurrent = mTarget;
+            mTarget = -1;
+        } else {
+            mBlendFromSnapshot = false;
         }
 
         auto& Target{mStates[static_cast<std::size_t>(TargetIndex)]};
@@ -258,14 +252,50 @@ void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context) {
 
         if (mBlendDuration <= 0.0f || TargetIndex == mCurrent) {
             mCurrent = TargetIndex;
+            mTarget = -1;
+            mActiveTransition = -1;
+            mBlendFromSnapshot = false;
         } else {
             mTarget = TargetIndex;
             mActiveTransition = Transition.mId;
         }
 
         // 같은 프레임에 조건이 여러 개 참이어도 먼저 선택한 전환 하나만 수행한다.
-        break;
+        return true;
     }
+
+    return false;
+}
+
+void FAnimNode_StateMachine::Update(const FAnimationUpdateContext& Context) {
+    if (mCurrent < 0) {
+        return;
+    }
+
+    const float Delta{std::isfinite(Context.GetDeltaTime()) ? std::max(Context.GetDeltaTime(), 0.0f) : 0.0f};
+    auto& Current{mStates[static_cast<std::size_t>(mCurrent)]};
+    Current.mPose.Update(Context);
+    Current.mElapsed += Delta;
+
+    if (mTarget >= 0) {
+        auto& Target{mStates[static_cast<std::size_t>(mTarget)]};
+        Target.mPose.Update(Context);
+        Target.mElapsed += Delta;
+        mBlendElapsed += Delta;
+
+        if (mBlendElapsed >= mBlendDuration) {
+            mCurrent = mTarget;
+            mTarget = -1;
+            mActiveTransition = -1;
+            mBlendFromSnapshot = false;
+            return;
+        }
+
+        TryStartTransition(Context, mTarget, true);
+        return;
+    }
+
+    TryStartTransition(Context, mCurrent, false);
 }
 
 void FAnimNode_StateMachine::Evaluate(FPoseContext& Output) {
@@ -277,6 +307,7 @@ void FAnimNode_StateMachine::Evaluate(FPoseContext& Output) {
 
     if (mTarget < 0) {
         Current.mPose.Evaluate(Output);
+        mLastOutputPose = Output.mPose;
 
         return;
     }
@@ -285,9 +316,16 @@ void FAnimNode_StateMachine::Evaluate(FPoseContext& Output) {
     FPoseContext Source{Output.GetAnimInstance()};
     FPoseContext Target{Output.GetAnimInstance()};
     const float Alpha{GetBlendAlpha()};
-    Current.mPose.Evaluate(Source, 1.0f - Alpha);
+
+    if (mBlendFromSnapshot) {
+        Source.mPose = mSnapshotPose;
+    } else {
+        Current.mPose.Evaluate(Source, 1.0f - Alpha);
+    }
+
     mStates[static_cast<std::size_t>(mTarget)].mPose.Evaluate(Target, Alpha);
     FAnimationRuntime::BlendTwoPosesTogether(Source.mPose, Target.mPose, 1.0f - Alpha, Output.mPose);
+    mLastOutputPose = Output.mPose;
 }
 
 const FString& FAnimNode_StateMachine::GetNodeType() const {
@@ -311,11 +349,7 @@ void FAnimNode_StateMachine::GetDebugValues(std::vector<FAnimNodeValue>& OutValu
         OutValues.push_back({"State Time", std::format("{:.2f} s", mStates[static_cast<std::size_t>(mCurrent)].mElapsed)});
     }
 
-    if (mTarget >= 0) {
-        OutValues.push_back({"Rules", FString{"Deferred while blending"}});
-    } else {
-        OutValues.insert(OutValues.end(), mRuleDebugValues.begin(), mRuleDebugValues.end());
-    }
+    OutValues.insert(OutValues.end(), mRuleDebugValues.begin(), mRuleDebugValues.end());
 }
 
 int32 FAnimNode_StateMachine::GetCurrentState() const {

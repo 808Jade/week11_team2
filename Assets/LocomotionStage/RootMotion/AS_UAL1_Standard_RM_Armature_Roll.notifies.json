@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "Notifies": [
+        {
+            "Name": "DodgeWindow",
+            "Time": 0.11733,
+            "Duration": 0.93867,
+            "Track": 1
+        }
+    ]
+}

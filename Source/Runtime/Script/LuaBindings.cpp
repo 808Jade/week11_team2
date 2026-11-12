@@ -7,6 +7,8 @@
 #include "Animation/AnimationAsset.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/AnimGraphInstance.h"
+#include "Animation/AnimNode_StateMachine.h"
 #include "Components/MovementComponent.h"
 #include "Components/SlidingMovementComponent.h"
 #include "Components/IceVolumeComponent.h"
@@ -578,6 +580,30 @@ namespace
 
 				return PCM->IsBlending();
 			});
+        Lua.set_function("SetActiveCamera", [](const FLuaActorRef& Ref) {
+            AActor& Actor{Deref(Ref)};
+            UWorld* World{Actor.GetWorld()};
+            FWorldContext* Context{GEngine != nullptr && World != nullptr ? GEngine->GetWorldContextFromWorld(World) : nullptr};
+
+            if (Context == nullptr || Context->GameViewport == nullptr) {
+                throw sol::error("SetActiveCamera requires an initialized game viewport.");
+            }
+
+            for (UActorComponent* Component : Actor.GetComponents()) {
+                if (auto* Camera{Cast<UCameraComponent>(Component)}) {
+                    Context->GameViewport->SetCameraComponent(Camera);
+
+                    if (auto* Controller{World->EnsurePlayerController()}; Controller != nullptr && Controller->GetCameraManager() != nullptr) {
+                        Controller->GetCameraManager()->SetViewTarget(&Actor);
+                    }
+
+                    return;
+                }
+            }
+
+            throw sol::error("SetActiveCamera requires an actor with a camera component.");
+        });
+
         Lua.set_function("SetCameraInputEnabled", [](const FLuaActorRef& Ref, bool Enabled) {
             for (UActorComponent* Component : Deref(Ref).GetComponents()) {
                 if (auto* Camera{Cast<UCameraComponent>(Component)}) {
@@ -640,6 +666,46 @@ namespace
                 auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
                 auto* Player{Mesh ? Mesh->GetSingleNodeInstance() : nullptr};
                 return Player ? Player->GetLength() : 0.0f;
+            },
+            "SetAnimationRate", [](const FLuaComponentRef& Ref, float PlayRate) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                auto* Player{Mesh != nullptr ? Mesh->GetSingleNodeInstance() : nullptr};
+                return Player != nullptr && Player->SetPlayRate(PlayRate);
+            },
+            "SetAnimationPosition", [](const FLuaComponentRef& Ref, float Position) {
+                auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                auto* Player{Mesh != nullptr ? Mesh->GetSingleNodeInstance() : nullptr};
+
+                if (Player != nullptr) {
+                    Player->SetPosition(Position);
+                }
+
+                return Player != nullptr;
+            },
+            "GetAnimationTime", [](const FLuaComponentRef& Ref) {
+                const auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                const auto* Player{Mesh != nullptr ? Mesh->GetSingleNodeInstance() : nullptr};
+                return Player != nullptr ? Player->GetCurrentTime() : 0.0f;
+            },
+            "GetAnimGraphState", [](const FLuaComponentRef& Ref) {
+                const auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
+                const auto* Instance{Mesh != nullptr ? Mesh->GetAnimInstance() : nullptr};
+                const FAnimNode_Base* Node{Instance != nullptr ? Instance->GetRootNode() : nullptr};
+                FString Result{};
+
+                for (uint32 Depth{}; Depth < 16; ++Depth) {
+                    const auto* Machine{dynamic_cast<const FAnimNode_StateMachine*>(Node)};
+                    const auto* State{Machine != nullptr ? Machine->FindState(Machine->GetCurrentState()) : nullptr};
+
+                    if (State == nullptr) {
+                        break;
+                    }
+
+                    Result += (Result.empty() ? "" : " / ") + State->mName;
+                    Node = State->mPose.mLinkedNode;
+                }
+
+                return Result;
             },
             "IsAnimationFinished", [](const FLuaComponentRef& Ref) {
                 auto* Mesh{Cast<USkeletalMeshComponent>(&Deref(Ref))};
@@ -826,6 +892,14 @@ namespace
 			return FInputSystem::IsMousePressed(EMouseButton::Left);
 			});
 
+        Lua.set_function("GetMouseDelta", []() {
+            return std::make_tuple(FInputSystem::GetMouseDeltaX(), FInputSystem::GetMouseDeltaY());
+        });
+
+        Lua.set_function("IsRightMouseButtonDown", []() {
+            return FInputSystem::IsMouseDown(EMouseButton::Right);
+        });
+
 		Lua.set_function("IsRightMouseButtonPressed", []() {
 			return FInputSystem::IsMousePressed(EMouseButton::Right);
 			});
@@ -936,6 +1010,24 @@ namespace
 				};
 			}
 		);
+
+        Lua.set_function("RaycastBlocking", [](sol::this_environment Env, const FVector& Origin, const FVector& Direction, sol::optional<float> MaxDistance) -> sol::optional<FVector> {
+            AActor* Owner{OwnerFromEnv(Env)};
+            UWorld* World{Owner != nullptr ? Owner->GetWorld() : nullptr};
+
+            if (World == nullptr || Direction.Dot(Direction) <= 0.0000001f) {
+                return sol::nullopt;
+            }
+
+            const FRay Ray{Origin, Direction.Normalized()};
+            FHitResult Hit{};
+
+            if (!World->LineTraceSingle(Ray, Hit, nullptr, nullptr, Owner, true) || Hit.Distance > MaxDistance.value_or(1000.0f)) {
+                return sol::nullopt;
+            }
+
+            return Hit.ImpactPoint;
+        });
 
 		Lua.set_function("Raycast",
 			[](sol::this_environment Env,

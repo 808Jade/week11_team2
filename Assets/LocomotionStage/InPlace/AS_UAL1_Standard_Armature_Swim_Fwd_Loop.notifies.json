@@ -1,0 +1,17 @@
+{
+    "Version": 1,
+    "Notifies": [
+        {
+            "Name": "SwimStroke",
+            "Time": 0.24,
+            "Duration": 0,
+            "Track": 0
+        },
+        {
+            "Name": "SwimStroke",
+            "Time": 0.90667,
+            "Duration": 0,
+            "Track": 0
+        }
+    ]
+}
